@@ -50,7 +50,7 @@ The Maze-Hard task, which involves finding long paths in 30x30 grids, showed a h
 
 This result is well within the margin of error and closely aligns with the paper's claim, confirming the model's strong performance on this spatial reasoning task.
 
-<img src="reports/plots/claims_vs_achieved_1-maze-hard.png" width="600" alt="Maze-Hard Claim vs Achieved">
+<img src="plots/claims_vs_achieved_1-maze-hard.png" width="600" alt="Maze-Hard Claim vs Achieved">
 
 ### 2) The Abstraction and Reasoning Challenge (ARC)
 
@@ -69,7 +69,7 @@ The first run, with H-3, L-6 results in pass@2 as 52.75% ± 3.09%, following the
 
 Performing a one-tailed z test and calculating the p value (<0.005 or 95% confidence) confirmed that H-3, L-6 variant is indeed significant (by performance in terms of metric) compared to H-3, L-4 model.
 
-<img src="reports/plots/claims_vs_achieved_2-the-abstraction-and-reasoning-challenge-arc.png" width="600" alt="ARC-AGI-1 Claim vs Achieved">
+<img src="plots/claims_vs_achieved_2-the-abstraction-and-reasoning-challenge-arc.png" width="600" alt="ARC-AGI-1 Claim vs Achieved">
 
 ### 3) Sudoku-Extreme
 
@@ -85,7 +85,7 @@ The reproduction report documents two runs with different epoch counts. The long
 
 The result from the 60k epoch run is less than 1.1 percentage points from the target, confirming that the performance of the attention-based model is reproducible.
 
-<img src="reports/plots/image.png" width="600" alt="Sudoku-Extreme TRM-Attention Claim vs Achieved">
+<img src="plots/image.png" width="600" alt="Sudoku-Extreme TRM-Attention Claim vs Achieved">
 
 #### TRM-MLP Variant:
 
@@ -97,7 +97,7 @@ This variant is responsible for the paper's state-of-the-art claim on Sudoku-Ext
 
 The best-reproduced result of 79.37% falls short of the paper's claim by a significant margin of 8 percentage points. The experimental report notes that the longer training run to 60k epochs resulted in lower accuracy, speculating that overfitting may be a factor. This discrepancy suggests that achieving the peak result is highly sensitive and was not successfully replicated.
 
-<img src="reports/plots/claims_vs_achieved_trm-mlp-variant.png" width="600" alt="Sudoku-Extreme TRM-MLP Claim vs Achieved">
+<img src="plots/claims_vs_achieved_trm-mlp-variant.png" width="600" alt="Sudoku-Extreme TRM-MLP Claim vs Achieved">
 <!-- 
 **Table 2. Comparison of Claimed vs. Reproduced Results**
 
