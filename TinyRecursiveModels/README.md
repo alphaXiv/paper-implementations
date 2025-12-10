@@ -241,7 +241,7 @@ torchrun --nproc-per-node 1 --rdzv_backend=c10d --rdzv_endpoint=localhost:0 --nn
 
 ## Reproduction Report
 
-For detailed analysis of independent reproduction attempts and comparison with published claims, see [docs/REPORT.md](REPORT.md).
+For detailed analysis of independent reproduction attempts and comparison with published claims, see [REPORT.md](docs/REPORT.md).
 
 This report includes evaluation results, performance comparisons, and insights from reproducing the TRM paper's results across Maze-Hard, ARC-AGI-1, and Sudoku-Extreme benchmarks.
 
