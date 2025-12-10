@@ -14,7 +14,7 @@ This is the codebase for the paper: "Less is More: Recursive Reasoning with Tiny
 
 ## Quickstart
 
-
+We used Lambda Labs H100 GPUs instance with CUDA version 12.8. More info in [REPORT.md](docs/REPORT.md)
 
 ```bash
 # 1) Create env (Python 3.10+ recommended)
@@ -72,7 +72,7 @@ We provide pre-trained model weights to evaluate on:
 - Sudoku (TRM weights): https://huggingface.co/alphaXiv/trm-model-sudoku
 - ARC AGI 1 (TRM attention weights): https://huggingface.co/alphaXiv/trm-model-arc-agi-1
 
-To evaluate TRM you can use an A100, A10, L40s, or even CPU! Single GPU / CPU smoke test (one batch), loads model from HF or local path:
+Single GPU / CPU smoke test (one batch), loads model from HF or local path:
 
 ```bash
 python scripts/run_eval_only.py \
