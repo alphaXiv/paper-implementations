@@ -1,0 +1,52 @@
+Table 1 Mean concentrations (N = 5)
+
+<table>
+  <tr>
+    <th>Compound</th>
+    <th>Mean</th>
+    <th>Max</th>
+    <th>Min</th>
+    <th>Sd</th>
+    <th>Percentage of total</th>
+    <th>Ratio S1/S2</th>
+    <th>Compound/toluene</th>
+    <th>LOD</th>
+    <th>CR</th>
+  </tr>
+  <tr><td colspan="10">Station 1</td></tr>
+  <tr><td>Benzene</td><td>29</td><td>36</td><td>18</td><td>7</td><td>14.58</td><td>2.72</td><td>0.62</td><td>0.12</td><td>78</td></tr>
+  <tr><td>Toluene</td><td>46</td><td>59</td><td>28</td><td>11</td><td>23.45</td><td>2.56</td><td>0.15</td><td>91</td></tr>
+  <tr><td>Ethylbenzene</td><td>12</td><td>15</td><td>7</td><td>3</td><td>6.30</td><td>2.60</td><td>0.27</td><td>0.13</td><td>89</td></tr>
+  <tr><td>m-Xylene</td><td>27</td><td>36</td><td>17</td><td>6</td><td>13.80</td><td>2.61</td><td>0.59</td><td>0.11</td><td>85</td></tr>
+  <tr><td>p-Xylene</td><td>9</td><td>13</td><td>5</td><td>3</td><td>4.89</td><td>2.57</td><td>0.21</td><td>0.15</td><td>88</td></tr>
+  <tr><td>o-Xylene</td><td>8</td><td>11</td><td>5</td><td>2.0</td><td>4.24</td><td>2.68</td><td>0.18</td><td>0.15</td><td>85</td></tr>
+  <tr><td>Isopropylbenzene</td><td>2.3</td><td>3.0</td><td>1.3</td><td>0.7</td><td>1.15</td><td>2.61</td><td>0.05</td><td>0.21</td><td>79</td></tr>
+  <tr><td>n-Propylbenzene</td><td>7</td><td>9</td><td>4</td><td>2.0</td><td>3.33</td><td>2.55</td><td>0.14</td><td>0.22</td><td>80</td></tr>
+  <tr><td>1,3,5-Trimethylbenzene</td><td>17</td><td>23</td><td>9</td><td>5.0</td><td>8.53</td><td>2.65</td><td>0.36</td><td>0.20</td><td>78</td></tr>
+  <tr><td>1,2,4-Trimethylbenzene</td><td>34</td><td>46</td><td>19</td><td>10</td><td>17.28</td><td>2.51</td><td>0.74</td><td>0.19</td><td>82</td></tr>
+  <tr><td>Sec-butylbenzene</td><td>0.6</td><td>0.8</td><td>0.4</td><td>0.2</td><td>0.31</td><td>2.41</td><td>0.01</td><td>0.20</td><td>79</td></tr>
+  <tr><td>p-Isopropyltoluene</td><td>0.8</td><td>1</td><td>0.5</td><td>0.2</td><td>0.39</td><td>2.42</td><td>0.02</td><td>0.22</td><td>77</td></tr>
+  <tr><td>n-Butylbenzene</td><td>3</td><td>4</td><td>2</td><td>1</td><td>1.74</td><td>2.62</td><td>0.07</td><td>0.18</td><td>75</td></tr>
+  <tr><td>Total VACs</td><td>195.7</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td colspan="10">Station 2</td></tr>
+  <tr><td>Benzene</td><td>79</td><td>95</td><td>64</td><td>12</td><td>15.25</td><td>0.66</td><td>0.12</td><td>78</td></tr>
+  <tr><td>Toluene</td><td>120</td><td>141</td><td>89</td><td>19</td><td>23.14</td><td>0.15</td><td>91</td></tr>
+  <tr><td>Ethylbenzene</td><td>33</td><td>38</td><td>24</td><td>5</td><td>6.30</td><td>0.27</td><td>0.13</td><td>89</td></tr>
+  <tr><td>m-Xylene</td><td>72</td><td>93</td><td>49</td><td>17</td><td>13.86</td><td>0.60</td><td>0.11</td><td>85</td></tr>
+  <tr><td>p-Xylene</td><td>25</td><td>30</td><td>18</td><td>4</td><td>4.83</td><td>0.21</td><td>0.15</td><td>88</td></tr>
+  <tr><td>o-Xylene</td><td>23</td><td>26</td><td>16</td><td>4</td><td>4.37</td><td>0.19</td><td>0.15</td><td>85</td></tr>
+  <tr><td>Isopropylbenzene</td><td>6</td><td>7</td><td>4</td><td>1</td><td>1.16</td><td>0.05</td><td>0.21</td><td>79</td></tr>
+  <tr><td>n-Propylbenzene</td><td>17</td><td>21</td><td>12</td><td>3</td><td>3.28</td><td>0.14</td><td>0.22</td><td>80</td></tr>
+  <tr><td>1,3,5-Trimethylbenzene</td><td>45</td><td>53</td><td>32</td><td>8</td><td>8.70</td><td>0.38</td><td>0.20</td><td>78</td></tr>
+  <tr><td>1,2,4-Trimethylbenzene</td><td>86</td><td>106</td><td>65</td><td>15</td><td>16.71</td><td>0.72</td><td>0.19</td><td>82</td></tr>
+  <tr><td>Sec-butylbenzene</td><td>1.5</td><td>1.7</td><td>1.0</td><td>0.3</td><td>0.29</td><td>0.01</td><td>0.20</td><td>79</td></tr>
+  <tr><td>p-Isopropyltoluene-ne</td><td>1.9</td><td>2.2</td><td>1.2</td><td>0.4</td><td>0.36</td><td>0.02</td><td>0.22</td><td>77</td></tr>
+  <tr><td>n-Butylbenzene</td><td>9</td><td>11</td><td>7</td><td>2</td><td>1.76</td><td>0.08</td><td>0.18</td><td>75</td></tr>
+  <tr><td>Total VACs</td><td>518.4</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+</table>
+
+Maximum (Max), minimum (Min) and standard deviations (Sd) of VACs in Stations 1 and 2 (units of \( \mu \)g m\(^{-3}\)). Mass composition (%), the ratio of concentrations in Stations 1 and 2 (S1/S2) and the concentration ratios compound/toluene are also shown. Limits of detection (LOD, ng m\(^{-3}\)) and compound recoveries (CR, %) are also reported
+
+As previously noted (Bowmand and Seinfeld 1995) exhaust compositions differ from fuel composition in several aspects, mainly the generation of light olefins and carbonyls, depletion of paraffins and ethers and enrichment of benzene. Emissions are composed of unburned fuel, products of partial combustion and evaporative looses. Since 2002, the volume percentage of benzene and total aromatics in gasohol should be in the range 1.0–1.9% and 45–57%, respectively, according to the Brazilian legislation (ANP 2005). Results obtained in this work show that benzene account for 15% (in mass) of total VACs.
+
+The benzene/toluene mass ratio is 0.62–0.66, quite similar to the value determined in São Paulo and to data for Mc Henry and Tuscarola Mountain Tunnels (Pierson et al. 1996). These values are rather high in comparison to reported ambient ratios for various cities around the world, which range from 0.25 to 0.50 (Martins et al. 2006a, b) and also the ratios determined in several tunnels in Taiwan (Hsieh et al. 1999; Hwa et al. 2002; Hsu et al. 2001) and Europe (Kristensson et al. 2004; Stemmler et al. 2005; Colberg et al. 2005). The benzene/toluene ratio determined in this work may be considered a characteristic value for the fuels used in Brazil and for the on-road tunnel emissions in Brazil. It worth noting that emission ratios depend on the fuel formulation, driving conditions, vehicle maintenance and traffic congestion. Emission factors of individual VACs were not calculated since data for CO, used as reference, and currently obtained by the tunnel control system are subject to a great uncertainty.

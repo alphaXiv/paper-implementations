@@ -1,0 +1,297 @@
+name: Main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+    tags:
+      - "v*.*.*"
+
+env:
+  # Change this to invalidate existing cache.
+  CACHE_PREFIX: v0
+  PYTHONPATH: ./
+
+jobs:
+  checks:
+    name: Python ${{ matrix.python }} - ${{ matrix.task.name }}
+    runs-on: large-olmocr-runner
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11"]
+        task:
+          - name: Test
+            run: |
+              playwright install chromium
+              pytest -v --color=yes  -m "not nonci" tests/
+
+        include:
+          - python: "3.11"
+            task:
+              name: Lint
+              run: ruff check .
+
+          # Removing mypy for now, as it isn't handling async things correctly and crashing
+          # - python: "3.11"
+          #   task:
+          #     name: Type check
+          #     run: mypy .
+
+          - python: "3.11"
+            task:
+              name: Build
+              run: |
+                python -m build
+
+          - python: "3.11"
+            task:
+              name: Style
+              run: |
+                isort --check .
+                black --check .
+
+          - python: "3.11"
+            task:
+              name: Docs
+              run: cd docs && make html
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends poppler-utils 
+
+      - name: Setup Python environment
+        uses: ./.github/actions/setup-venv
+        with:
+          python-version: ${{ matrix.python }}
+          cache-prefix: ${{ env.CACHE_PREFIX }}
+
+      - name: Restore mypy cache
+        if: matrix.task.name == 'Type check'
+        uses: actions/cache@v3
+        with:
+          path: .mypy_cache
+          key: mypy-${{ env.CACHE_PREFIX }}-${{ runner.os }}-${{ matrix.python }}-${{ hashFiles('*requirements.txt') }}-${{ github.ref }}-${{ github.sha }}
+          restore-keys: |
+            mypy-${{ env.CACHE_PREFIX }}-${{ runner.os }}-${{ matrix.python }}-${{ hashFiles('*requirements.txt') }}-${{ github.ref }}
+            mypy-${{ env.CACHE_PREFIX }}-${{ runner.os }}-${{ matrix.python }}-${{ hashFiles('*requirements.txt') }}
+
+      - name: ${{ matrix.task.name }}
+        run: |
+          . .venv/bin/activate
+          ${{ matrix.task.run }}
+
+      - name: Upload package distribution files
+        if: matrix.task.name == 'Build'
+        uses: actions/upload-artifact@v4
+        with:
+          name: package
+          path: dist
+
+      - name: Clean up
+        if: always()
+        run: |
+          . .venv/bin/activate
+          pip uninstall -y olmocr
+
+  gpu_checks:
+    name: GPU CI
+    runs-on: large-olmocr-runner
+    timeout-minutes: 15
+    needs: [checks]
+    env:
+      BEAKER_TOKEN: ${{ secrets.BEAKER_TOKEN }}
+      BEAKER_IMAGE: jakep/olmocr-gpu-ci
+      BEAKER_BUDGET: ai2/oe-base
+      BEAKER_WORKSPACE: ai2/olmocr
+    steps:
+      - name: Determine current commit SHA (pull request)
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "COMMIT_SHA=${{ github.event.pull_request.head.sha }}" >> $GITHUB_ENV
+
+      - name: Determine current commit SHA (push)
+        if: github.event_name != 'pull_request'
+        run: |
+          echo "COMMIT_SHA=$GITHUB_SHA" >> $GITHUB_ENV
+
+      - name: GPU Tests
+        uses: allenai/beaker-run-action@v1.2
+        if: env.BEAKER_TOKEN != ''
+        with:
+          spec: |
+            version: v2
+            description: GPU Tests
+            budget: ${{ env.BEAKER_BUDGET }}
+            tasks:
+              - name: tests
+                image:
+                  beaker: ${{ env.BEAKER_IMAGE }}
+                context:
+                  priority: normal
+                  preemptible: true
+                resources:
+                  gpuCount: 1
+                constraints:
+                  cluster:
+                    - ai2/jupiter-cirrascale-2
+                    - ai2/neptune-cirrascale
+                    - ai2/saturn-cirrascale
+                    - ai2/ceres-cirrascale
+                envVars:
+                  - name: GIT_REVISION
+                    value: ${{ env.COMMIT_SHA }}
+                entrypoint: ["/bin/bash"]
+                command: ["./gpu-ci-script.sh"]
+                result:
+                  path: /unused
+          token: ${{ env.BEAKER_TOKEN }}
+          workspace: ${{ env.BEAKER_WORKSPACE }}
+
+  release:
+    name: Release
+    runs-on: large-olmocr-runner
+    needs: [checks, gpu_checks]
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install requirements
+        run: |
+          pip install --upgrade pip setuptools wheel build
+          pip install -e .[dev]
+          pip install -e .[bench]
+
+      - name: Prepare environment
+        run: |
+          echo "RELEASE_VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+          echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      - name: Download package distribution files
+        uses: actions/download-artifact@v4
+        with:
+          name: package
+          path: dist
+
+      - name: Generate release notes
+        run: |
+          python scripts/release_notes.py > ${{ github.workspace }}-RELEASE_NOTES.md
+
+      - name: Publish package to PyPI
+        run: |
+          twine upload -u '${{ secrets.PYPI_USERNAME }}' -p '${{ secrets.PYPI_PASSWORD }}' dist/*
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          body_path: ${{ github.workspace }}-RELEASE_NOTES.md
+          prerelease: ${{ contains(env.TAG, 'rc') }}
+          files: |
+            dist/*
+
+  docker-build:
+    name: Build and Push Docker Image
+    runs-on: large-olmocr-runner
+    needs: [release]
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: read
+      packages: write
+    env:
+      REGISTRY: docker.io
+      IMAGE_NAME: alleninstituteforai/olmocr
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet \
+            /usr/local/lib/android \
+            /opt/ghc \
+            /opt/hostedtoolcache/CodeQL
+          sudo docker system prune -af
+          sudo apt-get -y autoremove
+          sudo apt-get -y autoclean
+          df -h
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=tag
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+          flavor: |
+            latest=true
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64
+          outputs: type=registry
+          no-cache: true
+
+      # jakep: push to beaker can't work because of limitted disk space on these runners
+      # jakep: (you can try by setting load: true above, but you'll need a larger runner)
+      # - name: Setup Beaker CLI
+      #   uses: allenai/setup-beaker@v2
+      #   with:
+      #     token: ${{ secrets.BEAKER_TOKEN }}
+      #     version: latest
+      # - name: Debug Docker images
+      #   run: docker images
+
+      # - name: Push to Beaker
+      #   env:
+      #     BEAKER_TOKEN: ${{ secrets.BEAKER_TOKEN }}
+      #   run: |
+      #     VERSION=${{ steps.meta.outputs.version }}
+      #     beaker image create \
+      #       --name "olmocr-inference-$VERSION" \
+      #       --workspace ai2/olmocr \
+      #       alleninstituteforai/olmocr:$VERSION
+        
+      - name: Clean up after build
+        if: always()
+        run: |
+          docker system prune -af --volumes
+          df -h
