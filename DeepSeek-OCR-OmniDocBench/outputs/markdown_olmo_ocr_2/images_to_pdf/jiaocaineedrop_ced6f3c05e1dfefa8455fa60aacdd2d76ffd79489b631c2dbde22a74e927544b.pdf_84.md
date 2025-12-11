@@ -1,0 +1,42 @@
+<table>
+  <tr>
+    <th></th>
+    <th></th>
+    <th></th>
+    <th></th>
+    <th></th>
+    <th></th>
+  </tr>
+  <tr>
+    <td>(5) To be outlined at education intervention to be conducted prior to July 31<sup>st</sup>, 2019.</td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <th>PCMH Roadmap</th>
+    <td>(1) NCQA PCMH criteria and gap analysis will guide roadmap development<br>(2) Delivery of roadmap to Project Coordinator and Executive Director by June 30th, 2019<br>(3) Roadmap will be disseminated educational session conducted by the end of July 2019.</td>
+    <td>(1) NCQA website<br>(2) Gap Analysis<br>(3) Staff and leadership interviews<br>(4) Document review (policies, job descriptions, reports)<br>(5) Meeting notes and agendas</td>
+    <td>(1) Manual collection<br>(2) Field notes<br>(3) Observation</td>
+    <td>(1) Prior to June 30<sup>th</sup>, 2019</td>
+    <td>(1) Doctoral Student<br>(2) Program Coordinator</td>
+  </tr>
+  <tr>
+    <th>Staff Education</th>
+    <td>(1) Gathering of data to develop educational intervention using NCQA’s PCMH criteria, gap analysis, and roadmap.<br>(2) Delivery of roadmap to Project Coordinator and Executive Director by June 30th, 2019<br>(3) Delivery of education to key stakeholders by July 31<sup>st</sup>, 2019.<br>(4) At completion of education intervention, a survey to assess satisfaction of the education will be administered</td>
+    <td>(1) NCQA website<br>(2) Clinic branding criteria<br>(3) Gap analysis<br>(4) Roadmap<br>(5) Resources to aid in development of a Likert-type survey to assess satisfaction with education</td>
+    <td>(1) Manual collection<br>(2) Field notes<br>(3) Observation<br>(4) Post education staff satisfaction Likert-type survey</td>
+    <td>(1) Education and post satisfaction survey to be completed by July 31<sup>st</sup>, 2019.</td>
+    <td>(1) Doctoral student<br>(2) Program Coordinator<br>(3) With the assistance of a university statistician, the student will review the results from the 5-point Likert Survey</td>
+  </tr>
+  <tr>
+    <th>Return on Investment Analysis</th>
+    <td>(1) Data will be gathered on an ongoing basis. Utilization of gathered data will guide the business proposal<br>(2) Delivery of business proposal to</td>
+    <td>(1) NCQA website<br>(2) Estimated salary data from the urban clinic<br>(3) PCMH gap analysis will guide</td>
+    <td>(1) Manual collection<br>(2) Field notes<br>(3) Observation<br>(4) Evidence-based literature on ROI with PCMHs and</td>
+    <td>(1) Developed and completed by July 31<sup>st</sup>, 2019.</td>
+    <td>(1) Doctoral Student<br>(2) Key stakeholders (Project Coordinator, QI Specialist, Executive Director,</td>
+  </tr>
+</table>

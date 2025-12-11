@@ -1,0 +1,16 @@
+Bootstrapped Elo Ratings (95% CI):
+--------------------------------------------------
+pdelf        1813.0 ± 84.9 [1605.9, 1930.0]
+mineru       1545.2 ± 99.7 [1336.7, 1714.1]
+marker       1429.1 ± 100.7 [1267.6, 1645.5]
+gotocr_format 1212.7 ± 82.0 [1097.3, 1408.3]
+
+Pairwise Significance Tests:
+--------------------------------------------------
+gotocr_format vs marker       Δ = -216.3 [-470.8,  135.0] p = 0.218
+gotocr_format vs mineru       Δ = -332.5 [-567.5,   19.3] p = 0.051
+gotocr_format vs pdelf        Δ = -600.3 [-826.1, -344.3] p = 0.000*
+marker       vs mineru       Δ = -116.1 [-365.4,  246.5] p = 0.430
+marker       vs pdelf        Δ = -383.9 [-610.6,  -10.9] p = 0.044*
+mineru       vs pdelf        Δ = -267.8 [-517.3,  104.0] p = 0.135
+

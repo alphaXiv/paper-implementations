@@ -1,0 +1,52 @@
+<|ref|>text<|/ref|><|det|>[[72, 73, 328, 138]]<|/det|>
+Supporting information used to prepare these findings is available for public inspection, by appointment, during normal business hours, by contacting the appropriate person, as  
+
+<|ref|>text<|/ref|><|det|>[[359, 73, 633, 138]]<|/det|>
+specified under FOR FURTHER INFORMATION CONTACT. Please submit any new information, materials, comments, or questions concerning these findings to the appropriate person, as specified  
+
+<|ref|>text<|/ref|><|det|>[[650, 73, 868, 98]]<|/det|>
+under FOR FURTHER INFORMATION CONTACT.  
+
+<|ref|>text<|/ref|><|det|>[[650, 110, 890, 122]]<|/det|>
+FOR FURTHER INFORMATION CONTACT:  
+
+<|ref|>table<|/ref|><|det|>[[68, 144, 930, 366]]<|/det|>
+
+<table><tr><td>Species</td><td>Contact information</td></tr><tr><td>Arizona treefrog (Huachuca-Canelo population)</td><td>Nathan Allan, Acting Listing Coordinator, Southwest Regional Office, Ecological Services, 512-490-0057.</td></tr><tr><td>Arkansas darter</td><td>Jason Luginbill, Field Supervisor, Kansas Ecological Services Field Office, 785-539-3474.</td></tr><tr><td>Black mudalia</td><td>Bill Pearson, Field Supervisor, Alabama Ecological Services Field Office, 251-441-5181.</td></tr><tr><td>Highlands tiger beetle</td><td>Roxanna Hinzman, Field Supervisor, South Florida Ecological Services Field Office, 772-562-3909.</td></tr><tr><td>Dichanthelium (=panicum) hirstii (Hirst Brothers&#x27; panic grass).</td><td>Krishna Gifford, Listing Coordinator, Northeast Regional Office, Ecological Services, 413-253-8619.</td></tr><tr><td>Kentucky cave beetles (Louisville cave beetle and Tatum Cave beetle).</td><td>Submit any new information concerning the species&#x27; taxonomy, population status, or threats to: New Jersey Ecological Services Field Office, 4 E. Jimmie Leeds Road, Suite 4, Galloway, NJ 08205.</td></tr><tr><td>Relict leopard frog</td><td>Lee Andrews, Field Supervisor, Kentucky Ecological Services Field Office, 502-695-0468.</td></tr><tr><td>Sicklefin redhorse sucker</td><td>Michael Senn, Field Supervisor, Southern Nevada Ecological Services Field Office, 702-515-5244.</td></tr><tr><td>Stephan&#x27;s riffle beetle</td><td>Jason Mays, Asheville (North Carolina) Ecological Services Field Office, 828-258-3939.</td></tr><tr><td></td><td>Steve Spangle, Field Supervisor, Arizona Ecological Services Field Office, 602-242-0210.</td></tr></table>  
+
+<|ref|>text<|/ref|><|det|>[[72, 392, 340, 444]]<|/det|>
+If you use a telecommunications device for the deaf (TDD), please call the Federal Information Relay Service (FIRS) at 800- 877- 8339.  
+
+<|ref|>sub_title<|/ref|><|det|>[[72, 445, 268, 456]]<|/det|>
+## SUPPLEMENTARY INFORMATION:  
+
+<|ref|>sub_title<|/ref|><|det|>[[72, 463, 155, 476]]<|/det|>
+## Background  
+
+<|ref|>text<|/ref|><|det|>[[71, 480, 345, 934]]<|/det|>
+Section 4(b)(3)(B) of the Act (16 U.S.C. 1533) requires that, within 12 months after receiving any petition to revise the Federal Lists of Endangered and Threatened Wildlife and Plants that contains substantial scientific or commercial information indicating that listing an animal or plant species may be warranted, we make a finding ("12- month finding"). In this finding, we determine whether listing the Huachuca- Canelo population of the Arizona treefrog, the Arkansas darter, black mudalia, Highlands tiger beetle, Dichanthelium (=panicum) hirstii (Hirst Brothers' panic grass), two Kentucky cave beetles (Louisville cave beetle and Tatum Cave beetle), relict leopard frog, sicklefin redhorse sucker, and Stephan's riffle beetle is: (1) Not warranted; (2) warranted; or (3) warranted, but the immediate proposal of a regulation implementing the petitioned action is precluded by other pending proposals to determine whether species are endangered or threatened species, and expeditions progress is being made to add or remove qualified species from the Federal Lists of Endangered and Threatened Wildlife and Plants ("warranted but precluded"). Section 4(b)(3)(C) of the Act requires that we treat a petition for which the requested action is found to be warranted but precluded as though resubmitted on the date of such finding, that is, requiring a  
+
+<|ref|>text<|/ref|><|det|>[[360, 392, 630, 431]]<|/det|>
+subsequent finding to be made within 12 months. We must publish these 12- month findings in the Federal Register.  
+
+<|ref|>sub_title<|/ref|><|det|>[[360, 437, 630, 462]]<|/det|>
+## Summary of Information Pertaining to the Five Factors  
+
+<|ref|>text<|/ref|><|det|>[[360, 468, 633, 744]]<|/det|>
+Section 4 of the Act (16 U.S.C. 1533) and the implementing regulations in part 424 of title 50 of the Code of Federal Regulations (50 CFR part 424) set forth procedures for adding species to, removing species from, or reclassifying species on the Federal Lists of Endangered and Threatened Wildlife and Plants. The Act defines "endangered species" as any species that is in danger of extinction throughout all or a significant portion of its range (16 U.S.C. 1532(6)), and "threatened species" as any species that is likely to become an endangered species within the foreseeable future throughout all or a significant portion of its range (16 U.S.C. 1532(20)). Under section 4(a)(1) of the Act, a species may be determined to be an endangered or a threatened species because of any of the following five factors:  
+
+<|ref|>text<|/ref|><|det|>[[360, 744, 633, 884]]<|/det|>
+(A) The present or threatened destruction, modification, or curtailment of its habitat or range; 
+(B) Overutilization for commercial, recreational, scientific, or educational purposes; 
+(C) Disease or predation; 
+(D) The inadequacy of existing regulatory mechanisms; or 
+(E) Other natural or manmade factors affecting its continued existence.  
+
+<|ref|>text<|/ref|><|det|>[[360, 884, 636, 934]]<|/det|>
+We summarize below the information on which we based our evaluation of the five factors provided in section 4(a)(1) of the Act to determine whether the  
+
+<|ref|>text<|/ref|><|det|>[[649, 392, 916, 590]]<|/det|>
+Huachuca- Canelo population of the Arizona treefrog, the Arkansas darter, black mudalia, Highlands tiger beetle, Dichanthelium (=panicum) hirstii, two Kentucky cave beetles (Louisville cave beetle and Tatum Cave beetle), relict leopard frog, sicklefin redhorse sucker, and Stephan's riffle beetle meet the definition of an endangered or threatened species. More detailed information about these species is presented in the species- specific assessment forms found on http://www.regulations.gov under the appropriate docket number (see ADDRESSES, above).  
+
+<|ref|>text<|/ref|><|det|>[[649, 591, 923, 934]]<|/det|>
+In considering what stressors under the Act's five factors might constitute threats, we must look beyond the mere exposure of the species to the factor to determine whether the species responds to the factor in a way that causes actual impacts to the species. If there is exposure to a factor, but no response, or only a positive response, that factor is not a threat. If there is exposure and the species responds negatively, the factor may be a threat. In that case, we determine if that stressor rises to the level of a threat, meaning that it may drive or contribute to the risk of extinction of the species such that the species warrants listing as an endangered or threatened species as those terms are defined by the Act. This does not necessarily require empirical proof of a threat. The combination of exposure and some corroborating evidence of how the species is likely affected could suffice. The mere identification of stressors that could affect a species negatively is not sufficient to compel a finding that
