@@ -1,0 +1,28 @@
+end2end_eval:
+  metrics:
+    text_block:
+      metric:
+        - Edit_dist
+        # - BLEU
+        # - METEOR
+    display_formula:
+      metric:
+        - Edit_dist
+        - CDM_plain  # CDM can be calculated directly by calling CDM in config file if you have CDM environment
+    table:
+      metric:
+        - TEDS
+        - Edit_dist
+    reading_order:
+      metric:
+        - Edit_dist
+  dataset:
+    dataset_name: end2end_dataset
+    ground_truth:
+      data_path: ./../../../../../../../../home/ubuntu/.cache/huggingface/hub/datasets--opendatalab--OmniDocBench/snapshots/91fe284bbfacfa687959ae3eb00846ca852aa907/OmniDocBench.json
+    prediction:
+      # data_path: markdowns_for_dpsk_ocr/results_dpsk-cleaned
+      data_path: output_results_markdown
+    match_method: quick_match
+    filter: 
+      language: simplified_chinese
