@@ -2,7 +2,7 @@ export BASE_MODEL='Qwen/Qwen2.5-1.5B-Instruct'
 export PROJECT_NAME='multihopqa'
 export EXPERIMENT_NAME=ppo-qwen2.5-1.5b-instruct
 
-python3 -m agent_r1.src.main_agent \
+python3 -m src.agent_r1.src.main_agent \
     data.train_files=['data/hotpotqa/train.parquet','data/2wiki/train_processed.parquet'] \
     data.val_files=['data/hotpotqa/validation.parquet','data/2wiki/validation_processed.parquet','data/musique/validation_answerable_processed.parquet'] \
     data.train_batch_size=128 \
