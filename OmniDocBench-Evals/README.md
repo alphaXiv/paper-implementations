@@ -16,26 +16,24 @@ This repository provides a comparative evaluation of **DeepSeek-OCR** and **OLMO
 ## Install
 >Our environment is cuda11.8+torch2.6.0.
 1. Clone this repository and navigate to the DeepSeek-OCR folder
+
 ```bash
 git clone https://github.com/deepseek-ai/DeepSeek-OCR.git
 cd src/
 ```
-```
+
 
 2. Conda
+
 ```Shell
 conda create -n deepseek-ocr python=3.12.9 -y
 conda activate deepseek-ocr
 ```
 3. Packages
 
-- download the vllm-0.8.5 [whl](https://github.com/vllm-project/vllm/releases/tag/v0.8.5) 
-
-```Shell
-pip install torch==2.6.0 torchvision==0.21.0 torchaudio==2.6.0 --index-url https://download.pytorch.org/whl/cu118
-pip install vllm-0.8.5+cu118-cp38-abi3-manylinux1_x86_64.whl
+```bash
+pip install -e .[deepseek-ocr] --index-url https://download.pytorch.org/whl/cu118
 pip install -r requirements.txt
-pip install flash-attn==2.7.3 --no-build-isolation
 ```
 **Note:** if you want vLLM and transformers codes to run in the same environment, you don't need to worry about this installation error like: vllm 0.8.5+cu118 requires transformers>=4.51.1
 
@@ -53,20 +51,18 @@ CAUTION: DO NOT install olmOCR2 and DeepSeek-OCR in the same conda environment t
 conda create -n olmocr python=3.11
 conda activate olmocr
 
-# For actually converting the files with your own GPU
-pip install olmocr[gpu]  --extra-index-url https://download.pytorch.org/whl/cu128
-
-# Recommended: Install flash infer for faster inference on GPU
-pip install https://download.pytorch.org/whl/cu128/flashinfer/flashinfer_python-0.2.5%2Bcu128torch2.7-cp38-abi3-linux_x86_64.whl
+# Install dependencies
+pip install -e .[olmocr] --extra-index-url https://download.pytorch.org/whl/cu128
 
 ``` 
+
 ### 3. Chandra OCR Setup
 
 Quick usage
-1. install chandra-ocr package
+1. Install chandra-ocr package
 
    ```bash
-   pip install chandra-ocr
+   pip install -e .[chandra-ocr]
    ```
 
 Follow the setup instructions in [`src/olmocr/README.md`](olmocr/README.md).
