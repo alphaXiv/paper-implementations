@@ -1,0 +1,29 @@
+<|ref|>text<|/ref|><|det|>[[121, 95, 504, 320]]<|/det|>
+for Ravens set E the overall effect was just short of significance, \(F(2,117) = 2.89\) , \(p = 0.059\) . However, pairwise comparisons revealed that ecstasy/cannabis users scored significantly lower than 'ecstasy-only' users, \(p < 0.05\) . There was no significant group difference in relation to set D, \(F < 1\) . For the sample completing the computation span task, again the overall group differences were non-significant. \(F = 3.04\) , \(p = 0.050\) for set D, and \(F = 3.01\) , \(p = 0.052\) for set E, both with \(\mathrm{df} = 2,182\) . However, two of the pairwise comparisons were statistically significant. For set D ecstasy/cannabis users scored significantly lower than non-users, and for set E ecstasy/cannabis users scored significantly lower than 'ecstasy-only' users, \(p < 0.05\) in both cases.  
+
+<|ref|>sub_title<|/ref|><|det|>[[122, 356, 213, 371]]<|/det|>
+## Main results  
+
+<|ref|>text<|/ref|><|det|>[[122, 378, 504, 483]]<|/det|>
+The number of errors on the processing speed task yielded a significant group effect, \(F(2,122) = 3.83\) , \(p < 0.05\) . The ecstasy/cannabis group made more errors compared to the 'ecstasy- only' group and compared to non- users (Table 3). Of the pairwise comparisons, only the non- user versus ecstasy/cannabis user difference was significant, \(p < 0.05\) .  
+
+<|ref|>text<|/ref|><|det|>[[522, 95, 904, 125]]<|/det|>
+None of the interactions containing user group were statistically significant, \(F < 1.65\) in all cases.  
+
+<|ref|>text<|/ref|><|det|>[[523, 126, 904, 275]]<|/det|>
+In relation to the number of correct responses on the processing speed task there was a significant interaction between user group and type of task, \(F(2,122) = 4.01\) , \(p < 0.05\) . Compared to the other two groups, ecstasy/cannabis users were generally faster when processing patterns but slower when processing the letter stimuli. With this exception, neither the main effect of user group nor any of the interactions containing this variable were statistically significant, \(F < 1.08\) in all cases.  
+
+<|ref|>text<|/ref|><|det|>[[523, 275, 904, 422]]<|/det|>
+No group differences were observed on three of the random generation measures, specifically for alphabetic sequences and redundancy, \(F < 1\) in both cases and for repeat sequences, \(F(2,133) = 1.93\) , \(p > 0.05\) . There was a significant group difference in the number of letters generated, \(F(2,133) = 5.88\) , \(p < 0.01\) . Inspection of Table 3 reveals that ecstasy/cannabis users produced significantly fewer letters compared to non- users, \(p < 0.01\) . None of the other pairwise comparisons were significant.  
+
+<|ref|>text<|/ref|><|det|>[[523, 422, 904, 483]]<|/det|>
+Although both user groups had lower reading span scores compared to non- users, the difference was not statistically significant, \(F(2,94) = 1.07\) , \(p > 0.05\) . However, on the computation span measure there  
+
+<|ref|>table<|/ref|><|det|>[[120, 525, 905, 842]]<|/det|>
+<|ref|>table_caption<|/ref|><|det|>[[120, 507, 840, 522]]<|/det|>
+Table 3. Performance measures on each of the tasks for non-ecstasy users, 'ecstasy-only' users and ecstasy/cannabis users   
+
+<table><tr><td rowspan="2"></td><td colspan="2">Non-user</td><td colspan="2">Ecstasy ‘only’ user</td><td colspan="2">Ecstasy/cannabis user</td></tr><tr><td>Mean</td><td>SD</td><td>Mean</td><td>SD</td><td>Mean</td><td>SD</td></tr><tr><td>Processing speed</td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>Total errors</td><td>1.05</td><td>0.72</td><td>1.15</td><td>0.73</td><td>1.51</td><td>1.00*</td></tr><tr><td>Correct responses, letters</td><td>17.60</td><td>3.27</td><td>17.01</td><td>3.12</td><td>16.65</td><td>2.45</td></tr><tr><td>Correct responses, patterns</td><td>15.81</td><td>3.45</td><td>15.43</td><td>2.64</td><td>16.30</td><td>2.79</td></tr><tr><td>Random generation (standardised scores)</td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>Alphabetic sequences</td><td>-0.01</td><td>0.75</td><td>-0.03</td><td>0.54</td><td>-0.04</td><td>0.93</td></tr><tr><td>Repeat sequences</td><td>-0.04</td><td>0.51</td><td>-0.18</td><td>0.44</td><td>0.16</td><td>1.07</td></tr><tr><td>Redundancy</td><td>-0.04</td><td>0.69</td><td>-0.07</td><td>0.77</td><td>0.12</td><td>0.84</td></tr><tr><td>Number of letters</td><td>0.18</td><td>0.44</td><td>0.09</td><td>0.42</td><td>-0.16</td><td>0.64**</td></tr><tr><td>Working memory span</td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>Reading span</td><td>3.06</td><td>1.13</td><td>2.71</td><td>0.85</td><td>2.72</td><td>1.17</td></tr><tr><td>Computation span</td><td>4.56</td><td>1.62</td><td>3.62</td><td>1.81</td><td>3.10</td><td>1.66***</td></tr><tr><td>Spatial working memory</td><td>4.16</td><td>1.19</td><td>3.06</td><td>1.30</td><td>2.87</td><td>1.34***</td></tr><tr><td>Associative learning</td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>Initial learning</td><td>4.32</td><td>2.01</td><td>3.69</td><td>2.18</td><td>2.25</td><td>1.77**</td></tr><tr><td>Perseverative responses</td><td>0.16</td><td>0.66</td><td>0.94</td><td>1.57</td><td>0.38</td><td>0.50**</td></tr><tr><td>Total forgotten</td><td>0.48</td><td>0.94</td><td>1.13</td><td>1.20</td><td>1.38</td><td>1.78*</td></tr><tr><td>Trials to completion</td><td>4.32</td><td>1.46</td><td>5.94</td><td>1.81</td><td>6.00</td><td>2.00***</td></tr><tr><td>Syllogistic reasoning, correct responses</td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td>One model (easy)</td><td>4.90</td><td>1.85</td><td>2.91</td><td>1.87</td><td>3.55</td><td>2.10***</td></tr><tr><td>Two/three model (difficult)</td><td>1.75</td><td>1.61</td><td>1.32</td><td>2.01</td><td>1.34</td><td>1.88</td></tr></table>
+
+<|ref|>table_footnote<|/ref|><|det|>[[122, 845, 198, 884]]<|/det|>
+\(^{*}p< 0.05\) \(^{**}p< 0.01\) \(^{***}p< 0.001\)

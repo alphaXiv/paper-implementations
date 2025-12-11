@@ -1,0 +1,30 @@
+你发现了什么？
+
+<table>
+  <tr>
+    <th>平行四边形</th>
+    <th>底</th>
+    <th>高</th>
+    <th>面积</th>
+  </tr>
+  <tr>
+    <td></td>
+    <td>6m</td>
+    <td>4m</td>
+    <td>24m<sup>2</sup></td>
+  </tr>
+  <tr>
+    <th>长方形</th>
+    <th>长</th>
+    <th>宽</th>
+    <th>面积</th>
+  </tr>
+  <tr>
+    <td></td>
+    <td>6m</td>
+    <td>4m</td>
+    <td>24m<sup>2</sup></td>
+  </tr>
+</table>
+
+如果长方形的长和宽分别等于平行四边形的底和高，那么它们的面积相等。
