@@ -1,0 +1,17 @@
+COP28 concludes
+The long goodbye?
+
+DUBAI
+Climate talks at last lead to a global deal on cutting fossil-fuel use
+
+MOST EVENINGS at COP28, the latest instalment of the annual United Nations climate conference, delegates were treated to a dazzling light show. It transformed the central dome of the venue, Expo City in Dubai, into a teeming coral reef. Priority was given to prettiness over precision. Turtles swam cosily with similar-sized humpback whales. A change in soundtrack saw them suddenly turned into dancing, blood-red squid.
+
+In the end the conference delivered the same combination of deliberate choreography and otherworldly fantasy. For the first time in more than three decades of international climate diplomacy, all parties explicitly agreed to move away from using fossil fuels in energy systems. These systems generate vast wealth, but also the bulk of the world’s emissions. On December 13th the meeting’s president, Sultan al-Jaber, chief executive of the Abu Dhabi National Oil Company, announced that the agreement would be passed without objections. The plenary rose in applause. Outside, the desert sun beat down on a planet that is already around 1.2°C warmer than in pre-industrial times. The world’s largest gas-fired power plant, just a stone’s throw away, ran on regardless.
+
+Nevertheless, it was a rare success for multilateralism, given the 198 delegations involved. The conference took place against the backdrop of wars in Ukraine and the Gaza strip, both of which have worsened divisions between the rich and poor worlds. An agreement before the summit between America and China laid the groundwork for its success. The pair promised to triple the deployment of renewable energy by 2030—a declaration originally made by the G20—which ultimately inspired a clause in cop28’s final agreement. Similarly a cross-cutting coalition of countries from the EU, Latin America and the Alliance of Small Island States (Aosis) repeatedly pushed for more progress on reducing fossil-fuel use.
+
+The final text is a product of bitter compromises between the desire to limit the planet’s warming and the economic interests aligned with fossil fuels. It calls on parties to transition “away from fossil fuels in energy systems” and to accelerate action “in this critical decade, so as to achieve net zero by 2050”. Although many of the deal’s provisions leave much room for interpretation, the agreement forged in Dubai could serve to indicate the direction of travel. But like all UN climate deals, there is no enforcement mechanism within the latest one. Government actions alone will give it teeth.
+
+COP28 marked a critical moment in the UN climate calendar. The Paris agreement, signed in 2015, decreed that this year’s meeting would be the first “global stocktake”: an inventory of progress on cutting emissions thus far and feedback on how efforts could improve. The verdict that countries remain well off-track was not a surprise. The text states that greenhouse-gas emissions need to be cut by 43% by 2030 and 60% by 2035, relative to 2019 levels, if limiting global warming to 1.5°C by the end of the century is to be considered plausible. It noted with alarm that even if every aspect of countries’ current plans were met, emissions reductions in 2030 looked closer to a dismal 5% (putting the world on track for a rise of 2.1°C-2.8°C even in the best-case scenario). More urgent reduction is possible; the cuts of 7% year on year needed to hit the target are not.
+
+The exact implications of the deal will

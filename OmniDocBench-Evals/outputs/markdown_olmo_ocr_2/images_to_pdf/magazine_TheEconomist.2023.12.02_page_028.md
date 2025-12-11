@@ -1,0 +1,16 @@
+Indian military power
+Gunning for the top
+
+India’s military modernisation is promising, but China is still far ahead
+
+NARENDRA MODI, India’s prime minister, often dons fatigues while visiting troops in Kashmir. On November 25th he went one better by squeezing into a flight suit and taking a sortie over Bangalore in a Tejas fighter jet. The Indian-designed plane embodies Mr Modi’s push for India to make more of its own weapons. It also embodies much of what has gone wrong with the country’s defence. The jet is 20 years behind schedule, underpowered, and disdained by Indian pilots.
+
+India’s growing geopolitical clout is based in large part on a hope that it can balance Chinese power. That makes the modernisation of the partly antiquated Indian armed forces—the second biggest of any country, with 1.4m full-time personnel—a matter of global interest. Follies like the Tejas make it easy to be pessimistic. The forces are also heavily reliant on Soviet-legacy hardware. Successful modernisation, assuming it happens, is likely to take decades. Yet a close look at India’s defence efforts reveals several areas of significant and underappreciated progress.
+
+This starts with a striking shift in focus. Indian leaders have talked about China as the main enemy for 25 years. But deployments told a different story. Only 12 of the Indian army’s 38 divisions historically faced China. Terrorist attacks emanating from Pakistan and domestic insurgencies absorbed most of the army’s attention. The trigger for change came in June 2020 when, after years of rising tensions, Indian and Chinese troops clashed violently, with clubs and machetes, in the Galwan valley in the mountains of eastern Ladakh.
+
+After that skirmish, which resulted in the deaths of 20 Indian soldiers and at least four Chinese ones, India swiftly moved 68,000 troops and a bevy of tanks to the area, where a lone infantry division had previously covered 800km (500 miles) of front line. Jets and helicopters were sent to northern bases. A push for new roads, tunnels and bridges was accelerated—60% of border roads built in the past three years have been in states bordering China.
+
+The most important change was that units which were once “dual-tasked”—instructed to keep an eye on both China and Pakistan—were told to focus on China. The Indian Army’s I Corps—one of the three armour-heavy “strike corps” originally built to scythe through Pakistan—was taken away from the Pakistan-facing western command and placed under the northern command, responsible for Ladakh. “I spent two-thirds of my career looking at Pakistan,” says Raj Shukla, a retired general. “Today the posture reflects the threat.”
+
+The second change is the biggest reorganisation of India’s military command structure since the country’s independence in 1947. In 2020, six months before Galwan, Mr Modi created a new post: a chief of defence staff, or CDS, to sit above the army, navy and air-force chiefs and push them to become more joined up. Previous governments had shied away from this move, fearing that a too powerful general would threaten civilian supremacy.

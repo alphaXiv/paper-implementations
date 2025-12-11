@@ -1,0 +1,17 @@
+<|ref|>table<|/ref|><|det|>[[53, 34, 344, 135]]<|/det|>
+<table><tr><td>MONEY</td><td>GEMS</td></tr></table>
+
+<|ref|>table<|/ref|><|det|>[[360, 34, 933, 220]]<|/det|>
+<table><tr><td></td><td>LANGUAGES</td></tr><tr><td>KNOWN</td><td>NOT KNOWN</td></tr><tr><td></td><td></td></tr><tr><td></td><td></td></tr><tr><td></td><td></td></tr><tr><td></td><td></td></tr><tr><td></td><td></td></tr><tr><td></td><td></td></tr><tr><td></td><td></td></tr><tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td></tr></table>
+
+<|ref|>table<|/ref|><|det|>[[53, 145, 344, 959]]<|/det|>
+<table><tr><td>EQUIPMENT</td><td></td><td></td></tr><tr><td></td><td>1</td><td></td></tr><tr><td></td><td>2</td><td></td></tr><tr><td></td><td>3</td><td></td></tr><tr><td></td><td>4</td><td></td></tr><tr><td></td><td>5</td><td></td></tr><tr><td></td><td>6</td><td>+1 Enc</td></tr><tr><td></td><td>7</td><td></td></tr><tr><td></td><td>8</td><td></td></tr><tr><td></td><td>9</td><td></td></tr><tr><td></td><td>10</td><td></td></tr><tr><td></td><td>11</td><td>+1 Enc</td></tr><tr><td></td><td>12</td><td></td></tr><tr><td></td><td>13</td><td></td></tr><tr><td></td><td>14</td><td></td></tr><tr><td></td><td>15</td><td></td></tr><tr><td></td><td>16</td><td>+1 Enc</td></tr><tr><td></td><td>17</td><td></td></tr><tr><td></td><td>18</td><td></td></tr><tr><td></td><td>19</td><td></td></tr><tr><td></td><td>20</td><td></td></tr><tr><td></td><td>21</td><td>+1 Enc</td></tr><tr><td></td><td>22</td><td></td></tr><tr><td></td><td>23</td><td></td></tr><tr><td></td><td>24</td><td></td></tr><tr><td></td><td>25</td><td></td></tr><tr><td></td><td>26</td><td></td></tr><tr><td></td><td>27</td><td></td></tr><tr><td></td><td>28</td><td></td></tr><tr><td></td><td>29</td><td></td></tr><tr><td></td><td>30</td><td></td></tr><tr><td></td><td>31</td><td></td></tr></table>
+
+<|ref|>table<|/ref|><|det|>[[360, 504, 933, 670]]<|/det|>
+<table><tr><td colspan="2">NON-ENCUMBERING EQUIPMENT</td></tr><tr><td></td><td></td></tr></table>
+
+<|ref|>table<|/ref|><|det|>[[360, 682, 933, 830]]<|/det|>
+<table><tr><td>PROPERTIES</td><td></td></tr><tr><td>Name</td><td>Location</td></tr><tr><td></td><td></td></tr><tr><td>Library Value</td><td>Laboratory Value</td></tr></table>
+
+<|ref|>table<|/ref|><|det|>[[360, 842, 933, 956]]<|/det|>
+<table><tr><td>INVESTMENTS</td><td></td></tr><tr><td>Name</td><td>Type</td></tr><tr><td></td><td>Value</td></tr></table>

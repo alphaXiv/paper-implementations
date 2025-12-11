@@ -1,0 +1,7 @@
+MethodA,MethodB,A_wins,B_wins,A_rate(%),B_rate(%)
+marker,mineru,53,26,67.1,32.9
+mineru,pdelf,22,55,28.6,71.4
+gotocr_format,marker,26,45,36.6,63.4
+marker,pdelf,31,49,38.8,61.3
+gotocr_format,pdelf,29,41,41.4,58.6
+gotocr_format,mineru,38,37,50.7,49.3
