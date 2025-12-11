@@ -89,40 +89,8 @@ Additional resources are available in the codebase:
 ## Feedback
 We welcome all forms of feedback! Please raise an issue for bugs, questions, or suggestions. This helps our team address common problems efficiently and builds a more productive community.
 
-**Join our community**: Connect with other users and our development team in our [WeChat group](https://raw.githubusercontent.com/alphaXiv/Agent-R1-Community/refs/heads/master/Wechat.jpg) or [Discord server](https://discord.gg/kW3UZU2e).
-
-## Contributors
-
-**Student Contributors**: [**Jie Ouyang**\*](https://github.com/0russwest0), [**Ruiran Yan**\*](https://github.com/RuiranYan), [**Yucong Luo**\*](https://github.com/GodFire66666), Zirui Liu, Shuo Yu, Daoyu Wang
-
-**Supervisors**: [**Qi Liu**](http://staff.ustc.edu.cn/~qiliuql/), [**Mingyue Cheng**](https://mingyue-cheng.github.io/)
-
-**Affiliation**: **State Key Laboratory of Cognitive Intelligence, USTC**
 
 ## Acknowledgements  
 We extend our gratitude to [DeepSeek](https://github.com/deepseek-ai/DeepSeek-R1) for providing the DeepSeek-R1 model and inspiring ideas. We are also thankful to the [veRL](https://github.com/volcengine/verl) team for their robust infrastructure support. Additionally, we acknowledge the [RAGEN](https://github.com/ZihanWang314/ragen) team for their groundbreaking discoveries, which significantly influenced our early exploration. Lastly, we deeply appreciate the insightful discussions and contributions from Jie Ouyang, Ruiran Yan, Yucong Luo, Zirui Liu, Shuo Yu and Daoyu Wang.
 
-## Citation
-**Agent-R1**
-```md
-@misc{cheng2025agentr1trainingpowerfulllm,
-      title={Agent-R1: Training Powerful LLM Agents with End-to-End Reinforcement Learning}, 
-      author={Mingyue Cheng and Jie Ouyang and Shuo Yu and Ruiran Yan and Yucong Luo and Zirui Liu and Daoyu Wang and Qi Liu and Enhong Chen},
-      year={2025},
-      eprint={2511.14460},
-      archivePrefix={arXiv},
-      primaryClass={cs.CL},
-      url={https://arxiv.org/abs/2511.14460}, 
-}
-```
-**TableMind**(WSDM 2026)
-
-*TableMind is built upon the Agent-R1 framework, leveraging its end-to-end reinforcement learning pipeline to train a specialized tool-augmented agent for structured table reasoning.*
-```md
-@article{jiang2025tablemind,
-  title={TableMind: An Autonomous Programmatic Agent for Tool-Augmented Table Reasoning},
-  author={Jiang, Chuang and Cheng, Mingyue and Tao, Xiaoyu and Mao, Qingyang and Ouyang, Jie and Liu, Qi},
-  journal={arXiv preprint arXiv:2509.06278},
-  year={2025}
-}
-```
+Original Authors Repository [link](https://github.com/0russwest0/Agent-R1)

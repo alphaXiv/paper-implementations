@@ -43,7 +43,7 @@ pip install flash-attn==2.7.3 --no-build-isolation
 Follow the installation guide in case of any doubts in [`src/DeepSeek-OCR-master/README.md`](DeepSeek-OCR-master/README.md).
 
 
-CAUTION: DO NOT install OLMOCR and DeepSeek-OCR in the same conda environment to avoid package conflicts.
+CAUTION: DO NOT install olmOCR2 and DeepSeek-OCR in the same conda environment to avoid package conflicts.
 
 ### 2. OLMOCR Setup
 
