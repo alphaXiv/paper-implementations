@@ -1,0 +1,14 @@
+quant_stage:
+    quant_modifiers:
+        QuantizationModifier:
+            ignore: ['re:.*lm_head', 're:model.visual.*']
+            config_groups:
+                group_0:
+                    weights:
+                        num_bits: 8
+                        type: float
+                        strategy: group
+                        dynamic: false
+                        symmetric: true
+                        group_size: 16
+                    targets: ["Linear"]
