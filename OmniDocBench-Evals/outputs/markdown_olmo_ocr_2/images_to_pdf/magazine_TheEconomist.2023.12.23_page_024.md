@@ -1,0 +1,16 @@
+Robots
+Xi-3PO
+
+As its population shrinks, China hopes to become a robot superpower
+
+China’s first attempt at building a humanoid robot did not hit the mark. The machine produced in 2000 by a team at the National University of Defence Technology looked like a walking toaster. It had googly eyes and cannon-like protuberances near its crotch. Called Xianxingzhe, or Forerunner, it was mocked in neighbouring Japan, which at the time boasted far sleeker robots. Japanese netizens described it as China’s secret weapon—designed to make its enemies die of laughter.
+
+China has stuck with it, though. In November the government published a plan calling for the mass production of humanoids by 2025. The country’s love of robots goes beyond those that can walk and talk. Last year half of all the industrial robots installed worldwide were fitted in China, according to the International Federation of Robotics, an industry body. It is now the fifth most automated country in the world when measured by robots per worker. Motivated by pride and pressing demographic challenges, China is on a mission to become a robot superpower.
+
+Many of the country’s newly installed robots are mechanical arms that can be programmed to weld, drill or assemble components on a production line. But last year China also produced over 6m “service robots”, which help humans with tasks apart from industrial automation (see Science & technology section). Such machines scoot around warehouses, moving boxes. Others clean hotels. At a restaurant in the southern city of Guangzhou meals are cooked and served by robots.
+
+Some of this may seem gimmicky, but to the Communist Party led by Xi Jinping robots are serious business. Officials believe China fell behind and was humiliated by Western powers in the 19th century in part because it did not embrace technological revolutions happening elsewhere. Now China aims to stay ahead of the game. Whereas officials once used steel production as a gauge of economic advancement, today they look at the number of robots installed, says Dan Wang of Hang Seng Bank.
+
+China’s impressive economic growth in recent decades was a result of three main factors: a soaring urban workforce, a big increase in the capital stock and rising productivity. Today, though, less new infrastructure is needed. And the working-age population, those between 15 and 64, is shrinking. It is projected to drop by over 20% by 2050. Earlier this year the government released a list of 100 occupations for which there is a shortage of labour. Manufacturing-related positions accounted for 41 of them. A surfeit of young and cheap workers once did these jobs; now wages are higher and workers less abundant.
+
+As a result, Mr Xi has made boosting China’s productivity a priority. The government sees robots playing a big part in this effort. For years it has pushed industry to go from being labour-intensive to robot-intensive. Provinces have spent billions of dollars helping manufacturers upgrade in this way. China’s experience during the pandemic reinforced this mindset. Endless lockdowns caused factories to close and Western firms to reconsider their sup-
