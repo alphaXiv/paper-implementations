@@ -27,6 +27,7 @@ pip install --pre --upgrade torch torchvision torchaudio \
   --index-url https://download.pytorch.org/whl/nightly/cu128
 
 # 3) Install project deps and optimizer
+pip install --no-cache-dir --no-build-isolation adam-atan2
 pip install -e .
 
 # 4) Optional: log to Weights & Biases
