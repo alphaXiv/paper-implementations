@@ -7,7 +7,7 @@ sudo docker run -d --gpus all --name verl-agent-r1 --ipc=host --ulimit memlock=-
 
 #### 2. Install Dependencies
 ```bash
-sudo docker exec verl-agent-r1 bash -c "cd /workspace/Agent-R1 && pip3 install FlagEmbedding faiss-cpu"
+sudo docker exec verl-agent-r1 bash -c "cd /workspace/Agent-R1 && pip3 install -e ."
 ```
 
 #### 3. Initialize Git Submodules
@@ -17,7 +17,7 @@ sudo docker exec verl-agent-r1 bash -c "git config --global --add safe.directory
 
 #### 4. Install VERL
 ```bash
-sudo docker exec verl-agent-r1 bash -c "cd /workspace/Agent-R1/verl && pip3 install -e ."
+sudo docker exec verl-agent-r1 bash -c "cd /workspace/Agent-R1/src/verl && pip3 install -e ."
 ```
 
 #### 5. Download and Preprocess HotpotQA Dataset

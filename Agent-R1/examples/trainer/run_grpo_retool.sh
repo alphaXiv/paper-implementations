@@ -2,7 +2,7 @@ export BASE_MODEL='russwest404/Qwen3-4B-ReTool-SFT'
 export PROJECT_NAME='retool'
 export EXPERIMENT_NAME=grpo-qwen3-4b-sft
 
-python3 -m agent_r1.src.main_agent \
+python3 -m src.agent_r1.src.main_agent \
     algorithm.adv_estimator=grpo \
     data.train_files=['data/retool/train.parquet'] \
     data.val_files=['data/retool/test.parquet'] \
