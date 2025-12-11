@@ -1,0 +1,56 @@
+<|ref|>title<|/ref|><|det|>[[58, 102, 234, 118]]<|/det|>
+# ORIGINAL ARTICLE  
+
+<|ref|>title<|/ref|><|det|>[[58, 121, 856, 180]]<|/det|>
+# Field testing of decision coaching with a decision aid for parents facing extreme prematurity  
+
+<|ref|>text<|/ref|><|det|>[[60, 186, 857, 203]]<|/det|>
+GP Moore \(^{1,2,3}\) , B Lemyre \(^{1,2,3}\) , T Daboval \(^{1,2,3}\) , S Ding \(^{2}\) , S Dunn \(^{2,4}\) , S Akiki \(^{2}\) , N Barrowman \(^{2}\) , AL Shephard \(^{2,3}\) and ML Lawson \(^{2,3}\)  
+
+<|ref|>text<|/ref|><|det|>[[75, 228, 904, 255]]<|/det|>
+OBJECTIVE: The objective of this study is to assess and modify an existing decision aid and field- test decision coaching with the modified aid during consultations with parents facing potential delivery at 23 to 24 weeks gestation.  
+
+<|ref|>text<|/ref|><|det|>[[75, 255, 900, 297]]<|/det|>
+STUDY DESIGN: International Patient Decision Aid Standards instrument (IPDASi) scoring deficits, multi- stakeholder group feedback and a- testing guided modifications. Feasibility/acceptability were assessed. The Decisional Conflict Scale was used to measure participants' decisional conflict before (T1) and immediately after (T2) the consultation.  
+
+<|ref|>text<|/ref|><|det|>[[75, 297, 905, 353]]<|/det|>
+RESULTS: IPDASi assessment of the existing aid (score 11/35) indicated it required updated data, more information and a palliative care description. Following modification, IPDASi score increased to 26/35. Twenty subjects (12 pregnancies) participated in fieldtesting; 15 completed all questionnaires. Most participants \((89\%)\) would definitely recommend this form of consultation. Decisional conflict scores decreased \((P< 0.001)\) between T1 \((52\pm 25)\) and T2 \((10\pm 16)\) .  
+
+<|ref|>text<|/ref|><|det|>[[75, 353, 860, 380]]<|/det|>
+CONCLUSION: Field testing demonstrated that consultations using the aid with decision coaching were feasible, reduced decisional conflict and may facilitate shared decision- making.  
+
+<|ref|>text<|/ref|><|det|>[[78, 384, 654, 399]]<|/det|>
+Journal of Perinatology advance online publication, 30 March 2017; doi:10.1038/jp.2017.29  
+
+<|ref|>sub_title<|/ref|><|det|>[[58, 437, 164, 449]]<|/det|>
+## INTRODUCTION  
+
+<|ref|>text<|/ref|><|det|>[[58, 452, 476, 558]]<|/det|>
+With the prioritizing of patient- centred care, there has been increasing emphasis on patient involvement during decisionmaking processes. Shared decision- making (SDM) involves a collaborative discussion between healthcare professionals and patients to come to an informed, preference- matched decision. Recent statements from national organizations \(^{2,3}\) encourage the use of SDM with decisions at the neonatal limit of viability to enhance parental involvement.  
+
+<|ref|>text<|/ref|><|det|>[[58, 559, 476, 650]]<|/det|>
+In clinical settings, patient decision aids (PtDA) can facilitate SDM. \(^{4}\) They support the participation of patients in decision making about health care options by improving patient knowledge, involvement and values- choice agreement. \(^{5,6}\) Decision coaching, where trained coaches provide patients with individualized, non- directive guidance, \(^{4}\) is often used in conjunction with PtDA and has similar benefits. \(^{4,7,8}\)  
+
+<|ref|>text<|/ref|><|det|>[[58, 650, 476, 847]]<|/det|>
+When facing the potential delivery of an extremely premature infant at 23 to 24 weeks gestational age (GA), parents often face the choice of having the healthcare team provide either intensive or palliative care for their infant. Although evidence strongly supports the use of PtDA and decision coaching to support patients in decision- making, minimal evidence exists regarding their use with parents making a life or death decision for their unborn infant. In 2012, Guillen et al. \(^{9}\) detailed the systematic development and pre- testing of a PtDA for use when prenatally counseling parents facing such a decision. The PtDA was understandable during simulated consultations and increased parental knowledge; however, it lacked standardized assessment \(^{10,11}\) and was not evaluated in real- life situations. If a PtDA does not meet these certification criteria, it can negatively affect the SDM process during clinical use. \(^{11}\)  
+
+<|ref|>text<|/ref|><|det|>[[504, 437, 923, 539]]<|/det|>
+Given continued parental dissatisfaction \(^{12}\) and healthcare professionals' difficulties \(^{13}\) with consultations at the limit of viability, the objectives of this study were to: (1) assess and, if necessary, modify an existing PtDA \(^{9}\) for use in our institution and (2) field- test decision coaching with the PtDA with parents facing potential delivery at 23 or 24 weeks GA to evaluate the feasibility and acceptability of using a PtDA in this situation and to determine the effect on parental decisional conflict.  
+
+<|ref|>sub_title<|/ref|><|det|>[[504, 562, 572, 573]]<|/det|>
+## METHODS  
+
+<|ref|>text<|/ref|><|det|>[[504, 576, 922, 610]]<|/det|>
+The local ethics review boards approved the study. One author (GM) received permission from its developers to modify an existing PtDA \(^{9}\) (six decision cards and accompanying four page script).  
+
+<|ref|>text<|/ref|><|det|>[[504, 610, 922, 656]]<|/det|>
+The study was conducted at The Ottawa Hospital, General Campus, and the Children's Hospital of Eastern Ontario. The study included three main steps as follows: (1) assessment, (2) modification and a- testing and (3) field (B) testing of decision coaching with the modified PtDA.  
+
+<|ref|>sub_title<|/ref|><|det|>[[504, 675, 686, 687]]<|/det|>
+## Assessment of existing PtDA  
+
+<|ref|>text<|/ref|><|det|>[[504, 689, 922, 813]]<|/det|>
+Four authors (GM, S Ding, S Dunn and TD) performed independent assessments of the existing PtDA \(^{9}\) using the International Patient Decision Aid Standards instrument \(^{11}\) (IPDASi, v4.0) that provides a framework to certify decision support tools through evaluating and improving their content, development and implementation. Nine of the 44 IPDASi items were not applied as the PtDA did not involve a screening test. \(^{11}\) A PtDA must receive 'yes' for all qualifying criteria to be considered a PtDA, a score greater than three on all certification criteria for IPDAS certification and scores \(>3\) on quality items to indicate better PtDA quality. Scoring differences were discussed until consensus was achieved. \(^{14}\) Unmet criteria allowed identification of the existing PtDA's shortcomings.  
+
+<|ref|>text<|/ref|><|det|>[[504, 814, 922, 848]]<|/det|>
+To complement the assessment, an existing multi- stakeholder working group (that included parents of extremely premature infants) completed a survey to rank health- related factors important to the decision that could
