@@ -1,0 +1,26 @@
+<|ref|>table<|/ref|><|det|>[[92, 175, 928, 247]]<|/det|>
+<|ref|>table_caption<|/ref|><|det|>[[241, 163, 777, 176]]<|/det|>
+Table 4 Comparison review with existing work's methods and accuracy scores.   
+
+<table><tr><td>Method</td><td>Data set</td><td>Subject</td><td>F1 Score</td><td>Modality</td><td>Training Accuracy</td><td>Validation Accuracy</td></tr><tr><td>SVM EBF [18]</td><td>CASIA</td><td>75</td><td>0.890</td><td>RGB</td><td>0.90</td><td>0.89</td></tr><tr><td>Spoof ResNet [19]</td><td>MSU-MFSD</td><td>35</td><td>N/A</td><td>RGB</td><td>0.978</td><td>0.944</td></tr><tr><td>MTCNN [20]</td><td>YOUTU</td><td>3350</td><td>0.956</td><td>RGB/IR</td><td>0.962</td><td>0.978</td></tr><tr><td>SqueezeNet [21]</td><td>CASIA-SURF</td><td>1000</td><td>N/A</td><td>Color, Depth &amp;amp; IR</td><td>N/A</td><td>0.998</td></tr><tr><td>FusionNet</td><td>CASIA-SURF</td><td>300</td><td>0.998</td><td>Color, Depth &amp;amp; IR</td><td>0.997</td><td>0.998</td></tr></table>  
+
+<|ref|>sub_title<|/ref|><|det|>[[93, 286, 210, 300]]<|/det|>
+## 4. Conclusion  
+
+<|ref|>text<|/ref|><|det|>[[93, 314, 500, 437]]<|/det|>
+In this research, we used a deep learning method focused on Fusion CNN architecture to derive facial patches and depth of 3 types of human facial image samples namely Color, Depth and IR from the CASIA- SURF dataset modeled with an altered 3D convolutional neural network classifier. Our primary interest was to be able to extract facial patches and the depth levels of all 3 facial inputs stated earlier on to distinguish a real face from a spoofed face from a CASIA- SURF dataset provided which are not preprocessed.  
+
+<|ref|>sub_title<|/ref|><|det|>[[94, 451, 232, 465]]<|/det|>
+## Acknowledgements  
+
+<|ref|>text<|/ref|><|det|>[[93, 479, 500, 520]]<|/det|>
+This work is supported by Department of Science and Technology of Sichuan Province, China, under Grant 2019YJ0166.  
+
+<|ref|>sub_title<|/ref|><|det|>[[93, 535, 172, 548]]<|/det|>
+## References  
+
+<|ref|>text<|/ref|><|det|>[[92, 562, 501, 850]]<|/det|>
+[1] J. Berry and D. A. Stoney. The history and development of fingerprinting [J]. Advances in fingerprint Technology, 2001, 2:13- 52. [2] W. Yang, S. Wang, J. Hu, et al. Security and accuracy of fingerprint- based biometrics: A review [J]. Symmetry, 2019, 11(2):141. [3] L. Introna and H. Nissenbaum. Facial recognition technology a survey of policy and implementation issues [J].2010. [4] D. Wen, H. Han, and A. K. Jain. Face spoof detection with image distortion analysis [J]. IEEE Transactions on Information Forensics and Security, 2015, 10(4):746- 761. [5] K. A. Nixon, V. Aimale, and R. K. Rowe. Handbook of biometrics, 2008, 403- 423. [6] A. da Silva Pinto, H. Pedrini, W. Schwartz, et al. Video- based face spoofing detection through visual rhythm analysis [C].2012 25th SIBGRAPI Conference on Graphics, Patterns and Images, 2012, 221- 228. [7] A. Krizhevsky, I. Sutskever, and G. E. Hinton. Imagenet classification with deep convolutional neural  
+
+<|ref|>text<|/ref|><|det|>[[520, 255, 929, 875]]<|/det|>
+networks [C]. Advances in neural information processing systems, 2012, 1097- 1105. [8] Y. Atoum, Y. Liu, A. Jourabloo, et, et, et al. Face anti- spoofing using patch and depth- based CNNs [C].2017 IEEE International Joint Conference on Biometrics (IJCB), 2017, 319- 328. [9] R. Min, J. Choi, G. Medioni, et al. Real- time 3D face identification from a depth camera [C]. Proceedings of the 21st International Conference on Pattern Recognition (ICPR2012), 2012, 1739- 1742. [10] S. Lawrence, C. L. Giles, A. C. Tsoi, et al. Face recognition: A convolutional neural- network approach [J]. IEEE transactions on neural networks, 1997, 8(1):98- 113. [11] Z. Zhang, J. Yan, S. Liu, et al. A face antispoofing database with diverse attacks [C].2012 5th IAPR international conference on Biometrics (ICB), 2012, 26- 31. [12] G. Albakri and S. Alghowinem. The effectiveness of depth data in liveness face authentication using 3D sensor cameras [J]. Sensors, 2019, 19(8):1928. [13] J. Dai, Y. Li, K. He, et al. R- fcn: Object detection via region- based fully convolutional networks [C]. Advances in neural information processing systems, 2016, 379- 387. [14] C.- L. Zhang, J.- H. Luo, X.- S. Wei, et al. In defense of fully connected layers in visual representation transfer [C]. Pacific Rim Conference on Multimedia, 2017, 807- 817. [15] J. Konecny, J. Liu, P. Richtarik, et al. Mini- batch semi- stochastic gradient descent in the proximal setting [J]. IEEE Journal of Selected Topics in Signal Processing, 2015, 10(2):242- 255. [16] A. F. Agarap. Deep learning using rectified linear units (relu) [J]. arXiv preprint arXiv:1803.08375, 2018. [17] L. Bottou. Neural networks: Tricks of the trade, 2012, 421- 436. [18] M. Hardt, B. Recht, and Y. Singer. Train faster, generalize better: Stability of stochastic gradient descent [J]. arXiv preprint arXiv:1509.01240, 2015. [19] D. T. van der Haar. Face Antispoofing Using Shearlets: An Empirical Study [J]. SAIEE Africa Research Journal, 2019, 110(2):94- 103. [20] C. Nagpal and S. R. Dubey. A performance evaluation of convolutional neural networks for face anti spoofing

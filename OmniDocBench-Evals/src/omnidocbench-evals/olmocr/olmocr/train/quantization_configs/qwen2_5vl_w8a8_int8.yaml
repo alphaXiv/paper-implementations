@@ -1,0 +1,6 @@
+quantization_stage:
+  quantization_modifiers:
+    GPTQModifier:
+      targets: [Linear]
+      ignore: ['re:.*lm_head', 're:model.visual.*']
+      scheme: W8A8

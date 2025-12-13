@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "omnidocbench-evals"
+version = "0.1.0"
+description = "Evaluation scripts for OmniDocBench OCR models"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "alphaXiv"}
+]
+
+dependencies = [
+    "torch>=2.6.0",
+    "torchvision>=0.21.0",
+    "torchaudio>=2.6.0",
+    "PyMuPDF",
+    "tqdm",
+    "jupyter",
+    "pandas",
+    "matplotlib",
+    "datasets",
+]
+
+[project.optional-dependencies]
+deepseek-ocr = [
+    "torch==2.6.0",
+    "torchvision==0.21.0",
+    "torchaudio==2.6.0",
+    "vllm @ https://github.com/vllm-project/vllm/releases/download/v0.8.5/vllm-0.8.5+cu118-cp38-abi3-manylinux1_x86_64.whl",
+    "flash-attn==2.7.3",
+]
+olmocr = [
+    "olmocr[gpu]",
+    "flashinfer @ https://download.pytorch.org/whl/cu128/flashinfer_python-0.2.5%2Bcu128torch2.7-cp38-abi3-linux_x86_64.whl",
+]
+chandra-ocr = [
+    "chandra-ocr",
+]

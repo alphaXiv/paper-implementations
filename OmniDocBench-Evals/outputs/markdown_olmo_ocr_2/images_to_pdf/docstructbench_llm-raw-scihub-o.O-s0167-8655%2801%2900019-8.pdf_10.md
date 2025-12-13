@@ -1,0 +1,185 @@
+Table 1
+Summary of datasets
+
+<table>
+  <tr>
+    <th>Dataset</th>
+    <th>Total size</th>
+    <th>Training items</th>
+    <th>Testing items</th>
+    <th>Continuous attributes</th>
+    <th>Nominal attributes</th>
+    <th>Total attributes</th>
+    <th colspan="3">Reduced attributes</th>
+  </tr>
+  <tr>
+    <th></th>
+    <th></th>
+    <th></th>
+    <th></th>
+    <th></th>
+    <th></th>
+    <th></th>
+    <th>IFN</th>
+    <th>Relief</th>
+    <th>ABB</th>
+  </tr>
+  <tr>
+    <td>Breast</td>
+    <td>699</td>
+    <td>465</td>
+    <td>234</td>
+    <td>9</td>
+    <td>0</td>
+    <td>9</td>
+    <td>3</td>
+    <td>2</td>
+    <td>3</td>
+  </tr>
+  <tr>
+    <td>Chess</td>
+    <td>3196</td>
+    <td>2155</td>
+    <td>1041</td>
+    <td>0</td>
+    <td>36</td>
+    <td>36</td>
+    <td>9</td>
+    <td>3</td>
+    <td>5</td>
+  </tr>
+  <tr>
+    <td>Credit</td>
+    <td>690</td>
+    <td>451</td>
+    <td>239</td>
+    <td>6</td>
+    <td>8</td>
+    <td>14</td>
+    <td>4</td>
+    <td>2</td>
+    <td>5</td>
+  </tr>
+  <tr>
+    <td>Diabetes</td>
+    <td>768</td>
+    <td>530</td>
+    <td>238</td>
+    <td>8</td>
+    <td>0</td>
+    <td>8</td>
+    <td>4</td>
+    <td>1</td>
+    <td>2</td>
+  </tr>
+  <tr>
+    <td>Glass</td>
+    <td>214</td>
+    <td>143</td>
+    <td>71</td>
+    <td>9</td>
+    <td>0</td>
+    <td>9</td>
+    <td>3</td>
+    <td>1</td>
+    <td>1</td>
+  </tr>
+  <tr>
+    <td>Heart</td>
+    <td>297</td>
+    <td>197</td>
+    <td>100</td>
+    <td>6</td>
+    <td>7</td>
+    <td>13</td>
+    <td>3</td>
+    <td>2</td>
+    <td>4</td>
+  </tr>
+  <tr>
+    <td>Iris</td>
+    <td>150</td>
+    <td>100</td>
+    <td>50</td>
+    <td>4</td>
+    <td>0</td>
+    <td>4</td>
+    <td>1</td>
+    <td>2</td>
+    <td>1</td>
+  </tr>
+  <tr>
+    <td>Liver</td>
+    <td>345</td>
+    <td>243</td>
+    <td>102</td>
+    <td>6</td>
+    <td>0</td>
+    <td>6</td>
+    <td>5</td>
+    <td>2</td>
+    <td>4</td>
+  </tr>
+  <tr>
+    <td>Lung-cancer</td>
+    <td>32</td>
+    <td>23</td>
+    <td>9</td>
+    <td>0</td>
+    <td>57</td>
+    <td>57</td>
+    <td>2</td>
+    <td>3</td>
+    <td>4</td>
+  </tr>
+  <tr>
+    <td>Wine</td>
+    <td>178</td>
+    <td>118</td>
+    <td>60</td>
+    <td>13</td>
+    <td>0</td>
+    <td>13</td>
+    <td>3</td>
+    <td>3</td>
+    <td>2</td>
+  </tr>
+  <tr>
+    <td>Average</td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td>16.9</td>
+    <td>3.70</td>
+    <td>2.10</td>
+    <td>3.10</td>
+  </tr>
+  <tr>
+    <td>Average dimensionality reduction</td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td>78%</td>
+    <td>88%</td>
+    <td>82%</td>
+  </tr>
+</table>
+
+types, ranging from purely continuous to purely nominal attribute domains. In the last three columns, we show the number of attributes selected by the information-theoretic algorithm (IFN) and by the two alternative feature selection methods (Relief and ABB).
+
+To evaluate the effect of each method on the performance of a standard decision-tree classifier (C4.5), we have randomly partitioned the datasets into training and validation records, using the standard 2/3:1/3 ratio. Only the training examples were used in the feature selection process. For each dataset, the C4.5 algorithm (Quinlan, 1993, 1996) has been trained on the following four subsets of features:
+1. Before feature selection (the set of all available attributes)
+2. After IFN (the subset of features selected by the information-theoretic algorithm)
+3. After Relief (the subset of features selected by Relief). As suggested by Kira and Rendell (1992), the distinction between relevant and irrelevant features was performed manually, based on the relevance levels computed by Relief.
+4. After ABB (the subset of features selected by ABB). Though ABB required discretization of every continuous feature, C4.5 was always trained on the original (continuous) values of the selected continuous features.
+
+We have also evaluated the performance of the classification model built directly by IFN (see Section 2.3). This model is based on the same features as “C4.5 after IFN”, but the model structure may be different due to the IFN restriction of using the same feature at all splits of each layer. The error rate of all models has been measured on the same validation sets. We have also calculated the lower and upper bounds of the 95% confidence interval for the error rate of C4.5 with a full set of features and compared statistically the error rates after different feature selection methods to this “base” error rate. The comparison was based on the normal approximation of the binomial distribution.
+
+3.2. Analysis of results
+
+The last row of Table 1 shows the average dimensionality reduction due to each one of the feature selection methods used (IFN, Relief, and ABB). All the methods tend to remove more than 3/4 of the available features. The best dimensionality reducer is Relief, which considers as relevant only 12% of features (on average). IFN removes the least number of features (average dimensionality reduction of 78%). These results suggest that the relevance of some features to the target may be revealed only by a feature selection procedure, which is able to evaluate subsets of features (like

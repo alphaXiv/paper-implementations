@@ -1,0 +1,30 @@
+forestation in the Amazon by nearly 50%. Brazil’s impressive record was marred, however, by Lula’s habit of cosying up to Mr Putin and Venezuela’s despot, Nicolás Maduro. As a result, Brazil misses out on the award.
+
+Poland had a remarkable 2023: its economy withstood the shock of the war next door; it continued to host nearly im Ukrainian refugees; and to deter Russia it raised its defence spending to above 3% of GDP, giving its stingy NATO peers an example to emulate. The country’s biggest problem has been the dominance of the populist-nationalist Law and Justice (PiS) party, which has run the government for the past eight years, eroding the independence of the courts, stuffing state media with lackeys and nurturing crony capitalism. In October voters dumped PiS in favour of an array of opposition parties. It is early days for a new coalition government, led by Donald Tusk, a veteran centrist, but if it does a good job of mending the damage PiS did to democratic institutions, Poland will be a strong candidate for our prize next year.
+
+That leaves our winner, Greece. Ten years ago it was crippled by a debt crisis and ridiculed on Wall Street. Incomes had plunged, the social contract was fraying and extremist parties of the left and right were rampant. The government grew so desperate that it cuddled up to China and later sold its main port, Piraeus, to a Chinese firm. Today Greece is far from perfect. A rail crash in February exposed corruption and shoddy infrastructure; a wire-tapping scandal and the mistreatment of migrants suggested civil liberties can be improved.
+
+But after years of painful restructuring, Greece topped our annual ranking of rich-world economies in 2023 (see Finance & economics section). Its centre-right government was re-elected in June. Its foreign policy is pro-America, pro-EU and wary of Russia. Greece shows that from the verge of collapse it is possible to enact tough, sensible economic reforms, rebuild the social contract, exhibit restrained patriotism—and still win elections. With half the world due to vote in 2024, democrats everywhere should pay heed.
+
+Christmas innovation
+Advances in Santa tech
+New technology is helping Santa Claus come to town more efficiently
+
+Dear shareholders of Father Christmas (FC) Global Inc, ’tis the season for management to update you on the state of the business. Growth in demand continues to be ho-ho-hum. That other implausible global delivery maestro, the stork, has been slacking, so our global customer base has expanded by just 130m infants this year, down from 144m in 2012, bringing the total addressable market to just over 2bn under-15-year-olds. We thus made 2023 the “year of efficiency”, like Meta but jollier.
+
+In particular, we invested heavily in our technological capabilities, to streamline operations, avoid supply-chain bottlenecks and contain costs. Start with logistics. We are ramping up use of sidewalk robots, drones and hypersonic jets (see Science & technology section). This provides a convenient way to put Donner, Blitzen and the rest of the herd out to pasture, while burnishing our ESG credentials by dispelling complaints about animal cruelty.
+
+Satellite production sites near big population centres are being equipped with additive-manufacturing tools, popularly known as 3D printers. Like Alstom, a French maker of trains, which boasts of having printed 150,000 spare parts at its depots around the world, we are making our toy locomotives locally. This helps us avoid supply disruptions, such as those causing some competitors problems in the Red Sea. It will also help us avoid overstocking stocking-fillers. Our green footprint is benefiting from advances in the circular economy. Toys that end up broken by Twelfth Night—which in some years is most of them—are increasingly being recycled into raw materials for the 3D printers.
+
+Our new Santa App for ios and Android offers computer-aided design software for fully customisable gifts. This took inspiration from the system launched in May by Nike for its trainers, and lets us make individualised items at little or no added cost. Forget scientist Barbie: we can do “irritating nine-year-old Jane Smith from Brighton” Barbie. Parents will love it.
+
+Technology is curbing other costs, starting with labour—a blessing in a time of worker shortages. Because 3D printers work autonomously, productivity per remaining pixie has surged. Shortages among service elves are being allayed with the help of ClausGPT, our proprietary chatbot. It can parse incoming correspondence and field complaints. Not loving little Jimmy’s new drum kit? We hope ClausGPT suggests earplugs, not violence.
+
+Virtual AI avatars of Father Christmas reduce the strain on our chief executive. Ozempic, the hot obesity drug of 2023, reduces the strain on his health-insurance bill. It also lowers our key-man risk, which independent analysts now put below that for Elon Musk or Sam Altman.
+
+To limit production costs, we have adopted the open-source RISC-V architecture for microchips, which these days feature in most of our products (and everybody else’s). This lets us avoid paying licence fees for semiconductors; Nvidia and its shareholders don’t need any more presents this year. With the promised phase-out of coal, just agreed at the UN’s climate summit, the lumps for the badly behaved should become cheaper, too. Superbrats may even get two lumps.
+
+In the spirit of Christmas disclosure, we wish to highlight a number of risks to our business. Some of our new technologies are dual-use, so government export controls threaten deployment. The spread of solar panels, already covering 4m residential roofs in our biggest market, America, is making landings treacherous. Efforts to insulate homes and substitute heat pumps for fireplaces are leading to access problems.
+
+Snow laughing matter
+And we cannot count on Amazon and Alibaba, our chief rivals, to remain on regulators’ naughty lists for ever. But we firmly believe that these risks are under control. In the worst-case scenario, we can always fall back on miracles.

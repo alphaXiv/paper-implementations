@@ -1,0 +1,30 @@
+<|ref|>image<|/ref|><|det|>[[150, 130, 836, 283]]<|/det|>
+<|ref|>image_caption<|/ref|><|det|>[[75, 290, 911, 319]]<|/det|>
+<center>Fig. 5. Mag-Lap 2-D feature histograms for invariant representation of image ToolA: (a) OGC, \(8 \times 8\) ; (b) CGC, \(8 \times 8\) ; (c) OGC, \(32 \times 32\) ; (d) CGC, \(32 \times 32\) . The gradient magnitude is along the vertical axis, the Laplacian along the horizontal axis. </center>  
+
+<|ref|>table<|/ref|><|det|>[[75, 372, 911, 532]]<|/det|>
+<|ref|>table_caption<|/ref|><|det|>[[75, 345, 508, 373]]<|/det|>
+Table 1 Distance matrix for intensity images, \(\chi^2\) metric, \(8\times 8\) bins, \(\sigma_{\mathrm{pre}} = 0^{\mathrm{a}}\)   
+
+<table><tr><td>χ²</td><td>Build</td><td>WoBA</td><td>WoBB</td><td>WoBC</td><td>WoBD</td><td>Cycl</td><td>Sand</td><td>ToolA</td><td>ToolB</td><td>ToolC</td></tr><tr><td>Build</td><td>204.7</td><td>951.9</td><td>1915.3</td><td>1100.7</td><td>1835.8</td><td>1692.4</td><td>1889.2</td><td>1978.0</td><td>3546.3</td><td>2322.3</td></tr><tr><td>WoBA</td><td>2018.0</td><td>490.5</td><td>1695.2</td><td>982.4</td><td>1284.4</td><td>2488.2</td><td>2458.4</td><td>466.6</td><td>1214.3</td><td>592.0</td></tr><tr><td>WoBB</td><td>4201.7</td><td>2514.2</td><td>603.6</td><td>1993.4</td><td>1000.8</td><td>1564.0</td><td>1825.9</td><td>1240.0</td><td>578.6</td><td>1167.5</td></tr><tr><td>WoBC</td><td>1197.9</td><td>843.8</td><td>740.2</td><td>469.7</td><td>381.7</td><td>1299.2</td><td>949.0</td><td>1040.3</td><td>1584.1</td><td>1028.1</td></tr><tr><td>WoBD</td><td>4045.1</td><td>3050.5</td><td>493.5</td><td>2246.2</td><td>1033.4</td><td>803.2</td><td>1182.5</td><td>2003.1</td><td>1443.4</td><td>2012.2</td></tr><tr><td>Cycl</td><td>983.1</td><td>1309.7</td><td>934.9</td><td>1097.0</td><td>1158.9</td><td>399.3</td><td>490.4</td><td>1925.1</td><td>2691.5</td><td>2238.1</td></tr><tr><td>Sand</td><td>1453.0</td><td>1154.3</td><td>1339.9</td><td>737.9</td><td>1115.1</td><td>1240.1</td><td>1037.5</td><td>1820.1</td><td>2609.2</td><td>2133.4</td></tr><tr><td>ToolA</td><td>3305.8</td><td>1398.8</td><td>1034.2</td><td>1421.6</td><td>1000.1</td><td>2313.6</td><td>2348.9</td><td>303.2</td><td>248.9</td><td>283.1</td></tr><tr><td>ToolB</td><td>6202.4</td><td>3264.8</td><td>1643.6</td><td>2919.5</td><td>1692.3</td><td>3351.2</td><td>3470.5</td><td>1325.7</td><td>539.8</td><td>1029.2</td></tr><tr><td>ToolC</td><td>3540.1</td><td>1668.4</td><td>1079.5</td><td>1717.9</td><td>1232.2</td><td>2282.5</td><td>2503.6</td><td>380.5</td><td>261.8</td><td>310.4</td></tr></table>
+
+<|ref|>table_footnote<|/ref|><|det|>[[75, 533, 290, 546]]<|/det|>
+a Minimum distances in bold face.  
+
+<|ref|>table<|/ref|><|det|>[[75, 602, 911, 765]]<|/det|>
+<|ref|>table_caption<|/ref|><|det|>[[75, 574, 575, 600]]<|/det|>
+Table 2 Distance matrix for invariant representations, \(\chi^2\) metric, \(8\times 8\) bins, \(\sigma_{\mathrm{pre}} = 1.0^{\mathrm{a}}\)   
+
+<table><tr><td>χ²</td><td>Build</td><td>WoBA</td><td>WoBB</td><td>WoBC</td><td>WoBD</td><td>Cycl</td><td>Sand</td><td>ToolA</td><td>ToolB</td><td>ToolC</td></tr><tr><td>Build</td><td>136.1</td><td>353.1</td><td>523.7</td><td>352.9</td><td>1340.8</td><td>647.1</td><td>1411.8</td><td>715.5</td><td>618.7</td><td>1215.1</td></tr><tr><td>WoBA</td><td>613.5</td><td>57.9</td><td>236.0</td><td>249.4</td><td>345.8</td><td>168.3</td><td>482.3</td><td>144.0</td><td>141.4</td><td>395.9</td></tr><tr><td>WoBB</td><td>517.8</td><td>204.0</td><td>51.6</td><td>255.3</td><td>463.1</td><td>240.7</td><td>608.5</td><td>240.7</td><td>177.7</td><td>359.4</td></tr><tr><td>WoBC</td><td>484.3</td><td>264.3</td><td>234.5</td><td>85.2</td><td>656.9</td><td>362.7</td><td>787.3</td><td>286.1</td><td>254.7</td><td>517.8</td></tr><tr><td>WoBD</td><td>1703.0</td><td>565.1</td><td>670.5</td><td>740.2</td><td>59.7</td><td>315.8</td><td>404.0</td><td>368.5</td><td>465.3</td><td>259.6</td></tr><tr><td>Cycl</td><td>753.3</td><td>164.0</td><td>311.6</td><td>325.3</td><td>273.1</td><td>25.9</td><td>193.6</td><td>182.2</td><td>234.5</td><td>309.0</td></tr><tr><td>Sand</td><td>1834.4</td><td>587.9</td><td>939.8</td><td>920.1</td><td>402.7</td><td>268.5</td><td>60.9</td><td>559.1</td><td>731.6</td><td>691.1</td></tr><tr><td>ToolA</td><td>833.8</td><td>194.9</td><td>299.0</td><td>264.4</td><td>258.4</td><td>220.2</td><td>448.8</td><td>52.8</td><td>112.2</td><td>309.2</td></tr><tr><td>ToolB</td><td>699.2</td><td>171.4</td><td>215.9</td><td>207.3</td><td>346.0</td><td>281.0</td><td>642.4</td><td>136.2</td><td>82.4</td><td>334.1</td></tr><tr><td>ToolC</td><td>1240.5</td><td>395.4</td><td>342.1</td><td>437.3</td><td>176.5</td><td>251.8</td><td>507.9</td><td>212.2</td><td>274.0</td><td>57.5</td></tr></table>
+
+<|ref|>table_footnote<|/ref|><|det|>[[75, 765, 290, 778]]<|/det|>
+a Minimum distances in bold face.  
+
+<|ref|>text<|/ref|><|det|>[[75, 801, 471, 833]]<|/det|>
+representation are more equally distributed over all histogram bins.  
+
+<|ref|>text<|/ref|><|det|>[[75, 834, 471, 898]]<|/det|>
+The \(\chi^2\) distances for the images in our test database, for \(8 \times 8\) bins, are given in Table 1 for the intensity images without pre- filtering, and in Table 2 for the invariant representations with  
+
+<|ref|>text<|/ref|><|det|>[[513, 801, 912, 898]]<|/det|>
+gentle Gaussian pre- filtering, \(\sigma_{\mathrm{pre}} = 1.0\) . Each row shows the distances from the given OGC histograms to the CGC histograms. Note that the tables are not symmetric. If the \(\chi^2\) value is smallest on the diagonal, then the query image has been correctly recognized. The percentage of

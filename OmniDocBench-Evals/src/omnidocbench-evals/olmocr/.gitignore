@@ -1,0 +1,87 @@
+# ml stuff
+wandb/
+*histogram.png
+*.json
+dolma_previews/*
+s2_previews/*
+gnarly_previews/*
+s2orc_previews/*
+s2orc_previews_3200/*
+sample200_vllm/*
+sample200_sglang/*
+pdelfin_testset/*
+localworkspace/*
+math_data/*
+math_data_big/*
+gpt4otestset/*
+old_train/
+gpt4otestset_output/*
+pdfs/*
+olmOCR-bench/*
+table_data*/
+/synth*/
+dolma_samples/*
+old_train/
+filtered_items/
+filtered_items_prefilter/
+augraphy_cache/
+/*.html
+html_templates*/
+olmocr-synthmix*/
+scoreelo.csv
+debug.log
+birrpipeline-debug.log
+beakerpipeline-debug.log
+olmocr-pipeline-debug.log
+
+# build artifacts
+
+.eggs/
+.mypy_cache
+*.egg-info/
+build/
+dist/
+pip-wheel-metadata/
+
+
+# dev tools
+
+.envrc
+.python-version
+.idea
+.venv/
+.vscode/
+/*.iml
+pyrightconfig.json
+
+
+# jupyter notebooks
+
+.ipynb_checkpoints
+
+
+# miscellaneous
+
+.cache/
+doc/_build/
+*.swp
+.DS_Store
+
+
+# python
+
+*.pyc
+*.pyo
+__pycache__
+
+
+# testing and continuous integration
+
+.coverage
+.pytest_cache/
+.benchmarks
+
+# documentation build artifacts
+
+docs/build
+site/

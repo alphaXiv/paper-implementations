@@ -1,0 +1,268 @@
+Table 1. Recording solutions
+
+<table>
+  <tr>
+    <th rowspan="2">Solution</th>
+    <th colspan="6">Intracellular solutions</th>
+    <th rowspan="2">EGTA</th>
+    <th rowspan="2">EDTA</th>
+    <th rowspan="2">ATP</th>
+  </tr>
+  <tr>
+    <th>K<sup>+</sup></th>
+    <th>Na<sup>+</sup></th>
+    <th>Cs<sup>+</sup></th>
+    <th>Ca<sup>2+</sup></th>
+    <th>Mg<sup>2+</sup></th>
+    <th>Ch<sub>3</sub>SO<sub>4</sub><sup>-</sup></th>
+  </tr>
+  <tr>
+    <td>K<sub>in1</sub></td>
+    <td>145</td>
+    <td></td>
+    <td>0.1</td>
+    <td>4</td>
+    <td></td>
+    <td>0.5</td>
+    <td></td>
+    <td>2</td>
+  </tr>
+  <tr>
+    <td>K<sub>in2</sub></td>
+    <td>145</td>
+    <td></td>
+    <td>4</td>
+    <td>4</td>
+    <td></td>
+    <td>0.5</td>
+    <td></td>
+    <td>2</td>
+  </tr>
+  <tr>
+    <td>K<sub>in3</sub></td>
+    <td>145</td>
+    <td></td>
+    <td>4</td>
+    <td>135</td>
+    <td>0.5</td>
+    <td></td>
+    <td></td>
+    <td>2</td>
+  </tr>
+  <tr>
+    <td>K<sub>in4</sub></td>
+    <td>130</td>
+    <td></td>
+    <td>6</td>
+    <td>125</td>
+    <td>0.5</td>
+    <td></td>
+    <td></td>
+    <td>4</td>
+  </tr>
+  <tr>
+    <td>K<sub>patch</sub></td>
+    <td>145</td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td>0.5</td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>Cs<sub>in2</sub></td>
+    <td></td>
+    <td>145</td>
+    <td>4</td>
+    <td></td>
+    <td></td>
+    <td>0.5</td>
+    <td></td>
+    <td>2</td>
+  </tr>
+  <tr>
+    <td>Cs<sub>in3</sub></td>
+    <td></td>
+    <td>145</td>
+    <td>4</td>
+    <td>135</td>
+    <td>0.5</td>
+    <td></td>
+    <td></td>
+    <td>2</td>
+  </tr>
+  <tr>
+    <td>Cs<sub>in4</sub></td>
+    <td></td>
+    <td>130</td>
+    <td>6</td>
+    <td>125</td>
+    <td>0.5</td>
+    <td></td>
+    <td></td>
+    <td>4</td>
+  </tr>
+  <tr>
+    <td>Na<sub>in</sub></td>
+    <td></td>
+    <td>145</td>
+    <td></td>
+    <td>4</td>
+    <td>140</td>
+    <td>0.5</td>
+    <td></td>
+    <td>2</td>
+  </tr>
+  <tr>
+    <td>Na<sub>patch</sub></td>
+    <td></td>
+    <td>145</td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td>0.5</td>
+    <td></td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <th rowspan="2">Solution</th>
+    <th colspan="7">Extracellular solutions</th>
+    <th rowspan="2">Dextrose</th>
+  </tr>
+  <tr>
+    <th>K<sup>+</sup></th>
+    <th>Na<sup>+</sup></th>
+    <th>NMDG<sup>+</sup></th>
+    <th>TEA<sup>+</sup></th>
+    <th>Ba<sup>2+</sup></th>
+    <th>Ca<sup>2+</sup></th>
+    <th>Mg<sup>2+</sup></th>
+    <th>Ch<sub>3</sub>SO<sub>4</sub></th>
+  </tr>
+  <tr>
+    <td>Tyrode's</td>
+    <td>5</td>
+    <td>140</td>
+    <td></td>
+    <td></td>
+    <td>2</td>
+    <td>1</td>
+    <td></td>
+    <td>10</td>
+  </tr>
+  <tr>
+    <td>Ba<sub>out1</sub></td>
+    <td></td>
+    <td>110</td>
+    <td>10</td>
+    <td>20</td>
+    <td></td>
+    <td></td>
+    <td>150</td>
+    <td>10</td>
+  </tr>
+  <tr>
+    <td>K<sub>out1</sub></td>
+    <td>5</td>
+    <td>140</td>
+    <td></td>
+    <td></td>
+    <td>2</td>
+    <td>1</td>
+    <td></td>
+    <td>10</td>
+  </tr>
+  <tr>
+    <td>K<sub>out2</sub></td>
+    <td>5</td>
+    <td>140</td>
+    <td></td>
+    <td></td>
+    <td>2</td>
+    <td>1</td>
+    <td>145</td>
+    <td>10</td>
+  </tr>
+  <tr>
+    <td>K<sub>out3</sub></td>
+    <td>20</td>
+    <td>125</td>
+    <td></td>
+    <td></td>
+    <td>2</td>
+    <td>1</td>
+    <td>145</td>
+    <td>10</td>
+  </tr>
+  <tr>
+    <td>K<sub>out4</sub></td>
+    <td>20</td>
+    <td>125</td>
+    <td></td>
+    <td></td>
+    <td>2</td>
+    <td>1</td>
+    <td>145</td>
+    <td>10</td>
+  </tr>
+  <tr>
+    <td>Na<sub>out1</sub></td>
+    <td>145</td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td>2</td>
+    <td>1</td>
+    <td>145</td>
+    <td>10</td>
+  </tr>
+  <tr>
+    <td>Na<sub>out2</sub></td>
+    <td>145</td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td>2</td>
+    <td>1</td>
+    <td>145</td>
+    <td>10</td>
+  </tr>
+  <tr>
+    <td>Na<sub>out3</sub></td>
+    <td>145</td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td>0.05</td>
+    <td>0.1</td>
+    <td>145</td>
+    <td>10</td>
+  </tr>
+  <tr>
+    <td>Nystl</td>
+    <td>145</td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td>5</td>
+    <td>5</td>
+    <td>70</td>
+    <td></td>
+  </tr>
+</table>
+
+All solutions contained HEPES at 5 mm (extracellular solutions) or 10 mm (intracellular solutions) and were adjusted to pH 7.4. Cl<sup>-</sup> was the major anion in all solutions except those containing methane sulfonate (CH<sub>3</sub>SO<sub>4</sub><sup>-</sup>) where Cl<sup>-</sup> was at a concentration of 14 or 9 mM for K<sub>in1</sub>/Cs<sub>in2</sub> and K<sub>in4</sub>/Cs<sub>in4</sub>, respectively, and 10 or 6 mM for Ba<sub>out1</sub> and K<sub>out1</sub>/K<sub>out2</sub>/K<sub>out3</sub>/Na<sub>out1</sub>, respectively. *K<sub>in1</sub>/Cs<sub>in4</sub> also contained 0.3 mM GTP and 14 mM phosphocreatine. Concentrations given are in millimolars.
+
+epithelium labeled with an anti-OMP antibody. Labeling is seen of cells in the deeper layers of the epithelium, the location of sensory neurons, and not of cells in the most luminal layer, the location of supporting cells. The spotty labeling is similar to what has been shown previously (Graziadei et al., 1980). Labeling is also present at the lumen of the epithelium and likely corresponds to the labeling of dendritic processes of VNO sensory neurons (Johnson et al., 1993).
+
+To obtain dissociated VNO neurons, the VNO and its bony encasing were removed from the nasal cavity and the epithelium was dissected free. At this anterior position in the nasal cavity, the OE is dorsal to the VNO and lies outside the bony encasing (Fig. 1), and thus no contamination of VNO neurons by olfactory neurons is expected. For most experiments, dissociated cells were prepared by incubating the epithelium in divalent-free solution containing trypsin and collagenase and then triturating gently. Dissociation using either of the two enzymes alone, or no enzyme, did not produce as many healthy-looking cells. To determine whether the enzymatic treatment altered the properties of the ion channels, some experiments were done without the use of enzymes; these experiments are explicitly stated as such. A population of cells were identified as sensory neurons by morphological criteria. These cells had an ovoid cell body with a mean diameter along the shorter axis of 11.1 ± 1.4 (mean ± SD; n = 12) and a dendritic process that varied in length and could be >40 μm. Some short dendrites were probably the result of retraction during the dissociation process. This identification was confirmed by labeling with anti-OMP antibody (Fig. 2A,B) and by the detection of action potentials in these cells (see next section). Two typical cells are shown in Figure 2, C and D, as visualized with differential interference contrast microscopy. Cells used for electrophysiology all had a similar appearance, with a clearly identifiable dendrite bearing microvilli. Mouse olfactory neurons were also dissociated for comparative experiments, and a typical cell is shown in Figure 2E at the same magnification. Note that VNO neurons are several times larger than olfactory neurons.
+
+Action potentials in response to current injections
+The electrical properties of VNO neurons were examined by whole-cell patch-clamp recording. The resting potential (V<sub>m</sub>) of VNO neurons was −58.3 ± 2.7 mV (mean ± SEM unless otherwise noted; range −43 to −70 mV; n = 9; K<sub>in2</sub> and Tyrode's solutions), which was significantly more depolarized than the resting potential of olfactory neurons measured under similar conditions (−81.8 ± 2.1 mV; n = 6). The input resistance of 3.3 ± 1.0 GΩ (n = 7) was similar to that for olfactory neurons (2.9 ± 0.8 GΩ; n = 8), and the capacitance (8.8 ± 0.3 pF; n = 39) was several times larger than that of olfactory neurons (1.8 ± 0.2 pF; n = 7). The responses of a VNO neuron to current injections of −4 to 4 pA are shown in Figure 3A. The response to hyperpolarizing current injections gave a membrane time constant of 15.3 ± 2.2 msec (n = 7). VNO neurons showed a remarkable sensitivity to small current injections, firing repetitive action potentials with injections of 1–2 pA. This sensitivity was also observed in cell-attached patch-clamp recordings, in which we were routinely able to elicit action potentials in response to depolarization of the patch.
+
+VNO neurons fired repetitively with no sign of adaptation

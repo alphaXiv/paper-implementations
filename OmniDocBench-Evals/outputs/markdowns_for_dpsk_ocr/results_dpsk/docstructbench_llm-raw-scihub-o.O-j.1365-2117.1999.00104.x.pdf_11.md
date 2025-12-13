@@ -1,0 +1,16 @@
+<|ref|>image<|/ref|><|det|>[[99, 97, 895, 277]]<|/det|>
+<|ref|>image_caption<|/ref|><|det|>[[99, 286, 884, 339]]<|/det|>
+<center>Fig. 14. Line drawing of the N-S seismic profile T1. The profile is located west of the Elba-Pianosa ridge in the Corsica Basin (see Figs 4D and 13 for positions). Note: (i) continuous presence of Oligocene strata below the Neogene; (ii) regular pattern of Tir 0. (The uninterpreted seismic profile has been published in Lazzarotto et al. (1995); A, B, C, D are unconformities also shown in Fig. 7.) </center>  
+
+<|ref|>image<|/ref|><|det|>[[100, 352, 895, 590]]<|/det|>
+<|ref|>image_caption<|/ref|><|det|>[[99, 598, 890, 679]]<|/det|>
+<center>Fig. 15. Line drawing of seismic profile T3 (Figs 4D and 13). Note: (i) highly deformed substrate below quasi-regular pattern of Tir 0; (ii) triangular-shaped geometry of Tir 2, and historic geometry of the west-dipping master fault; (iii) Tir 3 is missing; (iv) wide bowl-shaped geometry of Tir 4/5; and (iv) blanket geometry of Tir 6. In this profile it is difficult to distinguish Tir 4 from Tir 5 and therefore they have been considered together. Box (B) gives an interpretation of the development of the initial thrust top basin basin of Tir 0. (The uninterpreted seismic profile has been published in Lazzarotto et al. (1995) and Pascucci (1997a); A, B, C, D are unconformities also shown in Fig. 7.) </center>  
+
+<|ref|>text<|/ref|><|det|>[[100, 694, 482, 751]]<|/det|>
+(sp. 900- 1000; Fig. 19), traces of gently prograding clinoforms can be observed and, in places (T7, sp. 500; Fig. 19), mounded reflections have been recognized. The maximum thickness of Tir 2 is \(0.6 \mathrm{s}\) TWT.  
+
+<|ref|>text<|/ref|><|det|>[[100, 753, 482, 920], [513, 695, 892, 723]]<|/det|>
+Interpretation. Tir 2 has not been drilled in the Tuscan Shelf, but it has similar character and stratigraphic position to Seq 2. Therefore, it probably correlates with Lit 2 + Lit 3 of the Volterra Basin. This correlation is supported by the fact that Lit 3 crops out in the Tuscan Shelf on the Secche di Vada shoal (Aiello et al., 1981). The prograding cliniformis and the mounded reflections are correlated with clastic deposits, such as conglomerates and sands, typical of fluvio- lacustrine environments. Tir 2 is interpreted to be late Tortonian to early Messinian in age. If this is correct, it implies that in the Tuscan Shelf the equivalent of Seq 1 (Lit 1) has not been recognized and therefore we have preferred to use Tir 0 instead of Tir 1, possibly equivalent of Seq 1.   
+
+<|ref|>text<|/ref|><|det|>[[513, 737, 893, 920]]<|/det|>
+Tir 3 has been recognized only in the Ombrone area (lines: T4A, T5B, T6, T7, T8; Figs 13, 16- 20). It is bounded at the base by unconformity B\* and at the top by unconformity C or its correlative conformity. It is characterized by well- defined, discontinuous, closely spaced reflections, normally nonlapping onto the basal unconformity B\*. Toward the top, the reflections become more widely spaced and less defined. At the bottom, in several profiles, the reflections are mounded and very well defined (T7 sp. 400- 500, Fig. 19; T8 sp. 1000- 1100, Fig. 20). In places, Tir 3 is characterized either by prograding cliniformis (line T5B, sp. 2400, Fig. 17 and line T8, sp. 600- 500, Fig. 20) or a transparent pattern

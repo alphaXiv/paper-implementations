@@ -1,0 +1,13 @@
+<|ref|>title<|/ref|><|det|>[[280, 170, 680, 207]]<|/det|>
+# Making your Screen  
+
+<|ref|>text<|/ref|><|det|>[[111, 228, 857, 303]]<|/det|>
+It is very easy to build your own screen. Use \(2" \times 2"\) pieces of wood for your frame. You can angle them together or square them together. Use wood glue and steel angle from a hardware store, this will help keep the frame strong. Frame size is \(19 1 / 2" \times 23 1 / 2"\) .  
+
+<|ref|>text<|/ref|><|det|>[[111, 316, 870, 530]]<|/det|>
+Now you must purchase screen material from a art supply store or from a screen printing supply company or buy some from a screen printing shop. Most shops are very helpful. ( Some sign painting companies also screen print, Check your yellow page phone book. ) tell them you want to buy a fine screen mesh yellow or white. But not to fine a mesh, but not to course either. Now place your frame down flat on a table and place your screen mesh over top of it. cut your screen mesh leaving about 4" hanging from all around the frame. Now using a staple gun, start stapling one end only, now go to the opposite end and staple that while griping the screen mesh in your right hand and stapling with the other hand. YOU MUST STRETCH THE MATERIAL TIGHT STARTING FROM THE CENTER and working your way outward.  
+
+<|ref|>image<|/ref|><|det|>[[150, 578, 895, 822]]<|/det|>  
+
+<|ref|>text<|/ref|><|det|>[[168, 834, 835, 900]]<|/det|>
+Stretch Screen and staple down to wood frame. Then trim up screen mesh all the way to the outside frame. Screen should be tight enough to bounce a penny on it.

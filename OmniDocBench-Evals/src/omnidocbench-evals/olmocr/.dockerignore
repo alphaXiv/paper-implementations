@@ -1,0 +1,18 @@
+.git
+.github
+.mypy_cache
+.pytest_cache
+.venv
+__pycache__
+*.egg-info
+
+
+# Let's not copy any bash scripts from the scripts folder over, otherwise trashing the docker image too much with recent changes
+scripts/*.sh
+scripts/**/*.sh
+
+# Nor copy any olmocr bench files
+olmOCR-bench/
+olmOCR-bench*/
+html_templates*/
+olmocr-synthmix-*/

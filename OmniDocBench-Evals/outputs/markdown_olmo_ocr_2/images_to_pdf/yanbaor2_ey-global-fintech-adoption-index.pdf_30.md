@@ -1,0 +1,48 @@
+FIGURE 18 | List of SME FinTech services
+
+<table>
+  <tr>
+    <th>Catergories</th>
+    <th>Services</th>
+  </tr>
+  <tr>
+    <td rowspan="4">Banking and payments</td>
+    <td>Online foreign exchange</td>
+  </tr>
+  <tr>
+    <td>Digital-only branchless business bank</td>
+  </tr>
+  <tr>
+    <td>Online payments processors</td>
+  </tr>
+  <tr>
+    <td>Mobile Point of Sale (mPOS) payment machines and readers</td>
+  </tr>
+  <tr>
+    <td rowspan="3">Financial management</td>
+    <td>Online billing and invoice management tools</td>
+  </tr>
+  <tr>
+    <td>Online cashflow and liquidity management tools</td>
+  </tr>
+  <tr>
+    <td>Online bookkeeping and payroll tools</td>
+  </tr>
+  <tr>
+    <td rowspan="4">Financing</td>
+    <td>Online lending platforms</td>
+  </tr>
+  <tr>
+    <td>Online marketplaces, aggregators and brokers</td>
+  </tr>
+  <tr>
+    <td>Online equity (including equity crowdfunding) and debt securities</td>
+  </tr>
+  <tr>
+    <td>Online invoice financing and dynamic discounting</td>
+  </tr>
+  <tr>
+    <td>Insurance</td>
+    <td>Insurance premium comparison sites</td>
+  </tr>
+</table>

@@ -1,0 +1,88 @@
+全球灯塔网络新添 15 名成员，总数升至 69 家。
+
+<table>
+  <tr>
+    <th>序号</th>
+    <th>公司名称</th>
+    <th>所属行业</th>
+  </tr>
+  <tr>
+    <td>1</td>
+    <td>爱立信<br>电子设备，美国</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td>宝洁<br>消费品，美国</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td>宝洁<br>消费品，法国</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td>汉高<br>消费品，西班牙</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>5</td>
+    <td>西门子<br>工业自动化产品，德国</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>6</td>
+    <td>强生消费者保健<br>个人护理品，瑞典</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>7</td>
+    <td>STAR 炼油厂<br>油气，土耳其</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>8</td>
+    <td>ReNew Power<br>可再生能源，印度</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>9</td>
+    <td>塔塔钢铁<br>钢铁制品，印度</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>10</td>
+    <td>富士康<br>电子设备，中国</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>11</td>
+    <td>惠普<br>电子设备，新加坡</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>12</td>
+    <td>美的<br>家用电器，中国</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>13</td>
+    <td>纬创资通<br>电子设备，中国</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>14</td>
+    <td>青岛啤酒<br>消费品，中国</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>15</td>
+    <td>博世<br>汽车，中国</td>
+    <td></td>
+  </tr>
+</table>
+
+注释：欲知之前甄选灯塔工厂的详细信息，请参阅世界经济论坛白皮书《全球灯塔网络：四大持久转变助力制造业实现大规模重建》（Four Durable Shifts for a Great Reset in Manufacturing），2020年。
+
+资料来源：世界经济论坛和麦肯锡公司。

@@ -1,0 +1,20 @@
+<|ref|>sub_title<|/ref|><|det|>[[86, 78, 168, 95]]<|/det|>
+## ETIOLOGY  
+
+<|ref|>text<|/ref|><|det|>[[85, 104, 485, 305]]<|/det|>
+Injury to a peripheral nerve can occur by means of several mechanisms: stretching, compression (i.e., sustained compression or blunt trauma), friction, inflammation, or laceration. The clinical results of stretching or compression of the nerve vary depending on whether the insult has a rapid onset or is the result of a gradual change. A sudden insult does not allow for any adaptive change in the connective tissue of the nerve and is more likely to cause acute disruption of the nerve's blood supply or connective tissue. Conversely, the nerve can adapt amazingly well to a slow increase in tensile or compressive forces, such as that brought on by a growing osteophyte.12 A classification of peripheral nerve injuries is presented in Table 25- 1.13- 16  
+
+<|ref|>title<|/ref|><|det|>[[523, 85, 775, 101]]<|/det|>
+# Mechanisms of Peripheral Nerve Injury  
+
+<|ref|>text<|/ref|><|det|>[[521, 114, 612, 185]]<|/det|>
+Stretching Compression Friction Inflammation Laceration  
+
+<|ref|>text<|/ref|><|det|>[[512, 196, 911, 305]]<|/det|>
+Compression of the nerve can be caused by external sources or by swelling (e.g., inflammation) with a concomitant increase in pressure in a rigid compartment (e.g., carpal tunnel syndrome [CTS] compressing the median nerve at the wrist or anterior compartment [exertional] syndrome of the leg compressing the deep fibular [peroneal] nerve).17 A nerve can be directly compressed,  
+
+<|ref|>table<|/ref|><|det|>[[82, 362, 911, 936]]<|/det|>
+<|ref|>table_caption<|/ref|><|det|>[[85, 327, 235, 343]]<|/det|>
+TABLE 25-1   
+
+<table><tr><td>TYPE</td><td>FUNCTION</td><td></td><td></td><td></td></tr><tr><td>Seddon&#x27;s Classification</td><td>Sunderland&#x27;s Classification</td><td>Pathological Basis</td><td>Possible Causes</td><td>Prognosis</td></tr><tr><td>Neuropraxia</td><td>Type 1:<br>·Focal conduction block<br>·Primarily motor function and proprioception are affected<br>·Some sensation and sympathetic function possibly present</td><td>·Local myelin injury, primarily larger fibers<br>·Axonal continuity<br>·No Wallerian degeneration</td><td>·Electrolyte imbalances<br>·Deformation of myelin sheaths<br>·Ischemia caused by compression or traction</td><td>·Recovery within minutes, hours, or days if lesion was caused by anoxia or ionic imbalances<br>·Mechanical compression or stretch may recover in weeks to months</td></tr><tr><td>Axonotmesis</td><td>Type 2:<br>·Loss of nerve conduction at injury site and distally</td><td>·Disruption of axonal continuity with Wallerian degeneration<br>·Connective tissue elements of the nerve remain intact</td><td>·Compression</td><td>·Axonal regeneration required for recovery<br>·The length of time for regeneration will depend on the distance of the injury from the end of the nerve<br>·Good prognosis</td></tr><tr><td></td><td>Type 3:<br>·Loss of nerve conduction at injury site and distally</td><td>·Loss of axonal continuity and endoneural tubes<br>·Perineurium and epineurium preserved</td><td>·Compression</td><td>·Disruption of endoneural tubes, hemorrhage, and edema, producing scarring<br>·Axonal misdirection possible<br>·Poor prognosis<br>·Surgery possibly required</td></tr><tr><td></td><td>Type 4:<br>·Loss of nerve conduction at injury site and distally</td><td>·Damage to endoneurium and perineurium<br>·Epineurium remains intact</td><td>·Compression</td><td>·Intraureal scarring and axonal misdirection<br>·Poor prognosis<br>·Surgery required</td></tr><tr><td>Neurotmesis</td><td>Type 5:<br>·Loss of nerve conduction at injury site and distally</td><td>·Severance of entire nerve</td><td>·Compression<br>·Traction<br>·Laceration</td><td>·Surgical resection and repair only means of recovery; full recovery unlikely<br>·Factors that affect extent of recovery: nerve injured, level at which nerve is damaged, extent of injury, time elapsed since injury, patient&#x27;s age</td></tr></table>
