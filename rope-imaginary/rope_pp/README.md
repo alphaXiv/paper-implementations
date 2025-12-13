@@ -1,0 +1,9 @@
+<h1>Beyond Real: Imaginary Extension of Rotary Position Embeddings for Long-Context LLMs</h1>
+
+## Introduction
+
+This is an adaptation of the official "Rope++" codebase [here](https://github.com/OpenMOSS/rope_pp) released by the authors of the original paper. The original repo does pre-training of 376M and 776M parameter models over the [mlfoundations/dclm-baseline-1.0](https://huggingface.co/datasets/mlfoundations/dclm-baseline-1.0) dataset. Training is split up into 3 scripts: pre-training, pre-training with decay, and then long-context fine-tuning. There are a few configurations of Rope++ that can be trained as well. One may double the existing number of heads, or simply split the existing number of heads into equal part real and imaginary. The original codebase also uses [OpenCompass](https://github.com/open-compass/opencompass) for evaluations, evaluating over several benchmarks including HellaSwag, TruthfulQA, and RULER. 
+
+In this adaptation, we greatly simplify the setup, training, and evaluation process. Inspired by Karpathy's [Nanochat](https://github.com/karpathy/nanochat) implementation we provide a 'speedrun' bash script which sets up UV, installs the necessary packages, and runs the training+evaluation scripts all in one go. We also ran into difficulties setting up OpenCompass, so we swapped out it out with EleutherAI's LM harness, testing over the same benchmarks. 
+
+We provide bash scripts to train the models on both a single 40 GB A100 as well as 8 80GB H100 GPUs. A run with 8 H100 GPUs will take under a day to run to completion. The single GPU configuration will take over a week to run with the 376M variant, and is more so provided for those that want to play around with the implementation, perhaps on smaller number of training steps or model size. Due to memory constraints, the single GPU configuration does not do long-context fine-tuning. 
