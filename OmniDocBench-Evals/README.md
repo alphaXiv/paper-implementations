@@ -15,6 +15,7 @@ This repository provides a comparative evaluation of **DeepSeek-OCR** and **OLMO
 
 ## Install
 >Our environment is cuda11.8+torch2.6.0.
+
 1. Clone this repository and navigate to the DeepSeek-OCR folder
 
 ```bash
