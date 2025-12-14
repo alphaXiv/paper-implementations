@@ -1,3 +1,16 @@
+Metadata-Version: 2.4
+Name: agent-r1
+Version: 0.1.0
+Summary: Recursive reasoning with tiny neural networks for solving ARC-AGI and other puzzles
+Author: alphaXiv
+License: MIT
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: FlagEmbedding
+Requires-Dist: faiss-cpu
+Dynamic: license-file
+
 <h1 align="center"> Agent-R1: Training Powerful LLM Agents with End-to-End Reinforcement Learning </h1>
 
 <p align="center">
@@ -30,11 +43,7 @@
 
 In order to ease the setup process, we have provided a single file bash script to get you started with the training and evaluation of Agent-R1. 
 
-Running the bash script below will set up the docker environment, install all dependencies, download and preprocess the HotpotQA dataset, build the search index, and finally run the training script.
 
-```bash
-bash speedrun.sh
-```
 
 - [Environment Setup](https://github.com/alphaXiv/paper-implementations/Agent-R1/blob/master/docs/getting_started/installation.md)
 - [Quick Start: Try Default Search Tool on HotpotQA](https://github.com/alphaXiv/paper-implementations/Agent-R1/blob/master/docs/getting_started/quickstart.md) (see also: [Results on HotpotQA](https://github.com/alphaXiv/paper-implementations/Agent-R1/blob/master/docs/getting_started/quickstart.md#5-results-on-hotpotqa))
