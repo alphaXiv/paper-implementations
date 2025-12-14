@@ -349,13 +349,12 @@ def train_with_accelerate(
         betas=(adam_beta1, adam_beta2),
         weight_decay=weight_decay,
     )
-    
-    # Create learning rate scheduler
+
     def lr_lambda(current_step):
         if current_step < warmup_steps:
             return float(current_step) / float(max(1, warmup_steps))
-        return 1.0
-    
+        return max(0.0, float(num_training_steps - current_step) / float(max(1, num_training_steps - warmup_steps)))
+
     lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
     
     # Create dataloaders
