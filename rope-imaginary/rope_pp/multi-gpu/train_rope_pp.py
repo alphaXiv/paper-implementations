@@ -8,19 +8,17 @@ import torch
 import numpy as np
 
 import datasets
+import wandb
 
 import deepspeed
 
 from transformers import AutoTokenizer
-from transformers import Trainer, TrainingArguments
-from transformers.integrations import HfDeepSpeedConfig
 
 from llama_variants.configuration_llama import LlamaConfig
 from llama_variants.modeling_llama_rope_pp import LlamaForCausalLM
 
 from utils.dataset_utils import StreamingTrainingJsonlZSD, StreamingTrainingHuggingFace, EvaluatingDataset
-from utils.callback_utils import CheckpointingCallback, CustomLoggingCallback
-from utils.trainer_utils import TrainerWithDatasetCheckpointing
+from utils.training_engine import train_with_accelerate
 
 root = os.getcwd()
 tokenizer_path = 'meta-llama/Meta-Llama-3-8B'
@@ -101,16 +99,14 @@ ds_config = {
         "stage3_max_live_parameters": 1e7,
         "stage3_max_reuse_distance": 1e7,
         "stage3_gather_16bit_weights_on_model_save": True,
-        "stage3_prefetch_bucket_size": 5e7,  # Reduce prefetch to save memory
-        "stage3_param_persistence_threshold": 1e5,  # Reduce persistence threshold
+        "stage3_prefetch_bucket_size": 5e7,
+        "stage3_param_persistence_threshold": 1e5,
     },
-    "gradient_accumulation_steps": 1,
+    "gradient_accumulation_steps": gradient_accumulation_steps,
     "steps_per_print": 100,
-    "train_batch_size": batch_size,
+    "train_batch_size": batch_size * gradient_accumulation_steps,
     "wall_clock_breakdown": False, 
 }
-
-dschf = HfDeepSpeedConfig(ds_config)
 
 # ref: https://github.com/microsoft/DeepSpeed/blob/master/deepspeed/runtime/zero/partition_parameters.py#L603
 
@@ -126,28 +122,36 @@ with deepspeed.zero.Init(dtype=torch.bfloat16, config_dict_or_path=ds_config):
 
     model = LlamaForCausalLM(config=config)
 
-rank = torch.distributed.get_rank()
-size = torch.distributed.get_world_size()
+# Get rank for logging (Accelerate will handle distributed init)
+rank = 0
+if torch.distributed.is_initialized():
+    rank = torch.distributed.get_rank()
 
-train_args = {
-    'per_device_train_batch_size': batch_size // size, 
-    'per_device_eval_batch_size': 1,  # Use batch size of 1 for eval to save memory
-    'do_train': True, 'do_eval': True, 'bf16': True, 'bf16_full_eval': True, 
-    'optim': 'adamw_torch', 'learning_rate': 5e-4, 'weight_decay': 0.1, 
-    'adam_beta1': 0.95, 'adam_beta2': 0.99, 'num_train_epochs': 1, 
-    'lr_scheduler_type': 'constant_with_warmup', 'warmup_steps': warmup_steps,
-
-    'label_names': [], 'output_dir': f'{root}/checkpoints/{save_abbr}', 
-    'eval_strategy': 'steps', 'eval_steps': eval_steps, 
-    'logging_strategy': 'steps', 'logging_steps': 1, 
-    'save_strategy': 'steps', 'save_steps': save_steps, 
-    'gradient_accumulation_steps': gradient_accumulation_steps, 
-    'max_steps': max_steps, 'disable_tqdm': True, 'save_only_model': True, 
+# Training configuration
+training_config = {
+    'output_dir': f'{root}/checkpoints/{save_abbr}',
+    'max_steps': max_steps,
+    'batch_size': batch_size,
+    'gradient_accumulation_steps': gradient_accumulation_steps,
+    'learning_rate': 5e-4,
+    'weight_decay': 0.1,
+    'adam_beta1': 0.95,
+    'adam_beta2': 0.99,
+    'warmup_steps': warmup_steps,
+    'max_grad_norm': 1.0,
+    'eval_steps': eval_steps,
+    'save_steps': save_steps,
+    'steps_to_save': steps_to_save,
+    'max_length': max_length,
+    'valid_dataset_abbr': valid_dataset_abbr,
+    'logging_steps': 1,
+    'resume_from_checkpoint': None,
 }
 
 if rank == 0:
     print(f'{config = }', '\n')
-    print('train_args = ', json.dumps(train_args, indent=2), '\n')
+    print('ds_config = ', json.dumps(ds_config, indent=2), '\n')
+    print('training_config = ', json.dumps(training_config, indent=2), '\n')
 
 tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, use_fast=False)
 tokenizer.pad_token = tokenizer.eos_token
@@ -175,54 +179,39 @@ train_dataset = StreamingTrainingHuggingFace(
     tokenizer=tokenizer, 
     label_name=train_dataset_label, 
     train_length=max_length, 
-    num_data=max_steps * batch_size, 
+    num_data=max_steps * batch_size * gradient_accumulation_steps, 
     seed=seed,
     split='train',
     streaming=True,
     cache_dir=cache_dir
 )
 
-valid_dataset = EvaluatingDataset(dataset=valid_dataset, tokenizer=tokenizer, 
-                                  label_name=valid_dataset_label, valid_length=max_length)
-
 if rank == 0:
     print('dataset is ready !', '\n')
 
-# ref: https://huggingface.co/docs/transformers/main_classes/trainer#transformers.TrainingArguments
-
+# Initialize WandB (only on rank 0)
 os.environ["WANDB_MODE"] = "offline"
 os.environ["WANDB_PROJECT"] = "rope_pp"
 os.environ["WANDB_DIR"] = f"{root}/wandb"
 
-training_args = TrainingArguments(
-    report_to='wandb', logging_dir=f'{root}/wandb',
-    run_name=f'{save_abbr}-{datetime.now().strftime("%Y%m%d-%H%M%S")}',
-    include_for_metrics='loss', deepspeed=ds_config, **train_args
+if rank == 0:
+    wandb.init(
+        project="rope_pp",
+        name=f'{save_abbr}-{datetime.now().strftime("%Y%m%d-%H%M%S")}',
+        config={**training_config, **ds_config},
+        dir=f'{root}/wandb',
+    )
+    print('checkpoints and model will be saved in', training_config['output_dir'], '\n')
+
+# Train!
+train_with_accelerate(
+    model=model,
+    tokenizer=tokenizer,
+    train_dataset=train_dataset,
+    eval_dataset=valid_dataset,
+    config=training_config,
+    deepspeed_config=ds_config,
 )
 
 if rank == 0:
-    print('checkpoints and model will be saved in', train_args['output_dir'], '\n')
-
-start_time = datetime.now()
-
-trainer = TrainerWithDatasetCheckpointing(
-    model=model, tokenizer=tokenizer, args=training_args,
-    train_dataset=train_dataset, eval_dataset={valid_dataset_abbr: valid_dataset}, 
-    callbacks=[CheckpointingCallback(steps_to_save=steps_to_save), 
-               CustomLoggingCallback(max_steps=max_steps, batch_size=batch_size, max_length=max_length, 
-                                     world_size=size, valid_dataset_abbr=valid_dataset_abbr, 
-                                     logging_steps=1)
-                ], 
-)
-
-from transformers.trainer_callback import PrinterCallback
-trainer.remove_callback(PrinterCallback)
-
-trainer.can_return_loss = True
-trainer.train()
-
-if rank == 0:
-    end_time = datetime.now()
-    total_time = end_time - start_time
-    print(f"[{str(end_time)}] 100.00% {max_steps} / {max_steps} [{str(total_time)} / {str(total_time)}]")
-    print('training is over !')
+    wandb.finish()

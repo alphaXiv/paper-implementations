@@ -15,16 +15,15 @@ import torch
 import numpy as np
 
 import datasets
+import wandb
 
 from transformers import AutoTokenizer
-from transformers import Trainer, TrainingArguments
 
 from llama_variants.configuration_llama import LlamaConfig
 from llama_variants.modeling_llama_rope_pp import LlamaForCausalLM
 
 from utils.dataset_utils import StreamingTrainingJsonlZSD, StreamingTrainingHuggingFace, EvaluatingDataset
-from utils.callback_utils import CheckpointingCallback, CustomLoggingCallback
-from utils.trainer_utils import TrainerWithDatasetCheckpointing
+from utils.training_engine import train_with_accelerate
 
 root = os.getcwd()
 tokenizer_path = 'meta-llama/Meta-Llama-3-8B'
@@ -88,7 +87,6 @@ warmup_steps = 10
 save_steps = 10000
 steps_to_save = [100, max_steps]
 
-# Load config and create model (NO DEEPSPEED)
 config = LlamaConfig.from_pretrained(config_path)
 config.gradient_checkpointing = True  # CRITICAL for memory
 config.use_cache = False  # Required for gradient checkpointing
@@ -99,33 +97,29 @@ config.ignore_index = config.eos_token_id
 
 model = LlamaForCausalLM(config=config)
 
-# Move to GPU and enable gradient checkpointing
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = model.to(device)
-model.gradient_checkpointing_enable()  # Explicitly enable gradient checkpointing
-
-train_args = {
-    'per_device_train_batch_size': batch_size, 
-    'per_device_eval_batch_size': 1,  # Use batch size of 1 for eval to save memory
-    'do_train': True, 'do_eval': True, 'bf16': True, 'bf16_full_eval': True, 
-    'optim': 'adamw_torch', 'learning_rate': 5e-4, 'weight_decay': 0.1, 
-    'adam_beta1': 0.95, 'adam_beta2': 0.99, 'num_train_epochs': 1, 
-    'lr_scheduler_type': 'constant_with_warmup', 'warmup_steps': warmup_steps,
-
-    'label_names': [], 'output_dir': f'{root}/checkpoints/{save_abbr}', 
-    'eval_strategy': 'steps', 'eval_steps': eval_steps, 
-    'logging_strategy': 'steps', 'logging_steps': 1,
-    'save_strategy': 'steps', 'save_steps': save_steps, 
-    'gradient_accumulation_steps': gradient_accumulation_steps, 
-    'max_steps': max_steps, 'disable_tqdm': True, 'save_only_model': True,
-    'logging_first_step': False,  # Don't log the first step
-    'dataloader_num_workers': 2,  # Reduced workers to save memory
-    'dataloader_pin_memory': False,  # Disable pin memory to save RAM
-    'max_grad_norm': 1.0,  # Gradient clipping
+# Training configuration
+training_config = {
+    'output_dir': f'{root}/checkpoints/{save_abbr}',
+    'max_steps': max_steps,
+    'batch_size': batch_size,
+    'gradient_accumulation_steps': gradient_accumulation_steps,
+    'learning_rate': 5e-4,
+    'weight_decay': 0.1,
+    'adam_beta1': 0.95,
+    'adam_beta2': 0.99,
+    'warmup_steps': warmup_steps,
+    'max_grad_norm': 1.0,
+    'eval_steps': eval_steps,
+    'save_steps': save_steps,
+    'steps_to_save': steps_to_save,
+    'max_length': max_length,
+    'valid_dataset_abbr': valid_dataset_abbr,
+    'logging_steps': 1,
+    'resume_from_checkpoint': None,
 }
 
 print(f'{config = }', '\n')
-print('train_args = ', json.dumps(train_args, indent=2), '\n')
+print('training_config = ', json.dumps(training_config, indent=2), '\n')
 
 tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, use_fast=False)
 tokenizer.pad_token = tokenizer.eos_token
@@ -162,42 +156,28 @@ valid_dataset = EvaluatingDataset(dataset=valid_dataset, tokenizer=tokenizer,
 
 print('dataset is ready !', '\n')
 
+# Initialize WandB
 os.environ["WANDB_MODE"] = "offline"
 os.environ["WANDB_PROJECT"] = "rope_pp"
 os.environ["WANDB_DIR"] = f"{root}/wandb"
 
-training_args = TrainingArguments(
-    report_to='wandb',  # Keep WandB logging
-    logging_dir=f'{root}/wandb',
-    run_name=f'{save_abbr}-single-gpu-{datetime.now().strftime("%Y%m%d-%H%M%S")}',
-    include_for_metrics='loss', **train_args
+wandb.init(
+    project="rope_pp",
+    name=f'{save_abbr}-single-gpu-{datetime.now().strftime("%Y%m%d-%H%M%S")}',
+    config=training_config,
+    dir=f'{root}/wandb',
 )
 
-print('checkpoints and model will be saved in', train_args['output_dir'], '\n')
+print('checkpoints and model will be saved in', training_config['output_dir'], '\n')
 
-start_time = datetime.now()
-
-trainer = TrainerWithDatasetCheckpointing(
-    model=model, tokenizer=tokenizer, args=training_args,
-    train_dataset=train_dataset, eval_dataset={valid_dataset_abbr: valid_dataset}, 
-    callbacks=[CheckpointingCallback(steps_to_save=steps_to_save), 
-               CustomLoggingCallback(max_steps=max_steps, 
-                                     batch_size=batch_size * gradient_accumulation_steps, 
-                                     max_length=max_length, 
-                                     world_size=1, 
-                                     valid_dataset_abbr=valid_dataset_abbr, 
-                                     logging_steps=1)
-                ], 
+# Train!
+train_with_accelerate(
+    model=model,
+    tokenizer=tokenizer,
+    train_dataset=train_dataset,
+    eval_dataset=valid_dataset,
+    config=training_config,
+    deepspeed_config=None,
 )
 
-# Remove default progress callback that prints JSON logs
-from transformers.trainer_callback import PrinterCallback
-trainer.remove_callback(PrinterCallback)
-
-trainer.can_return_loss = True
-trainer.train()
-
-end_time = datetime.now()
-total_time = end_time - start_time
-print(f"[{str(end_time)}] 100.00% {max_steps} / {max_steps} [{str(total_time)} / {str(total_time)}]")
-print('training is over !')
+wandb.finish()
