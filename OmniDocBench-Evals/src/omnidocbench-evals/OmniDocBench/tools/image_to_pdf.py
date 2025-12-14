@@ -48,7 +48,7 @@ def batch_images_to_pdfs(input_dir, output_dir=None):
     # Get all image files
     image_files = []
    
-    for root, _, files in os.walk( './../../../../../../../home/ubuntu/.cache/huggingface/hub/datasets--opendatalab--OmniDocBench/snapshots/91fe284bbfacfa687959ae3eb00846ca852aa907/images/'):
+    for root, _, files in os.walk(input_dir):
         for file in files:
             if is_image_file(file):
                 image_files.append(os.path.join(root, file))
@@ -62,11 +62,11 @@ def batch_images_to_pdfs(input_dir, output_dir=None):
     # Process each image
     for image_path in tqdm(image_files, desc="Conversion Progress"):
         # Calculate relative path to maintain directory structure in output
-        rel_path = os.path.relpath(image_path, 'converted_olmocr_pdfs_from_img')
+        rel_path = os.path.relpath(image_path, input_dir)
         rel_dir = os.path.dirname(rel_path)
         # Create corresponding output subdirectory
         output_subdir = os.path.join(output_dir, rel_dir)
-        print("here: ", output_subdir)
+        
         os.makedirs(output_subdir, exist_ok=True)
 
         # Get filename without extension
@@ -82,7 +82,7 @@ def batch_images_to_pdfs(input_dir, output_dir=None):
 
 if __name__ == "__main__":
     # Example usage
-    input_directory = "../snapshots/91fe284bbfacfa687959ae3eb00846ca852aa907/images"  # Replace with your image directory path
-    output_directory = "converted_olmocr_pdfs_from_img" # Replace with output directory path, or None to use default
+    input_directory = "/home/ubuntu/texas-sandbox/paper-implementations/OmniDocBench-Evals/data/OmniDocBench/images/"
+    output_directory = "/home/ubuntu/texas-sandbox/paper-implementations/OmniDocBench-Evals/data/OmniDocBench/pdfs/"
 
     batch_images_to_pdfs(input_directory, output_directory)
