@@ -37,8 +37,9 @@ echo "Dataset downloaded to data/OmniDocBench"
 # Convert images to PDFs for OLMOCR
 echo "Converting images to PDFs for OLMOCR..."
 # Assume the images are in data/OmniDocBench/images/
-# Edit the script to set input_dir
-sed -i 's|input_dir = .*|input_dir = "../../../data/OmniDocBench/images/"|' src/omnidocbench-evals/OmniDocBench/tools/image_to_pdf.py
+# Edit the script to set input_dir and output_dir
+sed -i 's|input_directory = .*|input_directory = "../../../data/OmniDocBench/images/"|' src/omnidocbench-evals/OmniDocBench/tools/image_to_pdf.py
+sed -i 's|output_directory = .*|output_directory = "../../../data/OmniDocBench/pdfs/"|' src/omnidocbench-evals/OmniDocBench/tools/image_to_pdf.py
 conda run -n base python src/omnidocbench-evals/OmniDocBench/tools/image_to_pdf.py
 echo "PDFs created."
 
