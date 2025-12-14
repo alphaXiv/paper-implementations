@@ -14,9 +14,6 @@ authors = [
 ]
 
 dependencies = [
-    "torch>=2.6.0",
-    "torchvision>=0.21.0",
-    "torchaudio>=2.6.0",
     "PyMuPDF",
     "tqdm",
     "jupyter",
@@ -31,7 +28,15 @@ deepseek-ocr = [
     "torchvision==0.21.0",
     "torchaudio==2.6.0",
     "vllm @ https://github.com/vllm-project/vllm/releases/download/v0.8.5/vllm-0.8.5+cu118-cp38-abi3-manylinux1_x86_64.whl",
-    "flash-attn==2.7.3",
+    "transformers",
+    "tokenizers",
+    "img2pdf",
+    "einops",
+    "easydict",
+    "addict", 
+    "Pillow",
+    "numpy",
+
 ]
 olmocr = [
     "olmocr[gpu]",
