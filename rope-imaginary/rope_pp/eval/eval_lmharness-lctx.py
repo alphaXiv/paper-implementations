@@ -347,11 +347,12 @@ def main():
         # Uncomment as you wish!
         baseline_models = [
             # ('RoPE-DCLM-376M-32k', 'SII-xrliu/RoPE-DCLM-376M-32k', {'imag': False, 'imag_mode': 'imag1'}, 'ropepp', 64), 
-            ('RoPEPP_EH-DCLM-376M-32k', 'SII-xrliu/RoPEPP_EH-DCLM-376M-32k', {'imag': True, 'imag_mode': 'imag1'}, 'ropepp', 64), 
+            # ('RoPEPP_EH-DCLM-376M-32k', 'SII-xrliu/RoPEPP_EH-DCLM-376M-32k', {'imag': True, 'imag_mode': 'imag1'}, 'ropepp', 64), 
             # ('RoPEPP_EC-DCLM-376M-32k', 'SII-xrliu/RoPEPP_EC-DCLM-376M-32k', {'imag': True, 'imag_mode': 'imag2'}, 'ropepp', 64), 
 
             # ('RoPE-DCLM-776M-32k', 'SII-xrliu/RoPE-DCLM-776M-32k', {'imag': False, 'imag_mode': 'imag1'}, 'ropepp', 64), 
-            # ('RoPEPP_EH-DCLM-776M-32k', 'SII-xrliu/RoPEPP_EH-DCLM-776M-32k', {'imag': True, 'imag_mode': 'imag1'}, 'ropepp', 64), 
+            ('RoPEPP_EH-DCLM-776M-4k', 'SII-xrliu/RoPEPP_EH-DCLM-776M-4k', {'imag': True, 'imag_mode': 'imag1'}, 'ropepp', 64), 
+            ('RoPEPP_EH-DCLM-776M-32k', 'SII-xrliu/RoPEPP_EH-DCLM-776M-32k', {'imag': True, 'imag_mode': 'imag1'}, 'ropepp', 64), 
             # ('RoPEPP_EC-DCLM-776M-32k', 'SII-xrliu/RoPEPP_EC-DCLM-776M-32k', {'imag': True, 'imag_mode': 'imag2'}, 'ropepp', 64), 
 
             # ('RoPE-DCLM-1_5B-32k', 'SII-xrliu/RoPE-DCLM-1_5B-32k', {'imag': False, 'imag_mode': 'imag1'}, 'ropepp', 64), 
