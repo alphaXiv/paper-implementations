@@ -20,10 +20,6 @@ import json
 import argparse
 from pathlib import Path
 
-# Add rope_pp to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "lm-evaluation-harness"))
-
 from llama_variants.configuration_llama import LlamaConfig
 from llama_variants.modeling_llama_rope_pp import LlamaForCausalLM as RoPEPPLlamaForCausalLM
 from llama_variants.modeling_llama_fope import LlamaForCausalLM as FoPELlamaForCausalLM

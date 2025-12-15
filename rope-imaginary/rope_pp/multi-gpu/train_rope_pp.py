@@ -54,7 +54,14 @@ parser.add_argument('--imag_mode', choices=['imag1', 'imag2', ], default='imag1'
 # imag1 stands for rope_pp_eh, and imag2 stands for rope_pp_ec, 
 
 parser.add_argument('--config_abbr', type=str, default='376m')
-parser.add_argument('--save_abbr', type=str, default='376m')
+parser.add_argument('--exp_name', type=str, default='rope_pp-376m')
+parser.add_argument('--load_ckpt', type=int, default=None, help='Checkpoint to load from')
+
+parser.add_argument('--max_length', type=int, default=4096, help='Maximum sequence length')
+parser.add_argument('--rope_theta', type=float, default=None, help='RoPE theta base (default: model config default)')
+parser.add_argument('--batch_size', type=int, default=64, help='Batch size per device')
+parser.add_argument('--max_steps', type=int, default=100000, help='Maximum training steps')
+parser.add_argument('--warmup_steps', type=int, default=500, help='Warmup steps (set to 0 for decay phase)')
 
 parser.add_argument('--local_rank', type=int, default=-1)
 
@@ -68,17 +75,18 @@ rope_config = {
 config_abbr = args.config_abbr
 config_path = f'{root}/configs/rope-{config_abbr}-config.json'
 
-save_abbr = args.save_abbr
+exp_name = args.exp_name
+load_ckpt = args.load_ckpt
 
 gradient_accumulation_steps = 1
 
-batch_size = 64  # Reduced from 128 to avoid OOM
-max_length = 4096
+batch_size = args.batch_size
+max_length = args.max_length
 valid_size = 4096  # Reduced to avoid OOM during evaluation
 
-max_steps = 100000
+max_steps = args.max_steps
 eval_steps = 500
-warmup_steps = 500
+warmup_steps = args.warmup_steps
 
 save_steps = 10000
 steps_to_save = [100, max_steps]
@@ -117,10 +125,20 @@ with deepspeed.zero.Init(dtype=torch.bfloat16, config_dict_or_path=ds_config):
     config.use_cache = False
     config._attn_implementation = "flash_attention_2"
     config.torch_dtype = torch.bfloat16
+    if args.rope_theta is not None:
+        config.rope_theta = args.rope_theta
     config.rope_config = rope_config
     config.ignore_index = config.eos_token_id
 
-    model = LlamaForCausalLM(config=config)
+    if load_ckpt is not None:
+        load_path = f'{root}/checkpoints/{exp_name}/checkpoint-{load_ckpt}'
+        model = LlamaForCausalLM.from_pretrained(load_path, config=config)
+        if rank == 0:
+            print(f'Model loaded from checkpoint: {load_path}', '\n')
+    else:
+        model = LlamaForCausalLM(config=config)
+        if rank == 0:
+            print('Model initialized from scratch', '\n')
 
 # Get rank for logging (Accelerate will handle distributed init)
 rank = 0
@@ -129,7 +147,7 @@ if torch.distributed.is_initialized():
 
 # Training configuration
 training_config = {
-    'output_dir': f'{root}/checkpoints/{save_abbr}',
+    'output_dir': f'{root}/checkpoints/{exp_name}',
     'max_steps': max_steps,
     'batch_size': batch_size,
     'gradient_accumulation_steps': gradient_accumulation_steps,
@@ -197,7 +215,7 @@ os.environ["WANDB_DIR"] = f"{root}/wandb"
 if rank == 0:
     wandb.init(
         project="rope_pp",
-        name=f'{save_abbr}-{datetime.now().strftime("%Y%m%d-%H%M%S")}',
+        name=f'{exp_name}-{datetime.now().strftime("%Y%m%d-%H%M%S")}',
         config={**training_config, **ds_config},
         dir=f'{root}/wandb',
     )

@@ -5,12 +5,6 @@ import random
 import logging
 from datetime import datetime
 
-# Suppress transformers default logging output to console
-logging.getLogger("transformers.trainer").setLevel(logging.WARNING)
-
-# Add the current directory to sys.path to allow imports from sibling directories
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
 import torch
 import numpy as np
 
@@ -73,12 +67,12 @@ config_path = f'{root}/configs/rope-{config_abbr}-config.json'
 
 save_abbr = args.save_abbr
 
-# MODIFIED FOR SINGLE GPU - Optimized for 40GB A100
-batch_size = 4  # Very small batch to fit in memory
-gradient_accumulation_steps = 64  # Simulate effective batch size of 128
+# Modified to run on single 40GB A100
+batch_size = 3 
+gradient_accumulation_steps = 64
 
-max_length = 4096  # If still OOM, try 2048 or 3072
-valid_size = 4096  # Reduced validation size
+max_length = 4096
+valid_size = 4096
 
 max_steps = 100000
 eval_steps = 500

@@ -49,32 +49,14 @@ echo "Stage 1 complete! Check logs/${EXPERIMENT_NAME}.log"
 # Wait for stage 1 to complete
 wait
 
-# Stage 2: Learning rate decay for 10k steps from checkpoint 90000
-echo "=========================================="
-echo "Starting Stage 2: Learning Rate Decay"
-echo "=========================================="
-
-python single-gpu/train_rope_pp-decay_single_gpu.py \
-  --config_abbr '376m' \
-  --imag \
-  --imag_mode 'imag2' \
-  --save_abbr "rope_pp-376m-4k-imag2-single-gpu" \
-  --load_ckpt 90000 \
-  --decay_step 10000 
-
-echo "Stage 2 complete! Check logs/${EXPERIMENT_NAME}-ckpt90000-decay.log"
-
-# Wait for stage 2 to complete
-wait
-
-# Stage 3: Model Evaluation with LM Harness
+# Stage 2: Model Evaluation with LM Harness
 echo "=========================================="
 echo "Starting Model Evaluation with LM Harness"
 echo "=========================================="
 
 # Evaluate the trained checkpoint
 python eval/eval_lmharness.py \
-  --local-checkpoint "checkpoints/${EXPERIMENT_NAME}-ckpt90000-decay/checkpoint-10000" \
+  --local-checkpoint "checkpoints/${EXPERIMENT_NAME}/checkpoint-100000" \
   --model-name "Local-RoPEPP-376M-Trained" \
   --model-type "ropepp" \
   --include-baselines

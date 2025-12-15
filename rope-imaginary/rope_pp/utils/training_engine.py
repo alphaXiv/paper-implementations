@@ -353,7 +353,7 @@ def train_with_accelerate(
     def lr_lambda(current_step):
         if current_step < warmup_steps:
             return float(current_step) / float(max(1, warmup_steps))
-        return max(0.0, float(num_training_steps - current_step) / float(max(1, num_training_steps - warmup_steps)))
+        return max(0.0, float(max_steps - current_step) / float(max(1, max_steps - warmup_steps)))
 
     lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
     
@@ -371,6 +371,7 @@ def train_with_accelerate(
         batch_size=1,
         shuffle=False,
         num_workers=0,
+        collate_fn=DefaultDataCollator(return_tensors='pt'),
     )
     
     # Prepare everything with Accelerate
@@ -427,9 +428,10 @@ def train_with_accelerate(
             # Backward pass
             accelerator.backward(loss)
             
-            # Gradient clipping
+            # Gradient clipping and get grad norm BEFORE zero_grad
+            grad_norm = 0.0
             if accelerator.sync_gradients:
-                accelerator.clip_grad_norm_(model.parameters(), max_grad_norm)
+                grad_norm = accelerator.clip_grad_norm_(model.parameters(), max_grad_norm)
             
             # Optimizer step
             optimizer.step()
@@ -447,11 +449,6 @@ def train_with_accelerate(
             
             # Get current learning rate
             current_lr = lr_scheduler.get_last_lr()[0]
-            
-            # Get gradient norm (approximate)
-            grad_norm = 0.0
-            if hasattr(accelerator, 'get_global_grad_norm'):
-                grad_norm = accelerator.get_global_grad_norm()
             
             # Log training metrics
             log_training_step(
