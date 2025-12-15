@@ -132,7 +132,7 @@ sed -i "s|data_path: .*/OmniDocBench.json|data_path: ../../../data/OmniDocBench/
 sed -i "s|data_path: output_results_markdown|data_path: ../../outputs/deepseek_ocr/|" configs/end2end.yaml  # For DeepSeek, use cleaned if available
 # Run evaluation (assuming pdf_validation.py exists or use alternative)
 if [ -f "pdf_validation.py" ]; then
-    python pdf_validation.py --config configs/end2end.yaml
+    conda run -n deepseek-ocr python pdf_validation.py --config configs/end2end.yaml
 else
     echo "pdf_validation.py not found. Please run evaluation manually using the notebooks in tools/"
 fi
@@ -143,7 +143,7 @@ sed -i "s|data_path: .*/OmniDocBench.json|data_path: ../../../data/OmniDocBench/
 sed -i "s|data_path: output_results_markdown|data_path: ../../outputs/olmocr_workspace/markdown/|" configs/end2end.yaml  # For OLMOCR
 # Run evaluation (assuming pdf_validation.py exists or use alternative)
 if [ -f "pdf_validation.py" ]; then
-    python pdf_validation.py --config configs/end2end.yaml
+    conda run -n olmocr python pdf_validation.py --config configs/end2end.yaml
 else
     echo "pdf_validation.py not found. Please run evaluation manually using the notebooks in tools/"
 fi

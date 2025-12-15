@@ -20,6 +20,9 @@ dependencies = [
     "pandas",
     "matplotlib",
     "datasets",
+    "pylatexenc",
+    "beautifulsoup4",
+    "lxml",
 ]
 
 [project.optional-dependencies]
