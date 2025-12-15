@@ -56,6 +56,7 @@ echo "Setting up DeepSeek-OCR..."
 conda create -n deepseek-ocr python=3.12.9 -y
 conda run -n deepseek-ocr pip install -e .[deepseek-ocr] --extra-index-url https://download.pytorch.org/whl/cu118
 conda run -n deepseek-ocr pip install flash_attn==2.7.3 --no-build-isolation
+
 cd src/omnidocbench-evals/DeepSeek-OCR-master/DeepSeek-OCR-vllm
 # # Configure config.py
 # sed -i "s|INPUT_PATH = 'data/OmniDocBench/images/'|INPUT_PATH = '../../../../data/OmniDocBench/images/'|" config.py
@@ -73,6 +74,8 @@ echo "Cleaning up the outputs/deepseek_ocr/ directory..."
 echo "Cleaning complete. Noe setting up olmOCR2.."
 
 cd ../../../../src/omnidocbench-evals/olmocr
+
+echo "=========================================="
 
 # Setup OLMOCR
 echo "Setting up OLMOCR..."
@@ -103,6 +106,8 @@ echo "Markdown files created in outputs/olmocr_workspace/markdown/"
 
 cd ../../..
 
+echo "=========================================="
+
 # Setup Chandra OCR
 echo "Setting up Chandra OCR..."
 # Reuse olmocr env to avoid conflicts
@@ -125,8 +130,18 @@ fi
 cd ../../..
 
 # Evaluation
-echo "Running Evaluation..."
+echo "=========================================="
+echo "Starting Evaluation on OmniDocBench..."
 
+conda create -n omnidocbench-eval python=3.10 -y
+conda run -n omnidocbench-eval pip install -e .[omnidocbench] 
+eval "$(conda shell.bash hook)"
+conda activate omnidocbench-eval
+echo "Evaluation environment setup complete."
+
+echo "=========================================="
+
+echo "Running Evaluation..."
 echo "DeepSeek-OCR Evaluation..."
 
 cd src/omnidocbench-evals/OmniDocBench
@@ -135,7 +150,7 @@ sed -i "s|data_path: .*/OmniDocBench.json|data_path: ../../../data/OmniDocBench/
 sed -i "s|data_path: output_results_markdown|data_path: ../../outputs/deepseek_ocr/|" configs/end2end.yaml  # For DeepSeek, use cleaned if available
 # Run evaluation (assuming pdf_validation.py exists or use alternative)
 if [ -f "pdf_validation.py" ]; then
-    conda run -n deepseek-ocr python pdf_validation.py --config configs/end2end.yaml
+    conda run -n omnidocbench-eval python pdf_validation.py --config configs/end2end.yaml
 else
     echo "pdf_validation.py not found. Please run evaluation manually using the notebooks in tools/"
 fi
@@ -146,10 +161,11 @@ sed -i "s|data_path: .*/OmniDocBench.json|data_path: ../../../data/OmniDocBench/
 sed -i "s|data_path: output_results_markdown|data_path: ../../outputs/olmocr_workspace/markdown/|" configs/end2end.yaml  # For OLMOCR
 # Run evaluation (assuming pdf_validation.py exists or use alternative)
 if [ -f "pdf_validation.py" ]; then
-    conda run -n olmocr python pdf_validation.py --config configs/end2end.yaml
+    conda run -n omnidocbench-eval python pdf_validation.py --config configs/end2end.yaml
 else
     echo "pdf_validation.py not found. Please run evaluation manually using the notebooks in tools/"
 fi
+conda deactivate
 
 echo "=========================================="
 echo "Setup and Evaluation Complete!"
