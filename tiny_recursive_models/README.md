@@ -14,7 +14,7 @@ This is the codebase for the paper: "Less is More: Recursive Reasoning with Tiny
 
 ## Quickstart
 
-We used Lambda Labs H100 GPUs instance with CUDA version 12.8. More info in [REPORT.md](docs/REPORT.md)
+We used Lambda Labs Image 22.4 with 4xH100 80GB SXM GPUs instance with CUDA version 12.8. More info in [REPORT.md](docs/REPORT.md)
 
 ### One-Line Setup with speedrun.sh
 
