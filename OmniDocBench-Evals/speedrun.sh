@@ -50,12 +50,12 @@ ABS_PATH=$(pwd)
 # python src/omnidocbench-evals/OmniDocBench/tools/image_to_pdf.py
 # echo "PDFs created."
 
-# # Setup DeepSeek-OCR
-# echo "Setting up DeepSeek-OCR..."
+# Setup DeepSeek-OCR
+echo "Setting up DeepSeek-OCR..."
 
-# conda create -n deepseek-ocr python=3.12.9 -y
-# conda run -n deepseek-ocr pip install -e .[deepseek-ocr] --extra-index-url https://download.pytorch.org/whl/cu118
-# conda run -n deepseek-ocr pip install flash_attn==2.7.3 --no-build-isolation
+conda create -n deepseek-ocr python=3.12.9 -y
+conda run -n deepseek-ocr pip install -e .[deepseek-ocr] --extra-index-url https://download.pytorch.org/whl/cu118
+conda run -n deepseek-ocr pip install flash_attn==2.7.3 --no-build-isolation
 cd src/omnidocbench-evals/DeepSeek-OCR-master/DeepSeek-OCR-vllm
 # # Configure config.py
 # sed -i "s|INPUT_PATH = 'data/OmniDocBench/images/'|INPUT_PATH = '../../../../data/OmniDocBench/images/'|" config.py
@@ -96,7 +96,10 @@ eval "$(conda shell.bash hook)"
 conda activate olmocr
 python -m olmocr.pipeline ../../../outputs/olmocr_workspace --markdown --pdfs ../../../outputs/olmocr_workspace/pdf_list.txt
 conda deactivate
-echo "OLMOCR inference complete. Outputs in outputs/olmocr_workspace/markdown/"
+echo "OLMOCR inference complete. Converting JSONL to markdown..."
+# Convert JSONL results to markdown files
+python ../../../src/omnidocbench-evals/olmocr/convert_jsonl_to_markdown.py
+echo "Markdown files created in outputs/olmocr_workspace/markdown/"
 
 cd ../../..
 

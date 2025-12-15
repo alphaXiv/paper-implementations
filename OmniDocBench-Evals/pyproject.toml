@@ -23,6 +23,7 @@ dependencies = [
     "pylatexenc",
     "beautifulsoup4",
     "lxml",
+    "python-Levenshtein",
 ]
 
 [project.optional-dependencies]
