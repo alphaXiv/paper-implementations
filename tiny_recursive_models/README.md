@@ -16,221 +16,83 @@ This is the codebase for the paper: "Less is More: Recursive Reasoning with Tiny
 
 We used Lambda Labs H100 GPUs instance with CUDA version 12.8. More info in [REPORT.md](docs/REPORT.md)
 
-```bash
-# 1) Create env (Python 3.10+ recommended)
-python3 -m venv .venv && source .venv/bin/activate
-python -m pip install --upgrade pip wheel setuptools
+### One-Line Setup with speedrun.sh
 
-# 2) Install PyTorch (pick ONE that fits your machine)
-# CUDA 12.6 wheels (Linux w/ NVIDIA drivers):
-pip install --pre --upgrade torch torchvision torchaudio \
+The easiest way to get started is using our `speedrun.sh` script that handles everything:
+
+```bash
+# Single task (auto-detects GPU count)
+./speedrun.sh arc1              # ARC-AGI-1
+./speedrun.sh arc2              # ARC-AGI-2
+./speedrun.sh sudoku            # Sudoku-Extreme
+./speedrun.sh maze              # Maze-Hard 30x30
+
+# Force single or multi-GPU mode
+./speedrun.sh arc1 single-gpu   # Use 1 GPU
+./speedrun.sh arc2 multi-gpu    # Use all available GPUs
+
+# Run all tasks
+./speedrun.sh all multi-gpu
+```
+
+The script automatically:
+- Installs `uv` if not present
+- Creates virtual environment with `uv venv`
+- Installs PyTorch and dependencies
+- Builds datasets
+- Trains models
+- Evaluates results
+
+### Manual Setup
+
+If you prefer manual installation:
+
+```bash
+# 1) Install uv (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 2) Create env with uv
+uv venv .venv && source .venv/bin/activate
+
+# 3) Install PyTorch (CUDA 12.8)
+uv pip install --pre --upgrade torch torchvision torchaudio \
   --index-url https://download.pytorch.org/whl/nightly/cu128
 
-# 3) Install project deps and optimizer
-pip install -e .
+# 4) Install project dependencies
+uv pip install -e .
 
-# 4) Optional: log to Weights & Biases
+# 5) Optional: log to Weights & Biases
 # wandb login
 ```
 
-## Step 1: build dataset
+### Evaluating Pre-trained Models
 
-All builders output into `data/<dataset-name>/` with the expected `train/` and `test/` splits plus metadata.
+We provide pre-trained model weights:
 
-```bash
-# ARC-AGI-1 (uses files in kaggle/combined already in this repo)
-python -m trm.data.build_arc_dataset \
-  --input-file-prefix kaggle/combined/arc-agi \
-  --output-dir data/arc1concept-aug-1000 \
-  --subsets training evaluation concept \
-  --test-set-name evaluation
+- Maze: https://huggingface.co/alphaXiv/trm-model-maze
+- Sudoku: https://huggingface.co/alphaXiv/trm-model-sudoku
+- ARC-AGI-1: https://huggingface.co/alphaXiv/trm-model-arc-agi-1
 
-# ARC-AGI-2
-python -m trm.data.build_arc_dataset \
-  --input-file-prefix kaggle/combined/arc-agi \
-  --output-dir data/arc2concept-aug-1000 \
-  --subsets training2 evaluation2 concept \
-  --test-set-name evaluation2
-
-# Note: don't train on both ARC-AGI-1 and ARC-AGI-2 simultaneously if you plan to evaluate both; ARC-AGI-2 train includes some ARC-AGI-1 eval puzzles.
-
-# Sudoku-Extreme (1k base, 1k augments)
-python -m trm.data.build_sudoku_dataset \
-  --output-dir data/sudoku-extreme-1k-aug-1000 \
-  --subsample-size 1000 \
-  --num-aug 1000
-
-# Maze-Hard (30x30)
-python -m trm.data.build_maze_dataset
-```
-
-## Step 2: Evaluate existing checkpoints
-
-We provide pre-trained model weights to evaluate on:
-
-- Maze (30x30 TRM weights): https://huggingface.co/alphaXiv/trm-model-maze
-- Sudoku (TRM weights): https://huggingface.co/alphaXiv/trm-model-sudoku
-- ARC AGI 1 (TRM attention weights): https://huggingface.co/alphaXiv/trm-model-arc-agi-1
-
-Single GPU / CPU smoke test (one batch), loads model from HF or local path:
+**Quick Start with speedrun-inference.sh:**
 
 ```bash
-python scripts/run_eval_only.py \
-  --checkpoint alphaxiv/trm-model-maze/maze_hard_step_32550 \
-  --dataset data/maze-30x30-hard-1k \
-  --one-batch
+# Full evaluation (uses all available GPUs)
+./speedrun-inference.sh arc1    # ARC-AGI-1
+./speedrun-inference.sh maze    # Maze-Hard
+./speedrun-inference.sh sudoku  # Sudoku-Extreme
+
+# Evaluate all models
+./speedrun-inference.sh all
 ```
 
-Multi-GPU full eval:
+The script automatically:
+- Installs dependencies with `uv`
+- Builds required datasets
+- Downloads models from HuggingFace
+- Runs full evaluation and saves results
 
-```bash
-torchrun --nproc_per_node=8 scripts/run_eval_only.py \
-  --checkpoint trained_models/step_32550_sudoku_epoch50k \
-  --dataset data/sudoku-extreme-1k-aug-1000 \
-  --outdir checkpoints/sudoku_eval_run \
-  --eval-save-outputs inputs labels puzzle_identifiers preds \
-  --global-batch-size 1536 \
-  --apply-ema
-```
 
-Maze example:
-
-```bash
-torchrun --nproc_per_node=8 scripts/run_eval_only.py \
-  --checkpoint trained_models/maze_hard_step_32550 \
-  --dataset data/maze-30x30-hard-1k \
-  --outdir checkpoints/maze_eval_run \
-  --global-batch-size 1536 \
-  --apply-ema
-```
-
-ARC-AGI-1 example (attention):
-
-```bash
-torchrun --nproc_per_node=8 scripts/run_eval_only.py \
-  --checkpoint trained_models/step_259320_arc_ag1_attn_type_h3l4 \
-  --dataset data/arc1concept-aug-1000 \
-  --outdir checkpoints/arc1_eval_run \
-  --global-batch-size 1024 \
-  --apply-ema
-```
-
-## Step 3: Training your own weights!
-
-Training is configured via Hydra. CLI overrides like `arch.L_layers=2` are applied on top of `config/cfg_pretrain.yaml` and the chosen `config/arch/*.yaml`.
-
-Tips
-- Set `+run_name=<name>` to label runs; checkpoints land in `checkpoints/<Project>/<Run>/`.
-- Use `torchrun` for multi-GPU. Replace `--nproc-per-node` with your GPU count.
-
-### ARC-AGI-1 (attention, multi-GPU)
-
-```bash
-run_name="pretrain_att_arc1concept"
-torchrun --nproc-per-node 8 --rdzv_backend=c10d --rdzv_endpoint=localhost:0 --nnodes=1 \
-  scripts/train.py \
-  arch=trm \
-  data_paths="[data/arc1concept-aug-1000]" \
-  arch.L_layers=2 \
-  arch.H_cycles=3 arch.L_cycles=6 \
-  lr=2e-4 weight_decay=0.1 puzzle_emb_lr=1e-2 \
-  global_batch_size=1536 lr_warmup_steps=4000 \
-  epochs=100000 eval_interval=5000 checkpoint_every_eval=True \
-  +run_name=${run_name} ema=True
-```
-
-### ARC-AGI-2 (attention, multi-GPU)
-
-```bash
-run_name="pretrain_att_arc2concept"
-torchrun --nproc-per-node 8 --rdzv_backend=c10d --rdzv_endpoint=localhost:0 --nnodes=1 \
-  scripts/train.py \
-  arch=trm \
-  data_paths="[data/arc2concept-aug-1000]" \
-  arch.L_layers=2 \
-  arch.H_cycles=3 arch.L_cycles=6 \
-  lr=2e-4 weight_decay=0.1 puzzle_emb_lr=1e-2 \
-  global_batch_size=1536 lr_warmup_steps=4000 \
-  epochs=100000 eval_interval=5000 checkpoint_every_eval=True \
-  +run_name=${run_name} ema=True
-```
-
-### Sudoku-Extreme (MLP and attention variants)
-
-MLP-Tiny variant:
-
-```bash
-run_name="pretrain_mlp_t_sudoku"
-torchrun --nproc-per-node 8 --rdzv_backend=c10d --rdzv_endpoint=localhost:0 --nnodes=1 \
-  scripts/train.py \
-  arch=trm \
-  data_paths="[data/sudoku-extreme-1k-aug-1000]" \
-  evaluators="[]" \
-  epochs=50000 eval_interval=5000 \
-  lr=2e-4 puzzle_emb_lr=1e-4 weight_decay=1.0 puzzle_emb_weight_decay=1.0 \
-  arch.mlp_t=True arch.pos_encodings=none \
-  arch.L_layers=2 \
-  arch.H_cycles=3 arch.L_cycles=6 \
-  lr_warmup_steps=4000 \
-  global_batch_size=1536 \
-  +run_name=${run_name} ema=True
-```
-
-Attention variant:
-
-```bash
-run_name="pretrain_att_sudoku"
-torchrun --nproc-per-node 8 --rdzv_backend=c10d --rdzv_endpoint=localhost:0 --nnodes=1 \
-  scripts/train.py \
-  arch=trm \
-  data_paths="[data/sudoku-extreme-1k-aug-1000]" \
-  evaluators="[]" \
-  epochs=50000 eval_interval=5000 \
-  lr=2e-4 puzzle_emb_lr=1e-4 weight_decay=1.0 puzzle_emb_weight_decay=1.0 \
-  arch.L_layers=2 \
-  arch.H_cycles=3 arch.L_cycles=6 \
-  lr_warmup_steps=4000 \
-  global_batch_size=1536 \
-  +run_name=${run_name} ema=True
-```
-
-### Maze-Hard 30x30 (attention)
-
-Multi-GPU (8 GPUs):
-
-```bash
-run_name="pretrain_att_maze30x30"
-torchrun --nproc-per-node 8 --rdzv_backend=c10d --rdzv_endpoint=localhost:0 --nnodes=1 \
-  scripts/train.py \
-  arch=trm \
-  data_paths="[data/maze-30x30-hard-1k]" \
-  evaluators="[]" \
-  epochs=50000 eval_interval=5000 \
-  lr=2e-4 puzzle_emb_lr=1e-4 weight_decay=1.0 puzzle_emb_weight_decay=1.0 \
-  arch.L_layers=2 \
-  arch.H_cycles=3 arch.L_cycles=4 \
-  global_batch_size=1536 lr_warmup_steps=4000 \
-  checkpoint_every_eval=True \
-  +run_name=${run_name} ema=True
-```
-
-Single GPU (1x A100 40GB):
-
-```bash
-run_name="pretrain_att_maze30x30"
-torchrun --nproc-per-node 1 --rdzv_backend=c10d --rdzv_endpoint=localhost:0 --nnodes=1 \
-  scripts/train.py \
-  arch=trm \
-  data_paths="[data/maze-30x30-hard-1k]" \
-  evaluators="[]" \
-  epochs=50000 eval_interval=5000 \
-  lr=2e-4 puzzle_emb_lr=1e-4 weight_decay=1.0 puzzle_emb_weight_decay=1.0 \
-  arch.L_layers=2 \
-  arch.H_cycles=3 arch.L_cycles=4 \
-  global_batch_size=64 lr_warmup_steps=4000 \
-  checkpoint_every_eval=True \
-  +run_name=${run_name} ema=True
-```
+**Note:** The `speedrun.sh` script handles all dataset building, training, and evaluation automatically. Manual commands are provided for advanced users who need custom configurations.
 
 ## Reproducing paper numbers
 
