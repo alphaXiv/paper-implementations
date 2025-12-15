@@ -19,10 +19,10 @@ end2end_eval:
   dataset:
     dataset_name: end2end_dataset
     ground_truth:
-      data_path: ../../../OmniDocBench/OmniDocBench.json
+      data_path: ../../../data/OmniDocBench/OmniDocBench.json
     prediction:
       # data_path: markdowns_for_dpsk_ocr/results_dpsk-cleaned
-      data_path: output_results_markdown
+      data_path: ../../outputs/deepseek_ocr/
     match_method: quick_match
     filter: 
       language: simplified_chinese
