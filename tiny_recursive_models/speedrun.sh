@@ -106,6 +106,13 @@ uv pip install -e .
 # Create necessary directories
 mkdir -p data checkpoints logs results wandb
 
+# Login to Weights & Biases if API key is set
+if [ -n "$WANDB_API_KEY" ]; then
+    echo "Logging in to Weights & Biases..."
+    wandb login "$WANDB_API_KEY"
+    echo "W&B login successful!"
+fi
+
 echo "Environment setup complete!"
 echo ""
 
@@ -448,10 +455,10 @@ case $TASK in
         echo "Running all tasks (this will take a VERY long time)..."
         echo ""
         
-        build_arc1_dataset
-        build_arc2_dataset
-        build_sudoku_dataset
-        build_maze_dataset
+        # build_arc1_dataset
+        # build_arc2_dataset
+        # build_sudoku_dataset
+        # build_maze_dataset
         
         train_arc1
         evaluate_model "$LAST_CHECKPOINT" "$LAST_DATASET"

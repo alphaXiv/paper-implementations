@@ -79,6 +79,13 @@ uv pip install -e .
 # Create necessary directories
 mkdir -p data checkpoints logs results
 
+# Login to Weights & Biases if API key is set
+if [ -n "$WANDB_API_KEY" ]; then
+    echo "Logging in to Weights & Biases..."
+    wandb login "$WANDB_API_KEY"
+    echo "W&B login successful!"
+fi
+
 echo "Environment setup complete!"
 echo ""
 
