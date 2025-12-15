@@ -6,7 +6,7 @@ import copy
 from utils.match import compute_edit_distance_matrix_new, get_gt_pred_lines, get_pred_category_type
 import pdb
 import numpy as np
-import evaluate
+# import evaluate
 from collections import Counter
 from Levenshtein import distance as Levenshtein_distance
 
