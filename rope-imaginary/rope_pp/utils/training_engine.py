@@ -11,6 +11,7 @@ from datetime import datetime
 from typing import Dict, Any, Optional, List
 from torch.utils.data import DataLoader
 from accelerate import Accelerator
+from accelerate.utils import DeepSpeedPlugin
 from transformers import DefaultDataCollator
 
 from utils.dataset_utils import (
@@ -329,14 +330,36 @@ def train_with_accelerate(
     logging_steps = config.get('logging_steps', 1)
     resume_from_checkpoint = config.get('resume_from_checkpoint', None)
     
+    # Hard-coded for 8 GPU setup - divide batch_size across devices
+    num_devices = 8
+    per_device_batch_size = batch_size // num_devices
+    
     os.makedirs(output_dir, exist_ok=True)
     
     # Initialize Accelerator (handles DeepSpeed if config is provided)
-    accelerator = Accelerator(
-        gradient_accumulation_steps=gradient_accumulation_steps,
-        mixed_precision='bf16',
-        deepspeed_plugin=deepspeed_config,
-    )
+    if deepspeed_config is not None:
+        deepspeed_plugin = DeepSpeedPlugin(
+            gradient_accumulation_steps=gradient_accumulation_steps,
+            gradient_clipping=max_grad_norm,
+            zero_stage=deepspeed_config.get("zero_optimization", {}).get("stage", 3),
+            offload_optimizer_device=None,
+            offload_param_device=None,
+            zero3_init_flag=True,
+            zero3_save_16bit_model=deepspeed_config.get("zero_optimization", {}).get("stage3_gather_16bit_weights_on_model_save", True),
+        )
+        accelerator = Accelerator(
+            gradient_accumulation_steps=gradient_accumulation_steps,
+            mixed_precision='bf16',
+            deepspeed_plugin=deepspeed_plugin,
+        )
+    else:
+        accelerator = Accelerator(
+            gradient_accumulation_steps=gradient_accumulation_steps,
+            mixed_precision='bf16',
+        )
+    
+    # Free memory before starting training (like HF Trainer does)
+    accelerator.free_memory()
     
     # Enable gradient checkpointing
     if hasattr(model, 'gradient_checkpointing_enable'):
@@ -360,7 +383,7 @@ def train_with_accelerate(
     # Create dataloaders
     train_dataloader = DataLoader(
         train_dataset,
-        batch_size=batch_size,
+        batch_size=per_device_batch_size,
         shuffle=False,  # Streaming dataset handles shuffling
         num_workers=0,
         collate_fn=DefaultDataCollator(return_tensors='pt'),
@@ -395,9 +418,10 @@ def train_with_accelerate(
         print(f"\n***** Running Training with Accelerate *****")
         print(f"  Num processes = {world_size}")
         print(f"  Max steps = {max_steps}")
-        print(f"  Batch size per device = {batch_size}")
+        print(f"  Total batch size (user-specified) = {batch_size}")
+        print(f"  Batch size per device = {per_device_batch_size}")
         print(f"  Gradient accumulation steps = {gradient_accumulation_steps}")
-        print(f"  Total optimization batch size = {batch_size * gradient_accumulation_steps * world_size}")
+        print(f"  Total optimization batch size = {batch_size * gradient_accumulation_steps}")
         print(f"  Learning rate = {learning_rate}")
         print(f"  Mixed precision = bf16")
         print(f"  Output directory = {output_dir}\n")

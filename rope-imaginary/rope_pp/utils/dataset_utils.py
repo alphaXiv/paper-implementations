@@ -243,17 +243,6 @@ class StreamingTrainingHuggingFace(torch.utils.data.Dataset):
         if streaming:
             self.dataset = self.dataset.shuffle(seed=seed, buffer_size=10000)
         
-        # Get distributed training info
-        if torch.distributed.is_initialized():
-            self.rank = torch.distributed.get_rank()
-            self.world_size = torch.distributed.get_world_size()
-            # Shard the dataset for distributed training
-            if streaming:
-                self.dataset = self.dataset.skip(self.rank).take(num_data)
-        else:
-            self.rank = 0
-            self.world_size = 1
-        
         self.dataset_iter = iter(self.dataset)
         self.token_buffer = []
         

@@ -118,6 +118,11 @@ ds_config = {
 
 # ref: https://github.com/microsoft/DeepSpeed/blob/master/deepspeed/runtime/zero/partition_parameters.py#L603
 
+# Get rank for logging (DeepSpeed will handle distributed init)
+rank = 0
+if torch.distributed.is_initialized():
+    rank = torch.distributed.get_rank()
+
 with deepspeed.zero.Init(dtype=torch.bfloat16, config_dict_or_path=ds_config):
 
     config = LlamaConfig.from_pretrained(config_path)
@@ -139,11 +144,6 @@ with deepspeed.zero.Init(dtype=torch.bfloat16, config_dict_or_path=ds_config):
         model = LlamaForCausalLM(config=config)
         if rank == 0:
             print('Model initialized from scratch', '\n')
-
-# Get rank for logging (Accelerate will handle distributed init)
-rank = 0
-if torch.distributed.is_initialized():
-    rank = torch.distributed.get_rank()
 
 # Training configuration
 training_config = {
