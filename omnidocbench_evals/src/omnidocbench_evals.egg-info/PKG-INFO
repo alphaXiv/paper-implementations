@@ -1,0 +1,349 @@
+Metadata-Version: 2.4
+Name: omnidocbench-evals
+Version: 0.1.0
+Summary: Evaluation scripts for OmniDocBench OCR models
+Author: alphaXiv
+License: MIT
+Description-Content-Type: text/markdown
+Requires-Dist: PyMuPDF
+Requires-Dist: tqdm
+Requires-Dist: jupyter
+Requires-Dist: pandas
+Requires-Dist: matplotlib
+Requires-Dist: datasets
+Provides-Extra: deepseek-ocr
+Requires-Dist: torch==2.6.0; extra == "deepseek-ocr"
+Requires-Dist: torchvision==0.21.0; extra == "deepseek-ocr"
+Requires-Dist: torchaudio==2.6.0; extra == "deepseek-ocr"
+Requires-Dist: vllm@ https://github.com/vllm-project/vllm/releases/download/v0.8.5/vllm-0.8.5+cu118-cp38-abi3-manylinux1_x86_64.whl ; extra == "deepseek-ocr"
+Requires-Dist: transformers; extra == "deepseek-ocr"
+Requires-Dist: tokenizers; extra == "deepseek-ocr"
+Requires-Dist: img2pdf; extra == "deepseek-ocr"
+Requires-Dist: einops; extra == "deepseek-ocr"
+Requires-Dist: easydict; extra == "deepseek-ocr"
+Requires-Dist: addict; extra == "deepseek-ocr"
+Requires-Dist: Pillow; extra == "deepseek-ocr"
+Requires-Dist: numpy; extra == "deepseek-ocr"
+Provides-Extra: olmocr
+Requires-Dist: cached-path; extra == "olmocr"
+Requires-Dist: smart_open; extra == "olmocr"
+Requires-Dist: pypdf>=5.2.0; extra == "olmocr"
+Requires-Dist: pypdfium2; extra == "olmocr"
+Requires-Dist: cryptography; extra == "olmocr"
+Requires-Dist: lingua-language-detector; extra == "olmocr"
+Requires-Dist: Pillow; extra == "olmocr"
+Requires-Dist: ftfy; extra == "olmocr"
+Requires-Dist: bleach; extra == "olmocr"
+Requires-Dist: markdown2; extra == "olmocr"
+Requires-Dist: markdownify; extra == "olmocr"
+Requires-Dist: filelock; extra == "olmocr"
+Requires-Dist: orjson; extra == "olmocr"
+Requires-Dist: requests; extra == "olmocr"
+Requires-Dist: zstandard; extra == "olmocr"
+Requires-Dist: boto3; extra == "olmocr"
+Requires-Dist: httpx; extra == "olmocr"
+Requires-Dist: torch>=2.7.0; extra == "olmocr"
+Requires-Dist: transformers==4.55.2; extra == "olmocr"
+Requires-Dist: beaker-py; extra == "olmocr"
+Provides-Extra: chandra-ocr
+Requires-Dist: chandra-ocr; extra == "chandra-ocr"
+Provides-Extra: omnidocbench
+Requires-Dist: aiohappyeyeballs==2.4.3; extra == "omnidocbench"
+Requires-Dist: aiohttp==3.10.11; extra == "omnidocbench"
+Requires-Dist: aiosignal==1.3.1; extra == "omnidocbench"
+Requires-Dist: apted==1.0.3; extra == "omnidocbench"
+Requires-Dist: argon2-cffi==21.3.0; extra == "omnidocbench"
+Requires-Dist: argon2-cffi-bindings==21.2.0; extra == "omnidocbench"
+Requires-Dist: async-timeout==5.0.1; extra == "omnidocbench"
+Requires-Dist: attrs==24.2.0; extra == "omnidocbench"
+Requires-Dist: backcall==0.2.0; extra == "omnidocbench"
+Requires-Dist: beautifulsoup4==4.11.1; extra == "omnidocbench"
+Requires-Dist: bleach==5.0.1; extra == "omnidocbench"
+Requires-Dist: category-encoders==2.5.0; extra == "omnidocbench"
+Requires-Dist: certifi==2024.8.30; extra == "omnidocbench"
+Requires-Dist: charset-normalizer==3.4.0; extra == "omnidocbench"
+Requires-Dist: click==8.1.7; extra == "omnidocbench"
+Requires-Dist: contourpy==1.1.1; extra == "omnidocbench"
+Requires-Dist: cycler==0.12.1; extra == "omnidocbench"
+Requires-Dist: datasets==3.1.0; extra == "omnidocbench"
+Requires-Dist: debugpy==1.6.3; extra == "omnidocbench"
+Requires-Dist: decorator==5.1.1; extra == "omnidocbench"
+Requires-Dist: defusedxml==0.7.1; extra == "omnidocbench"
+Requires-Dist: dill==0.3.8; extra == "omnidocbench"
+Requires-Dist: entrypoints==0.4; extra == "omnidocbench"
+Requires-Dist: evaluate==0.4.3; extra == "omnidocbench"
+Requires-Dist: fastjsonschema==2.16.2; extra == "omnidocbench"
+Requires-Dist: filelock==3.16.1; extra == "omnidocbench"
+Requires-Dist: fonttools==4.55.0; extra == "omnidocbench"
+Requires-Dist: frozenlist==1.5.0; extra == "omnidocbench"
+Requires-Dist: fsspec==2024.9.0; extra == "omnidocbench"
+Requires-Dist: func-timeout==4.3.5; extra == "omnidocbench"
+Requires-Dist: huggingface-hub==0.26.2; extra == "omnidocbench"
+Requires-Dist: idna==3.10; extra == "omnidocbench"
+Requires-Dist: importlib_resources==6.4.5; extra == "omnidocbench"
+Requires-Dist: ipykernel==6.16.0; extra == "omnidocbench"
+Requires-Dist: ipython==7.34.0; extra == "omnidocbench"
+Requires-Dist: ipython-genutils==0.2.0; extra == "omnidocbench"
+Requires-Dist: ipywidgets==7.7.2; extra == "omnidocbench"
+Requires-Dist: jedi==0.18.1; extra == "omnidocbench"
+Requires-Dist: Jinja2==3.1.2; extra == "omnidocbench"
+Requires-Dist: joblib==1.2.0; extra == "omnidocbench"
+Requires-Dist: jsonpickle==2.2.0; extra == "omnidocbench"
+Requires-Dist: jupyterlab-pygments==0.2.2; extra == "omnidocbench"
+Requires-Dist: jupyterlab-widgets==1.1.1; extra == "omnidocbench"
+Requires-Dist: kiwisolver==1.4.7; extra == "omnidocbench"
+Requires-Dist: Levenshtein==0.25.1; extra == "omnidocbench"
+Requires-Dist: loguru==0.7.2; extra == "omnidocbench"
+Requires-Dist: lxml==4.9.1; extra == "omnidocbench"
+Requires-Dist: markdown-it-py==3.0.0; extra == "omnidocbench"
+Requires-Dist: matplotlib==3.7.5; extra == "omnidocbench"
+Requires-Dist: matplotlib-inline==0.1.6; extra == "omnidocbench"
+Requires-Dist: mdurl==0.1.2; extra == "omnidocbench"
+Requires-Dist: mistune==2.0.4; extra == "omnidocbench"
+Requires-Dist: mmeval==0.2.1; extra == "omnidocbench"
+Requires-Dist: multidict==6.1.0; extra == "omnidocbench"
+Requires-Dist: multiprocess==0.70.16; extra == "omnidocbench"
+Requires-Dist: nbclient==0.6.8; extra == "omnidocbench"
+Requires-Dist: nbconvert==7.0.0; extra == "omnidocbench"
+Requires-Dist: nbformat==5.6.1; extra == "omnidocbench"
+Requires-Dist: nest-asyncio==1.5.5; extra == "omnidocbench"
+Requires-Dist: nltk==3.9.1; extra == "omnidocbench"
+Requires-Dist: notebook==6.4.12; extra == "omnidocbench"
+Requires-Dist: numpy==1.24.4; extra == "omnidocbench"
+Requires-Dist: opencv-python==4.10.0.84; extra == "omnidocbench"
+Requires-Dist: packaging==24.2; extra == "omnidocbench"
+Requires-Dist: pandas==2.0.3; extra == "omnidocbench"
+Requires-Dist: pandocfilters==1.5.0; extra == "omnidocbench"
+Requires-Dist: parso==0.8.3; extra == "omnidocbench"
+Requires-Dist: patsy==0.5.2; extra == "omnidocbench"
+Requires-Dist: pexpect==4.8.0; extra == "omnidocbench"
+Requires-Dist: pickleshare==0.7.5; extra == "omnidocbench"
+Requires-Dist: pillow==10.4.0; extra == "omnidocbench"
+Requires-Dist: pkgutil_resolve_name==1.3.10; extra == "omnidocbench"
+Requires-Dist: plotly==5.5.0; extra == "omnidocbench"
+Requires-Dist: plum-dispatch==1.7.4; extra == "omnidocbench"
+Requires-Dist: prometheus-client==0.14.1; extra == "omnidocbench"
+Requires-Dist: prompt-toolkit==3.0.31; extra == "omnidocbench"
+Requires-Dist: propcache==0.2.0; extra == "omnidocbench"
+Requires-Dist: psutil==5.9.2; extra == "omnidocbench"
+Requires-Dist: ptyprocess==0.7.0; extra == "omnidocbench"
+Requires-Dist: pyarrow==17.0.0; extra == "omnidocbench"
+Requires-Dist: Pygments==2.18.0; extra == "omnidocbench"
+Requires-Dist: pylatexenc==3.0a30; extra == "omnidocbench"
+Requires-Dist: PyNomaly==0.3.4; extra == "omnidocbench"
+Requires-Dist: pyparsing==3.1.4; extra == "omnidocbench"
+Requires-Dist: pyrsistent==0.18.1; extra == "omnidocbench"
+Requires-Dist: python-dateutil==2.9.0.post0; extra == "omnidocbench"
+Requires-Dist: python-utils==3.3.3; extra == "omnidocbench"
+Requires-Dist: pytz==2024.2; extra == "omnidocbench"
+Requires-Dist: PyYAML==6.0.2; extra == "omnidocbench"
+Requires-Dist: rapidfuzz==3.9.7; extra == "omnidocbench"
+Requires-Dist: regex==2024.11.6; extra == "omnidocbench"
+Requires-Dist: requests==2.32.3; extra == "omnidocbench"
+Requires-Dist: rich==13.9.4; extra == "omnidocbench"
+Requires-Dist: scikit-learn==1.1.2; extra == "omnidocbench"
+Requires-Dist: scipy==1.10.1; extra == "omnidocbench"
+Requires-Dist: Send2Trash==1.8.0; extra == "omnidocbench"
+Requires-Dist: six==1.16.0; extra == "omnidocbench"
+Requires-Dist: soupsieve==2.3.2.post1; extra == "omnidocbench"
+Requires-Dist: statsmodels==0.13.2; extra == "omnidocbench"
+Requires-Dist: tabulate==0.9.0; extra == "omnidocbench"
+Requires-Dist: tenacity==8.1.0; extra == "omnidocbench"
+Requires-Dist: terminado==0.15.0; extra == "omnidocbench"
+Requires-Dist: threadpoolctl==3.1.0; extra == "omnidocbench"
+Requires-Dist: tinycss2==1.1.1; extra == "omnidocbench"
+Requires-Dist: tornado==6.2; extra == "omnidocbench"
+Requires-Dist: tqdm==4.67.1; extra == "omnidocbench"
+Requires-Dist: typing_extensions==4.12.2; extra == "omnidocbench"
+Requires-Dist: tzdata==2024.2; extra == "omnidocbench"
+Requires-Dist: urllib3==2.2.3; extra == "omnidocbench"
+Requires-Dist: webencodings==0.5.1; extra == "omnidocbench"
+Requires-Dist: widgetsnbextension==3.6.1; extra == "omnidocbench"
+Requires-Dist: xxhash==3.5.0; extra == "omnidocbench"
+Requires-Dist: yarl==1.15.2; extra == "omnidocbench"
+Requires-Dist: zipp==3.20.2; extra == "omnidocbench"
+Requires-Dist: pycocotools==2.0.7; extra == "omnidocbench"
+Requires-Dist: scikit-image==0.21.0; extra == "omnidocbench"
+
+# DeepSeek-OCR vs OLMOCR-2 Evaluation on OmniDocBench
+
+This repository provides a comparative evaluation of **DeepSeek-OCR** and **OLMOCR-2** on the **OmniDocBench** benchmark. The evaluation assesses document parsing capabilities across text, formulas, tables, and reading order.
+
+## Overview
+
+- **DeepSeek-OCR**: A vLLM-based multimodal pipeline for document understanding.
+- **OLMOCR-2**: An efficient OCR system using open visual language models.
+- **OmniDocBench**: A comprehensive benchmark with 1,355 annotated PDF pages covering diverse document types.
+
+## Setup
+
+### 1. DeepSeek-OCR Setup
+
+
+## Install
+>Our environment is cuda11.8+torch2.6.0.
+
+1. Clone this repository and navigate to the DeepSeek-OCR folder
+
+```bash
+git clone https://github.com/deepseek-ai/DeepSeek-OCR.git
+cd src/
+```
+
+
+2. Conda
+
+```Shell
+conda create -n deepseek-ocr python=3.12.9 -y
+conda activate deepseek-ocr
+```
+3. Packages
+
+```bash
+pip install -e .[deepseek-ocr] --index-url https://download.pytorch.org/whl/cu118
+pip install -r requirements.txt
+```
+**Note:** if you want vLLM and transformers codes to run in the same environment, you don't need to worry about this installation error like: vllm 0.8.5+cu118 requires transformers>=4.51.1
+
+
+Follow the installation guide in case of any doubts in [`src/DeepSeek-OCR-master/README.md`](DeepSeek-OCR-master/README.md).
+
+
+CAUTION: DO NOT install olmOCR2 and DeepSeek-OCR in the same conda environment to avoid package conflicts.
+
+### 2. OLMOCR Setup
+
+
+```bash
+
+conda create -n olmocr python=3.11
+conda activate olmocr
+
+# Install dependencies
+pip install -e .[olmocr] --extra-index-url https://download.pytorch.org/whl/cu128
+
+``` 
+
+### 3. Chandra OCR Setup
+
+Quick usage
+1. Install chandra-ocr package
+
+   ```bash
+   pip install -e .[chandra-ocr]
+   ```
+
+Follow the setup instructions in [`src/olmocr/README.md`](olmocr/README.md).
+
+
+## Get the data
+
+We used the HuggingFace version and based all our evals on it.
+
+Can be found at [link](https://huggingface.co/datasets/opendatalab/OmniDocBench)
+
+
+For olmOCR2, convert the images to PDFs using the following
+
+```bash
+
+python OmniDocBench/utils/image_to_pdf.py #(make sure to set the input directory inside the script)
+
+```
+
+Our outputs can be found in the 'outputs' folder.
+
+
+## Running the Models
+
+Make sure to follow the setup instructions for each of the models before running their respective inference.
+
+### Generate Outputs from DeepSeek-OCR
+
+1. Navigate to the DeepSeek-OCR directory:
+   ```bash
+   cd src/DeepSeek-OCR-master/DeepSeek-OCR-vllm
+   ```
+
+2. Configure paths in `config.py`:
+   - Set `INPUT_PATH` to the OmniDocBench images directory (e.g., `../../OmniDocBench/images/`)
+   - Set `OUTPUT_PATH` to a directory for output .md files (e.g., `../../outputs/deepseek_ocr/`)
+
+3. Run inference on images:
+   ```bash
+   python run_dpsk_ocr_eval_batch.py
+   ```
+
+   This will process all images and generate corresponding `.md` files in the output directory. Remember to use 'cleaned' .md files for evaluation, which can be found in `./DeepSeek-OCR-OmniDocBench/outputs/markdowns_for_dpsk_ocr/results_dpsk-cleaned` that we generated.
+
+### Generate Outputs from OLMOCR-2
+
+1. Navigate to the olmocr directory:
+   ```bash
+   cd olmocr
+   ```
+
+2. Run inference on PDFs:
+   ```bash
+   python -m olmocr.pipeline ./localworkspace --markdown --pdfs tests/gnarly_pdfs/*.pdf #put your pdf path here
+   ```
+
+   Replace `tests/gnarly_pdfs/` with a workspace directory, that includes your pdf files.
+
+   The `--markdown` flag ensures `.md` files are generated in the workspace's `markdown/` subdirectory.
+
+### 3. Generate outputs from Chandra OCR
+
+DATALAB_API_KEY is needed to run chandra OCR.
+
+Set the environment variable before running the script:
+
+```bash
+export DATALAB_API_KEY="your_api_key_here"
+```
+
+Make sure to give the directory of images or pdfs inside the chandra.py script or modify the script to take input arguments.
+
+
+1. Navigate to the chandra-ocr directory:
+   ```bash
+   cd src/chandra-ocr
+   ```
+2. Run the chandra.py script (example):
+   ```bash
+   python chandra.py
+   ```
+
+## Evaluation
+
+Use OmniDocBench's evaluation scripts to compare the generated outputs.
+
+### End-to-End Evaluation (end2end)
+
+1. Configure `OmniDocBench/configs/end2end.yaml`:
+   - Set `ground_truth.data_path` to `OmniDocBench/OmniDocBench.json`
+   - Set `prediction.data_path` to the directory containing model outputs (e.g., `outputs/deepseek_ocr/` or `olmocr_workspace/markdown/`)
+
+2. Run evaluation:
+   ```bash
+   cd OmniDocBench
+   python pdf_validation.py --config configs/end2end.yaml
+   ```
+
+
+## Results
+
+After evaluation, results are stored in `OmniDocBench/result/`. Use the notebooks in `OmniDocBench/tools/` to generate comparison tables and visualizations.
+
+You can find one of our results for one of our runs in `outputs/results_chandra_ocr` folder for eg! Remember we used Edit_dist for formula evaluation instead of CDM .
+
+Key metrics include:
+- Text accuracy (normalized edit distance)
+- Formula accuracy (Edit dist score)
+- Table TEDS score
+- Reading order accuracy
+- Overall score: ((1 - text_edit) × 100 + table_teds + (1 - edit_distance) × 100) / 3
+
+
+See [`REPORT.md`](REPORT.md) for detailed results and visualizations.
+
