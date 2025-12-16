@@ -28,6 +28,8 @@
 
 The easiest way to set up and train Agent-R1 is using the automated speedrun script:
 
+Use 4xH100 80 SXM (we used Lambda Labs with GPU Base image  22.04 for this setup)
+
 ```bash
 ./speedrun.sh
 ```
