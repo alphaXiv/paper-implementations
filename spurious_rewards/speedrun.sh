@@ -57,7 +57,35 @@ uv pip install flash_attn==2.7.0.post2 --no-build-isolation
 # Install the package in editable mode
 uv pip install -e .
 
+# Get the data from RLVR repository
+echo "Cloning RLVR-Fine-Tuning-Spurious-Rewards for data..."
 
+# Remove any existing clone directory
+if [ -d "RLVR-Fine-Tuning-Spurious-Rewards" ]; then
+    echo "Removing existing RLVR-Fine-Tuning-Spurious-Rewards directory..."
+    rm -rf RLVR-Fine-Tuning-Spurious-Rewards
+fi
+
+# Clone the repository
+git clone https://github.com/alphaXiv/RLVR-Fine-Tuning-Spurious-Rewards.git
+cd RLVR-Fine-Tuning-Spurious-Rewards/code
+
+# Move data folder to parent directory
+echo "Moving data folder..."
+if [ -d "data" ]; then
+    mv data ../../data
+    echo "Data folder moved successfully"
+else
+    echo "ERROR: data folder not found in RLVR-Fine-Tuning-Spurious-Rewards/code"
+    exit 1
+fi
+
+# Go back to src/spurious_rewards/code and remove the cloned repo
+cd ../../
+rm -rf RLVR-Fine-Tuning-Spurious-Rewards
+
+# Now we're back in src/spurious_rewards/code with data/ in place
+echo ""
 echo "=========================================="
 echo "Setup Complete! Starting Training..."
 echo "=========================================="
