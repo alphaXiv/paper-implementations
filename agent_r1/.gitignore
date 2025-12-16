@@ -1,0 +1,7 @@
+outputs/
+wandb/
+__pycache__/
+data/
+ignore/
+checkpoints/
+.history/
