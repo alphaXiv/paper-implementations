@@ -1,6 +1,6 @@
 # Ignore local cloned/checked-out subprojects and large folders
 ...existing code...
-data/
+
 outputs/
 *.pyc
 __pycache__/
