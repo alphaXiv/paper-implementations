@@ -1,0 +1,78 @@
+2025-12-16 16:42:12,916	INFO worker.py:1832 -- Started a local Ray instance. View the dashboard at [1m[32m127.0.0.1:8265 [39m[22m
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/lambda/nfs/texas-sandbox/paper-implementations/spurious_rewards/src/spurious_rewards/code/ttrl/cli/train_ppo_naive.py", line 387, in <module>
+    train(args)
+  File "/lambda/nfs/texas-sandbox/paper-implementations/spurious_rewards/src/spurious_rewards/code/ttrl/cli/train_ppo_naive.py", line 41, in train
+    controller.build_env()
+  File "/lambda/nfs/texas-sandbox/paper-implementations/spurious_rewards/src/spurious_rewards/code/ttrl/controller/naive_controller.py", line 109, in build_env
+    self.agent = self._init_agent()
+  File "/lambda/nfs/texas-sandbox/paper-implementations/spurious_rewards/src/spurious_rewards/code/ttrl/controller/naive_controller.py", line 135, in _init_agent
+    ray.get(pg.ready())
+  File "/lambda/nfs/texas-sandbox/paper-implementations/spurious_rewards/.venv/lib/python3.10/site-packages/ray/_private/auto_init_hook.py", line 21, in auto_init_wrapper
+    return fn(*args, **kwargs)
+  File "/lambda/nfs/texas-sandbox/paper-implementations/spurious_rewards/.venv/lib/python3.10/site-packages/ray/_private/client_mode_hook.py", line 103, in wrapper
+    return func(*args, **kwargs)
+  File "/lambda/nfs/texas-sandbox/paper-implementations/spurious_rewards/.venv/lib/python3.10/site-packages/ray/_private/worker.py", line 2772, in get
+    values, debugger_breakpoint = worker.get_objects(object_refs, timeout=timeout)
+  File "/lambda/nfs/texas-sandbox/paper-implementations/spurious_rewards/.venv/lib/python3.10/site-packages/ray/_private/worker.py", line 893, in get_objects
+    ] = self.core_worker.get_objects(
+  File "python/ray/_raylet.pyx", line 3190, in ray._raylet.CoreWorker.get_objects
+  File "python/ray/includes/common.pxi", line 83, in ray._raylet.check_status
+KeyboardInterrupt
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/lambda/nfs/texas-sandbox/paper-implementations/spurious_rewards/src/spurious_rewards/code/ttrl/cli/train_ppo_naive.py", line 387, in <module>
+    train(args)
+  File "/lambda/nfs/texas-sandbox/paper-implementations/spurious_rewards/src/spurious_rewards/code/ttrl/cli/train_ppo_naive.py", line 41, in train
+    controller.build_env()
+  File "/lambda/nfs/texas-sandbox/paper-implementations/spurious_rewards/src/spurious_rewards/code/ttrl/controller/naive_controller.py", line 109, in build_env
+    self.agent = self._init_agent()
+  File "/lambda/nfs/texas-sandbox/paper-implementations/spurious_rewards/src/spurious_rewards/code/ttrl/controller/naive_controller.py", line 135, in _init_agent
+    ray.get(pg.ready())
+  File "/lambda/nfs/texas-sandbox/paper-implementations/spurious_rewards/.venv/lib/python3.10/site-packages/ray/_private/auto_init_hook.py", line 21, in auto_init_wrapper
+    return fn(*args, **kwargs)
+  File "/lambda/nfs/texas-sandbox/paper-implementations/spurious_rewards/.venv/lib/python3.10/site-packages/ray/_private/client_mode_hook.py", line 103, in wrapper
+    return func(*args, **kwargs)
+  File "/lambda/nfs/texas-sandbox/paper-implementations/spurious_rewards/.venv/lib/python3.10/site-packages/ray/_private/worker.py", line 2772, in get
+    values, debugger_breakpoint = worker.get_objects(object_refs, timeout=timeout)
+  File "/lambda/nfs/texas-sandbox/paper-implementations/spurious_rewards/.venv/lib/python3.10/site-packages/ray/_private/worker.py", line 893, in get_objects
+    ] = self.core_worker.get_objects(
+  File "python/ray/_raylet.pyx", line 3190, in ray._raylet.CoreWorker.get_objects
+  File "python/ray/includes/common.pxi", line 83, in ray._raylet.check_status
+KeyboardInterrupt
+[0m
+Exception ignored in atexit callback: <function _start_and_connect_service.<locals>.teardown_atexit at 0x73b8e4d84d30>
+Traceback (most recent call last):
+  File "/lambda/nfs/texas-sandbox/paper-implementations/spurious_rewards/.venv/lib/python3.10/site-packages/wandb/sdk/lib/service_connection.py", line 94, in teardown_atexit
+    conn.teardown(hooks.exit_code)
+  File "/lambda/nfs/texas-sandbox/paper-implementations/spurious_rewards/.venv/lib/python3.10/site-packages/wandb/sdk/lib/service_connection.py", line 226, in teardown
+    self._router.join()
+  File "/lambda/nfs/texas-sandbox/paper-implementations/spurious_rewards/.venv/lib/python3.10/site-packages/wandb/sdk/interface/router.py", line 75, in join
+    self._thread.join()
+  File "/usr/lib/python3.10/threading.py", line 1096, in join
+    self._wait_for_tstate_lock()
+  File "/usr/lib/python3.10/threading.py", line 1116, in _wait_for_tstate_lock
+    if lock.acquire(block, timeout):
+KeyboardInterrupt:
+Exception ignored in atexit callback: <function shutdown at 0x73bb379f9bd0>
+Traceback (most recent call last):
+  File "/lambda/nfs/texas-sandbox/paper-implementations/spurious_rewards/.venv/lib/python3.10/site-packages/ray/_private/client_mode_hook.py", line 103, in wrapper
+    return func(*args, **kwargs)
+  File "/lambda/nfs/texas-sandbox/paper-implementations/spurious_rewards/.venv/lib/python3.10/site-packages/ray/_private/worker.py", line 1903, in shutdown
+    from ray.dag.compiled_dag_node import _shutdown_all_compiled_dags
+  File "/lambda/nfs/texas-sandbox/paper-implementations/spurious_rewards/.venv/lib/python3.10/site-packages/ray/dag/__init__.py", line 3, in <module>
+    from ray.dag.class_node import (
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 879, in exec_module
+  File "<frozen importlib._bootstrap_external>", line 1016, in get_code
+  File "<frozen importlib._bootstrap_external>", line 1074, in get_data
+KeyboardInterrupt:

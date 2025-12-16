@@ -1,0 +1,46 @@
+Metadata-Version: 2.4
+Name: ttrl
+Version: 0.1
+Summary: A Ray-based High-performance RLHF framework.
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Environment :: GPU :: NVIDIA CUDA
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Classifier: Topic :: System :: Distributed Computing
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: fire
+Requires-Dist: torch==2.5.1
+Requires-Dist: transformers
+Requires-Dist: tqdm
+Requires-Dist: vllm==0.7.2
+Requires-Dist: latex2sympy2
+Requires-Dist: numpy
+Requires-Dist: pandas
+Requires-Dist: peft
+Requires-Dist: pylatexenc
+Requires-Dist: ray==2.42.0
+Requires-Dist: regex
+Requires-Dist: Requests
+Requires-Dist: ring_flash_attn
+Requires-Dist: setuptools
+Requires-Dist: srsly
+Requires-Dist: sympy
+Requires-Dist: timeout_decorator
+Requires-Dist: wheel
+Requires-Dist: word2number
+Requires-Dist: pynvml==12.0.0
+Requires-Dist: wandb==0.19.8
+Requires-Dist: deepspeed==0.16.3
+Requires-Dist: datasets
+Requires-Dist: tensorboard
+Provides-Extra: vllm
+Requires-Dist: vllm==0.7.2; extra == "vllm"
+Provides-Extra: vllm-latest
+Requires-Dist: vllm>0.6.4.post1; extra == "vllm-latest"
+Dynamic: classifier
+Dynamic: description-content-type
+Dynamic: provides-extra
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary

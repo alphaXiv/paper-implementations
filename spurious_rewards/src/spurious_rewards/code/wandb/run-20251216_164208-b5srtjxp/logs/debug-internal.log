@@ -1,0 +1,7 @@
+{"time":"2025-12-16T16:42:08.326451495Z","level":"INFO","msg":"stream: starting","core version":"0.19.8","symlink path":"/lambda/nfs/texas-sandbox/paper-implementations/spurious_rewards/src/spurious_rewards/code/wandb/run-20251216_164208-b5srtjxp/logs/debug-core.log"}
+{"time":"2025-12-16T16:42:08.44222743Z","level":"INFO","msg":"created new stream","id":"b5srtjxp"}
+{"time":"2025-12-16T16:42:08.442291573Z","level":"INFO","msg":"stream: started","id":"b5srtjxp"}
+{"time":"2025-12-16T16:42:08.44232647Z","level":"INFO","msg":"writer: Do: started","stream_id":"b5srtjxp"}
+{"time":"2025-12-16T16:42:08.442576812Z","level":"INFO","msg":"sender: started","stream_id":"b5srtjxp"}
+{"time":"2025-12-16T16:42:08.443174502Z","level":"INFO","msg":"handler: started","stream_id":"b5srtjxp"}
+{"time":"2025-12-16T16:42:08.78714013Z","level":"INFO","msg":"Starting system monitor"}

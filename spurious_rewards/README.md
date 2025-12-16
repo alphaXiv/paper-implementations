@@ -19,7 +19,6 @@ conda activate spurious-rewards
 
 pip install -r requirements.txt
 pip install flash_attn==2.7.0.post2
-pip install -e .
 ```
 
 
@@ -65,10 +64,10 @@ cd code
 conda create -n spurious-rewards python=3.10 
 conda activate spurious-rewards
 
-#Now there is some order of steps for reproduction on NVIDIA CUDA 12.8
-pip install -r requirements.txt
+pip install -e .
 pip uninstall vllm
 pip install vllm==0.7.2
+pip install flash_attn==2.7.0.post2 --no-build-isolation
 
 ```
 
