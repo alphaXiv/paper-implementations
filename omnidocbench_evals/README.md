@@ -8,175 +8,75 @@ This repository provides a comparative evaluation of **DeepSeek-OCR** and **OLMO
 - **OLMOCR-2**: An efficient OCR system using open visual language models.
 - **OmniDocBench**: A comprehensive benchmark with 1,355 annotated PDF pages covering diverse document types.
 
-## Setup
+## Quick Start
 
-### 1. DeepSeek-OCR Setup
-
-
-## Install
->Our environment is cuda11.8+torch2.6.0.
-
-1. Clone this repository and navigate to the DeepSeek-OCR folder
+The easiest way to set up and run the complete evaluation is using the automated speedrun script:
 
 ```bash
-git clone https://github.com/deepseek-ai/DeepSeek-OCR.git
-cd src/
+./speedrun.sh [language_filter]
 ```
 
+**Options:**
+- `all` - Evaluate on all languages (default)
+- `english` - Evaluate on English documents only
+- `simplified_chinese` - Evaluate on simplified Chinese documents only
 
-2. Conda
-
-```Shell
-conda create -n deepseek-ocr python=3.12.9 -y
-conda activate deepseek-ocr
-```
-3. Packages
-
+**Example:**
 ```bash
-pip install -e .[deepseek-ocr] --index-url https://download.pytorch.org/whl/cu118
-pip install -r requirements.txt
-```
-**Note:** if you want vLLM and transformers codes to run in the same environment, you don't need to worry about this installation error like: vllm 0.8.5+cu118 requires transformers>=4.51.1
-
-
-Follow the installation guide in case of any doubts in [`src/DeepSeek-OCR-master/README.md`](DeepSeek-OCR-master/README.md).
-
-
-CAUTION: DO NOT install olmOCR2 and DeepSeek-OCR in the same conda environment to avoid package conflicts.
-
-### 2. OLMOCR Setup
-
-
-```bash
-
-conda create -n olmocr python=3.11
-conda activate olmocr
-
-# Install dependencies
-pip install -e .[olmocr] --extra-index-url https://download.pytorch.org/whl/cu128
-
-``` 
-
-### 3. Chandra OCR Setup
-
-Quick usage
-1. Install chandra-ocr package
-
-   ```bash
-   pip install -e .[chandra-ocr]
-   ```
-
-Follow the setup instructions in [`src/olmocr/README.md`](olmocr/README.md).
-
-
-## Get the data
-
-We used the HuggingFace version and based all our evals on it.
-
-Can be found at [link](https://huggingface.co/datasets/opendatalab/OmniDocBench)
-
-
-For olmOCR2, convert the images to PDFs using the following
-
-```bash
-
-python OmniDocBench/utils/image_to_pdf.py #(make sure to set the input directory inside the script)
-
+./speedrun.sh all
 ```
 
-Our outputs can be found in the 'outputs' folder.
+This script will automatically:
+1. Download the OmniDocBench dataset
+2. Set up all three OCR environments (DeepSeek-OCR, OLMOCR-2, Chandra OCR)
+3. Run inference on all models
+4. Execute comprehensive evaluation
+5. Generate comparison results
 
+### Environment Requirements
 
-## Running the Models
-
-Make sure to follow the setup instructions for each of the models before running their respective inference.
-
-### Generate Outputs from DeepSeek-OCR
-
-1. Navigate to the DeepSeek-OCR directory:
-   ```bash
-   cd src/DeepSeek-OCR-master/DeepSeek-OCR-vllm
-   ```
-
-2. Configure paths in `config.py`:
-   - Set `INPUT_PATH` to the OmniDocBench images directory (e.g., `../../OmniDocBench/images/`)
-   - Set `OUTPUT_PATH` to a directory for output .md files (e.g., `../../outputs/deepseek_ocr/`)
-
-3. Run inference on images:
-   ```bash
-   python run_dpsk_ocr_eval_batch.py
-   ```
-
-   This will process all images and generate corresponding `.md` files in the output directory. Remember to use 'cleaned' .md files for evaluation, which can be found in `./DeepSeek-OCR-OmniDocBench/outputs/markdowns_for_dpsk_ocr/results_dpsk-cleaned` that we generated.
-
-### Generate Outputs from OLMOCR-2
-
-1. Navigate to the olmocr directory:
-   ```bash
-   cd olmocr
-   ```
-
-2. Run inference on PDFs:
-   ```bash
-   python -m olmocr.pipeline ./localworkspace --markdown --pdfs tests/gnarly_pdfs/*.pdf #put your pdf path here
-   ```
-
-   Replace `tests/gnarly_pdfs/` with a workspace directory, that includes your pdf files.
-
-   The `--markdown` flag ensures `.md` files are generated in the workspace's `markdown/` subdirectory.
-
-### 3. Generate outputs from Chandra OCR
-
-DATALAB_API_KEY is needed to run chandra OCR.
-
-Set the environment variable before running the script:
-
-```bash
-export DATALAB_API_KEY="your_api_key_here"
-```
-
-Make sure to give the directory of images or pdfs inside the chandra.py script or modify the script to take input arguments.
-
-
-1. Navigate to the chandra-ocr directory:
-   ```bash
-   cd src/chandra-ocr
-   ```
-2. Run the chandra.py script (example):
-   ```bash
-   python chandra.py
-   ```
-
-## Evaluation
-
-Use OmniDocBench's evaluation scripts to compare the generated outputs.
-
-### End-to-End Evaluation (end2end)
-
-1. Configure `OmniDocBench/configs/end2end.yaml`:
-   - Set `ground_truth.data_path` to `OmniDocBench/OmniDocBench.json`
-   - Set `prediction.data_path` to the directory containing model outputs (e.g., `outputs/deepseek_ocr/` or `olmocr_workspace/markdown/`)
-
-2. Run evaluation:
-   ```bash
-   cd OmniDocBench
-   python pdf_validation.py --config configs/end2end.yaml
-   ```
-
-
+- CUDA 11.8+ with torch 2.6.0+
+- Conda/Miniconda installed
+- At least 60GB free disk space for models and data
+- For Chandra OCR: `DATALAB_API_KEY` environment variable (optional)
 ## Results
 
-After evaluation, results are stored in `OmniDocBench/result/`. Use the notebooks in `OmniDocBench/tools/` to generate comparison tables and visualizations.
+After evaluation, results are stored in `OmniDocBench/result/` and a summary CSV is generated at `results_${LANGUAGE_FILTER}.csv`.
 
-You can find one of our results for one of our runs in `outputs/results_chandra_ocr` folder for eg! Remember we used Edit_dist for formula evaluation instead of CDM .
+The speedrun script will automatically generate:
+- **CSV Summary**: `results_all.csv` (or `results_english.csv`, `results_simplified_chinese.csv` based on language filter)
+- **Detailed Metrics**: `src/omnidocbench_evals/OmniDocBench/result/`
+- **Model Outputs**: 
+  - DeepSeek-OCR: `outputs/deepseek_ocr/`
+  - OLMOCR-2: `outputs/olmocr_workspace/markdown/`
+  - Chandra OCR: `outputs/chandra_ocr/`
 
-Key metrics include:
-- Text accuracy (normalized edit distance)
-- Formula accuracy (Edit dist score)
-- Table TEDS score
-- Reading order accuracy
-- Overall score: ((1 - text_edit) × 100 + table_teds + (1 - edit_distance) × 100) / 3
+### Key Metrics
 
+- **Text Accuracy**: Normalized edit distance
+- **Formula Accuracy**: Edit distance score
+- **Table TEDS Score**: Table structure evaluation
+- **Reading Order Accuracy**: Document flow evaluation
+- **Overall Score**: `((1 - text_edit) × 100 + table_teds + (1 - edit_distance) × 100) / 3`
 
-See [`REPORT.md`](REPORT.md) for detailed results and visualizations.
+See [`REPORT.md`](REPORT.md) for detailed results and visualizations from our evaluation runs.
+
+## Troubleshooting
+
+### CUDA/Memory Issues
+- Ensure CUDA 11.8+ is installed: `nvidia-smi`
+- Check available GPU memory: `nvidia-smi`
+- Reduce batch size if out of memory
+
+### Dataset Download Issues
+- Set HuggingFace token: `export HF_TOKEN="your_token_here"`
+- Check internet connection and rate limits
+
+### Environment Conflicts
+- Each OCR system runs in a separate conda environment to avoid conflicts
+- Do not mix environments manually
+
+## Data
+
+The dataset is automatically downloaded from [OmniDocBench on HuggingFace](https://huggingface.co/datasets/opendatalab/OmniDocBench) to `data/OmniDocBench/` when running the speedrun script.
 
