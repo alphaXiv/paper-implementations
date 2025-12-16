@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Test Review</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- KaTeX files for math rendering -->
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='katex.min.css') }}">
+    <script src="{{ url_for('static', filename='katex.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='auto-render.min.js') }}"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1920px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: row;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .stats-header {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+            background-color: #f8f9fa;
+            padding: 6px 8px;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+            font-size: 0.85rem;
+        }
+        
+        .stat-item {
+            display: flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: 3px;
+            color: white;
+            font-weight: 500;
+        }
+        
+        .stat-total {
+            background-color: #4a6fa5;
+        }
+        
+        .stat-null {
+            background-color: #6c757d;
+        }
+        
+        .stat-verified {
+            background-color: #28a745;
+        }
+        
+        .stat-rejected {
+            background-color: #dc3545;
+        }
+        
+        .stat-completion {
+            background-color: #17a2b8;
+        }
+        
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .pdf-viewer {
+            flex: 2;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            margin-right: 20px;
+            overflow: auto;
+            max-height: calc(100vh - 100px);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #pdf-container {
+            width: 100%;
+            flex-grow: 1;
+            border: 1px solid #ddd;
+            overflow: auto;
+            position: relative;
+        }
+        
+        .pdf-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+        
+        .pdf-controls button {
+            padding: 5px 10px;
+            border: 1px solid #ccc;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .pdf-controls span {
+            margin: 0 10px;
+        }
+        
+        .pdf-canvas {
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .tests-panel {
+            flex: 1;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            max-height: calc(100vh - 100px);
+        }
+        
+        .test-item {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            transition: outline 0.15s ease, background-color 0.15s ease;
+            cursor: pointer;
+        }
+        
+        .test-item:hover {
+            background-color: #f9f9f9;
+        }
+        
+        .test-item.highlighted {
+            outline: 2px dotted #4a6fa5;
+            background-color: #f8f9fa;
+        }
+        
+        .test-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .test-type {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 4px;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .present {
+            background-color: #28a745;
+        }
+        
+        .absent {
+            background-color: #dc3545;
+        }
+        
+        .order {
+            background-color: #fd7e14;
+        }
+        
+        .table {
+            background-color: #17a2b8;
+        }
+        
+        .math {
+            background-color: #6f42c1;
+        }
+        
+        .baseline {
+            background-color: #4a6fa5;
+        }
+        
+        .unknown {
+            background-color: #6c757d;
+        }
+        
+        .test-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .test-content {
+            margin-bottom: 10px;
+        }
+        
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .approve-btn {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .reject-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .edit-btn {
+            background-color: #17a2b8;
+            color: white;
+        }
+        
+        .highlight-btn {
+            background-color: #ffc107;
+            color: #333;
+        }
+        
+        .kbd-shortcut {
+            display: inline-block;
+            margin-left: 5px;
+            padding: 1px 5px;
+            font-size: 0.8em;
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+            vertical-align: middle;
+        }
+        
+        .tests-panel {
+            position: relative;
+        }
+        
+        .keyboard-help {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            z-index: 1000;
+            font-size: 0.85em;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            display: none;
+        }
+        
+        .keyboard-help.show {
+            display: block;
+        }
+        
+        .next-btn, .prev-btn {
+            background-color: #4a6fa5;
+            color: white;
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: vertical;
+        }
+        
+        .editable {
+            border: 1px dashed #ccc;
+            padding: 5px;
+            margin-bottom: 10px;
+            margin-top: 2px;
+            display: inline-block;
+            min-width: 50px;
+            cursor: pointer;
+            background-color: rgba(240, 240, 240, 0.2);
+        }
+        
+        .editable:hover {
+            background-color: rgba(200, 200, 200, 0.3);
+            border-color: #17a2b8;
+        }
+        
+        .test-content div {
+            margin-bottom: 8px;
+        }
+        
+        .status-approved {
+            border-left: 5px solid #28a745;
+        }
+        
+        .status-rejected {
+            border-left: 5px solid #dc3545;
+        }
+        
+        .reject-all-btn {
+            background-color: #dc3545;
+            color: white;
+            float: right;
+            margin-bottom: 10px;
+        }
+        
+        /* Math display styles */
+        .math-display {
+            display: inline-block;
+            cursor: pointer;
+            padding: 5px;
+            margin-top: 2px;
+            margin-bottom: 10px;
+            min-width: 50px;
+            border: 1px dashed transparent;
+            background-color: rgba(240, 240, 240, 0.2);
+        }
+        
+        .math-display:hover {
+            background-color: rgba(200, 200, 200, 0.3);
+            border-color: #6f42c1;
+        }
+        
+        .tests-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .max-diffs-control {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .btn-small {
+            padding: 1px 6px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 3px;
+        }
+        
+        .btn-small:hover {
+            background-color: #e9ecef;
+        }
+        
+        /* PDF.js text layer styles */
+        .textLayer {
+            position: absolute;
+            left: 0;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+            opacity: 0.2; /* Slightly reduced opacity for better readability */
+            text-align: initial;
+            line-height: 1.0;
+            pointer-events: none;
+        }
+        
+        .textLayer span {
+            color: transparent;
+            position: absolute;
+            white-space: pre;
+            cursor: text;
+            transform-origin: 0% 0%;
+            pointer-events: all;
+            box-sizing: border-box;
+        }
+        
+        .textLayer .highlight {
+            background-color: rgba(255, 200, 0, 0.6); /* Brighter, more visible highlight */
+            border-radius: 3px;
+            border: 1px solid rgba(255, 150, 0, 0.8); /* Add a border for better visibility */
+            box-shadow: 0 0 3px rgba(255, 150, 0, 0.5); /* Add a subtle glow */
+        }
+        
+        .loading-indicator {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 20px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>PDF Test Review: {{ pdf_name }} ({{ pdf_index + 1 }}/{{ total_pdfs }})</h1>
+    
+    <div class="stats-header">
+        <div class="stat-item stat-total">Total Tests: {{ stats.total }}</div>
+        <div class="stat-item stat-null">Unchecked: {{ stats.null }}</div>
+        <div class="stat-item stat-verified">Verified: {{ stats.verified }}</div>
+        <div class="stat-item stat-rejected">Rejected: {{ stats.rejected }}</div>
+        <div class="stat-item stat-completion">Completion: {{ "%.1f"|format(stats.completion) }}%</div>
+    </div>
+    
+    <div class="navigation">
+        <div>
+            <form action="/prev_pdf" method="post" style="display: inline-block;">
+                <button type="submit" class="prev-btn">Previous PDF <span class="kbd-shortcut">P</span></button>
+            </form>
+            <form action="/next_pdf" method="post" style="display: inline-block;">
+                <button type="submit" class="next-btn">Next PDF <span class="kbd-shortcut">N</span></button>
+            </form>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="pdf-viewer">
+            <div class="pdf-controls">
+                <button id="prev-page">Previous Page</button>
+                <span id="page-num"></span> / <span id="page-count"></span>
+                <button id="next-page">Next Page</button>
+                <button id="zoom-in">Zoom In</button>
+                <button id="zoom-out">Zoom Out</button>
+            </div>
+            <div id="pdf-container">
+                <canvas id="pdf-canvas" class="pdf-canvas"></canvas>
+                <div id="text-layer" class="textLayer"></div>
+                <div class="loading-indicator" id="loading-indicator">Loading PDF...</div>
+            </div>
+        </div>
+        
+        <div class="tests-panel">
+            <div class="tests-header">
+                <h2>Tests ({{ tests|length }})</h2>
+                <button id="reject-all-btn" class="reject-all-btn">Reject All & Next <span class="kbd-shortcut">Q</span></button>
+            </div>
+            
+            {% for test in tests %}
+            <div class="test-item {% if test.checked == 'verified' %}status-approved{% elif test.checked == 'rejected' %}status-rejected{% endif %}" data-id="{{ test.id }}">
+                <div class="test-header">
+                    <span class="test-type {{ test.type }}">{{ test.type|upper }}</span>
+                    <div class="test-buttons">
+                        <button class="approve-btn" onclick="updateTestStatus('{{ test.pdf }}', '{{ test.id }}', 'checked', 'verified')">Approve <span class="kbd-shortcut">A</span></button>
+                        <button class="reject-btn" onclick="updateTestStatus('{{ test.pdf }}', '{{ test.id }}', 'checked', 'rejected')">Reject <span class="kbd-shortcut">R</span></button>
+                        <button class="edit-btn" onclick="toggleEditMode('{{ test.id }}')">Edit <span class="kbd-shortcut">E</span></button>
+                    </div>
+                </div>
+                
+                <div class="test-content">
+                    {% if test.type == 'present' or test.type == 'absent' %}
+                        <div><strong>Text:</strong> <span class="editable" data-field="text" data-id="{{ test.id }}">{{ test.text }}</span></div>
+                        <div><strong>Case Sensitive:</strong> {{ test.case_sensitive }}</div>
+                        {% if test.first_n %}<div><strong>First N:</strong> {{ test.first_n }}</div>{% endif %}
+                        {% if test.last_n %}<div><strong>Last N:</strong> {{ test.last_n }}</div>{% endif %}
+                    {% elif test.type == 'order' %}
+                        <div><strong>Before:</strong> <span class="editable" data-field="before" data-id="{{ test.id }}">{{ test.before }}</span></div>
+                        <div><strong>After:</strong> <span class="editable" data-field="after" data-id="{{ test.id }}">{{ test.after }}</span></div>
+                    {% elif test.type == 'table' %}
+                        <div><strong>Cell:</strong> <span class="editable" data-field="cell" data-id="{{ test.id }}">{{ test.cell }}</span></div>
+                        {% if test.up %}<div><strong>Up:</strong> <span class="editable" data-field="up" data-id="{{ test.id }}">{{ test.up }}</span></div>{% endif %}
+                        {% if test.down %}<div><strong>Down:</strong> <span class="editable" data-field="down" data-id="{{ test.id }}">{{ test.down }}</span></div>{% endif %}
+                        {% if test.left %}<div><strong>Left:</strong> <span class="editable" data-field="left" data-id="{{ test.id }}">{{ test.left }}</span></div>{% endif %}
+                        {% if test.right %}<div><strong>Right:</strong> <span class="editable" data-field="right" data-id="{{ test.id }}">{{ test.right }}</span></div>{% endif %}
+                        {% if test.top_heading %}<div><strong>Top Heading:</strong> <span class="editable" data-field="top_heading" data-id="{{ test.id }}">{{ test.top_heading }}</span></div>{% endif %}
+                        {% if test.left_heading %}<div><strong>Left Heading:</strong> <span class="editable" data-field="left_heading" data-id="{{ test.id }}">{{ test.left_heading }}</span></div>{% endif %}
+                    {% elif test.type == 'math' %}
+                        <div><strong>Math:</strong> <span class="math-display" data-id="{{ test.id }}">{{ test.math }}</span><span class="editable math-edit" style="display: none;" data-field="math" data-id="{{ test.id }}">{{ test.math }}</span></div>
+                    {% endif %}
+                    <div class="max-diffs-control">
+                        <strong>Max Diffs:</strong>
+                        <button class="btn-small" onclick="updateMaxDiffs('{{ test.pdf }}', '{{ test.id }}', -1)">-</button>
+                        <span id="max-diffs-{{ test.id }}">{{ test.max_diffs }}</span>
+                        <button class="btn-small" onclick="updateMaxDiffs('{{ test.pdf }}', '{{ test.id }}', 1)">+</button>
+                    </div>
+                    <div><strong>Status:</strong> {{ test.checked or 'Not checked' }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <div class="keyboard-help" id="keyboard-help">
+        <p><strong>Keyboard Shortcuts</strong></p>
+        <p>↑/↓: Navigate tests</p>
+        <p>A: Approve and move to next</p>
+        <p>R: Reject and move to next</p>
+        <p>E: Edit current test</p>
+        <p>Q: Reject all tests & next PDF</p>
+        <p>N: Next PDF</p>
+        <p>P: Previous PDF</p>
+        <p>+ / -: Increase/decrease Max Diffs</p>
+        <p>?: Toggle this help</p>
+    </div>
+    
+    <script>
+        // Set up PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        
+        // PDF rendering variables
+        let pdfDoc = null;
+        let pageNum = 1;
+        let pageRendering = false;
+        let pageNumPending = null;
+        let scale = 2.0; // Increased from 1.5 to 2.0 for better text alignment
+        const canvas = document.getElementById('pdf-canvas');
+        const container = document.getElementById('pdf-container');
+        const textLayer = document.getElementById('text-layer');
+        const ctx = canvas.getContext('2d');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        
+        // Device pixel ratio for HiDPI displays
+        const pixelRatio = window.devicePixelRatio || 1;
+        
+        // Load PDF from the provided path
+        const pdfPath = '{{ pdf_path }}';
+        
+        // Function to create text layers with proper alignment
+        function createTextLayer(textContent, viewport) {
+            // Clear previous text layer
+            textLayer.innerHTML = '';
+            
+            // Set text layer dimensions to match viewport
+            textLayer.style.width = `${viewport.width}px`;
+            textLayer.style.height = `${viewport.height}px`;
+
+            // Process each text item
+            const items = [];
+            for (let i = 0; i < textContent.items.length; i++) {
+                const item = textContent.items[i];
+                
+                // Convert text coordinates to viewport ones
+                const tx = pdfjsLib.Util.transform(
+                    viewport.transform,
+                    item.transform
+                );
+                
+                // Calculate text dimensions
+                const fontHeight = Math.sqrt((tx[2] * tx[2]) + (tx[3] * tx[3]));
+                const angle = Math.atan2(tx[1], tx[0]);
+                
+                // Create text span
+                const span = document.createElement('span');
+                span.textContent = item.str;
+                span.dataset.text = item.str; // Store for searching
+                
+                // Set font styles
+                span.style.fontSize = `${fontHeight}px`;
+                
+                // Adjust for baseline and correct the vertical positioning
+                // Apply a transformation matrix for better alignment with rendered content
+                // The vertical position needs to be adjusted to account for text baseline
+                span.style.left = `${tx[4]}px`;
+                span.style.top = `${tx[5] - (fontHeight * 0.7)}px`; // Adjusted baseline offset factor
+                
+                // Handle text rotation
+                if (angle !== 0) {
+                    span.style.transform = `rotate(${angle}rad)`;
+                    span.style.transformOrigin = '0% 0%';
+                }
+                
+                textLayer.appendChild(span);
+                items.push(span);
+            }
+            
+            return items;
+        }
+        
+        // Function to render a page
+        function renderPage(num) {
+            pageRendering = true;
+            loadingIndicator.style.display = 'block';
+            
+            // Get page from PDF document
+            pdfDoc.getPage(num).then(function(page) {
+                // Create viewport at the requested scale
+                const viewport = page.getViewport({ scale: scale });
+                
+                // Handle high-DPI displays
+                canvas.width = viewport.width * pixelRatio;
+                canvas.height = viewport.height * pixelRatio;
+                canvas.style.width = `${viewport.width}px`;
+                canvas.style.height = `${viewport.height}px`;
+                
+                // Set up canvas for rendering
+                ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+                
+                // Render PDF page
+                const renderContext = {
+                    canvasContext: ctx,
+                    viewport: viewport,
+                };
+                
+                const renderTask = page.render(renderContext);
+                
+                // Process text content for text layer
+                page.getTextContent().then(function(textContent) {
+                    createTextLayer(textContent, viewport);
+                });
+                
+                // Wait for rendering to finish
+                renderTask.promise.then(function() {
+                    pageRendering = false;
+                    loadingIndicator.style.display = 'none';
+                    
+                    if (pageNumPending !== null) {
+                        // New page rendering is pending
+                        renderPage(pageNumPending);
+                        pageNumPending = null;
+                    }
+                }).catch(function(error) {
+                    console.error('Error rendering PDF page:', error);
+                    loadingIndicator.style.display = 'none';
+                    pageRendering = false;
+                });
+            }).catch(function(error) {
+                console.error('Error getting PDF page:', error);
+                loadingIndicator.style.display = 'none';
+                pageRendering = false;
+            });
+            
+            // Update page counters
+            document.getElementById('page-num').textContent = num;
+        }
+        
+        // Function to queue rendering if already in progress
+        function queueRenderPage(num) {
+            if (pageRendering) {
+                pageNumPending = num;
+            } else {
+                renderPage(num);
+            }
+        }
+        
+        // Handle page navigation
+        function onPrevPage() {
+            if (pageNum <= 1) {
+                return;
+            }
+            pageNum--;
+            queueRenderPage(pageNum);
+        }
+        
+        function onNextPage() {
+            if (pageNum >= pdfDoc.numPages) {
+                return;
+            }
+            pageNum++;
+            queueRenderPage(pageNum);
+        }
+        
+        // Zoom functions
+        function zoomIn() {
+            scale *= 1.25;
+            queueRenderPage(pageNum);
+        }
+        
+        function zoomOut() {
+            scale /= 1.25;
+            queueRenderPage(pageNum);
+        }
+        
+        // Register event listeners
+        document.getElementById('prev-page').addEventListener('click', onPrevPage);
+        document.getElementById('next-page').addEventListener('click', onNextPage);
+        document.getElementById('zoom-in').addEventListener('click', zoomIn);
+        document.getElementById('zoom-out').addEventListener('click', zoomOut);
+        
+        // Load PDF
+        loadingIndicator.style.display = 'block';
+        pdfjsLib.getDocument(pdfPath).promise.then(function(pdf) {
+            pdfDoc = pdf;
+            document.getElementById('page-count').textContent = pdf.numPages;
+            
+            // Initial page render
+            renderPage(pageNum);
+        }).catch(function(error) {
+            console.error('Error loading PDF:', error);
+            loadingIndicator.style.display = 'none';
+        });
+        
+        // Highlight text in PDF
+        function highlightText(testId) {
+            // Clear any existing highlights
+            clearHighlights();
+            
+            let searchText = '';
+            let test = document.querySelector(`.test-item[data-id="${testId}"]`);
+            
+            // Extract the text to search based on the test type
+            if (test) {
+                const testType = test.querySelector('.test-type').textContent.toLowerCase();
+                
+                if (testType === 'present' || testType === 'absent') {
+                    const textElement = test.querySelector(`[data-field="text"][data-id="${testId}"]`);
+                    if (textElement) {
+                        searchText = textElement.textContent;
+                    }
+                } else if (testType === 'order') {
+                    const beforeElement = test.querySelector(`[data-field="before"][data-id="${testId}"]`);
+                    const afterElement = test.querySelector(`[data-field="after"][data-id="${testId}"]`);
+                    if (beforeElement && afterElement) {
+                        searchText = beforeElement.textContent + ' ' + afterElement.textContent;
+                    }
+                } else if (testType === 'table') {
+                    const cellElement = test.querySelector(`[data-field="cell"][data-id="${testId}"]`);
+                    if (cellElement) {
+                        searchText = cellElement.textContent;
+                    }
+                    
+                    // Also get related cell contents
+                    const fields = ['up', 'down', 'left', 'right', 'top_heading', 'left_heading'];
+                    fields.forEach(field => {
+                        const element = test.querySelector(`[data-field="${field}"][data-id="${testId}"]`);
+                        if (element) {
+                            searchText += ' ' + element.textContent;
+                        }
+                    });
+                } else if (testType === 'math') {
+                    const mathElement = test.querySelector(`[data-field="math"][data-id="${testId}"]`);
+                    if (mathElement) {
+                        searchText = mathElement.textContent;
+                    }
+                }
+            }
+            
+            if (searchText) {
+                // Search and highlight the text in the PDF
+                const textElements = document.querySelectorAll('#text-layer span');
+                
+                // Improved search term extraction - handle longer phrases better
+                // First try to match longer phrases (3+ words)
+                const longPhrases = extractPhrases(searchText, 3);
+                const mediumPhrases = extractPhrases(searchText, 2);
+                // Also include individual significant words
+                const searchTerms = searchText.split(/\s+/).filter(term => term.length > 2);
+                
+                // Try to highlight longer phrases first
+                let highlightCount = 0;
+                
+                // Try with phrases first
+                if (longPhrases.length > 0) {
+                    highlightCount = highlightPhrases(textElements, longPhrases);
+                }
+                
+                // If no highlights found with long phrases, try medium phrases
+                if (highlightCount === 0 && mediumPhrases.length > 0) {
+                    highlightCount = highlightPhrases(textElements, mediumPhrases);
+                }
+                
+                // If still no highlights, fall back to individual terms
+                if (highlightCount === 0) {
+                    textElements.forEach(element => {
+                        const elementText = element.dataset.text;
+                        
+                        searchTerms.forEach(term => {
+                            if (elementText.includes(term)) {
+                                element.classList.add('highlight');
+                                highlightCount++;
+                            }
+                        });
+                    });
+                }
+                
+                // Scroll to the first highlight
+                const firstHighlight = document.querySelector('#text-layer .highlight');
+                if (firstHighlight) {
+                    firstHighlight.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        }
+        
+        // Helper function to extract phrases of specified word count
+        function extractPhrases(text, minWordCount) {
+            const words = text.split(/\s+/);
+            const phrases = [];
+            
+            if (words.length >= minWordCount) {
+                for (let i = 0; i <= words.length - minWordCount; i++) {
+                    const phrase = words.slice(i, i + minWordCount).join(' ');
+                    if (phrase.length > 5) { // Only consider substantive phrases
+                        phrases.push(phrase);
+                    }
+                }
+            }
+            
+            return phrases;
+        }
+        
+        // Helper function to highlight phrases in text elements
+        function highlightPhrases(textElements, phrases) {
+            let highlightCount = 0;
+            const nodeTexts = [];
+            
+            // First, collect all text node contents to search across node boundaries
+            textElements.forEach(element => {
+                nodeTexts.push({
+                    element: element,
+                    text: element.dataset.text
+                });
+            });
+            
+            // Join adjacent node texts to find phrases that span multiple nodes
+            const combinedText = nodeTexts.map(nt => nt.text).join(' ');
+            
+            // Try to find each phrase in the combined text
+            phrases.forEach(phrase => {
+                if (combinedText.includes(phrase)) {
+                    // Found a match, now highlight individual nodes that are part of this phrase
+                    let startIndex = 0;
+                    let currentPhrase = '';
+                    
+                    // Iterate through nodes to build up phrases and check for matches
+                    for (let i = 0; i < nodeTexts.length; i++) {
+                        const nodeText = nodeTexts[i].text;
+                        currentPhrase += (i > 0 ? ' ' : '') + nodeText;
+                        
+                        if (currentPhrase.includes(phrase)) {
+                            // Mark nodes that contribute to this phrase
+                            for (let j = startIndex; j <= i; j++) {
+                                nodeTexts[j].element.classList.add('highlight');
+                                highlightCount++;
+                            }
+                            break;
+                        }
+                        
+                        // If current phrase is getting too long without a match,
+                        // advance the start index to keep a sliding window
+                        if (currentPhrase.length > phrase.length * 2) {
+                            startIndex++;
+                            currentPhrase = nodeTexts.slice(startIndex, i + 1)
+                                .map(nt => nt.text).join(' ');
+                        }
+                    }
+                }
+            });
+            
+            return highlightCount;
+        }
+        
+        function clearHighlights() {
+            const highlightedElements = document.querySelectorAll('#text-layer .highlight');
+            highlightedElements.forEach(element => {
+                element.classList.remove('highlight');
+            });
+        }
+        
+        // Function to update test status (approve/reject)
+        function updateTestStatus(pdfName, testId, field, value) {
+            fetch('/update_test', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    pdf: pdfName,
+                    id: testId,
+                    field: field,
+                    value: value
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Update UI to reflect change
+                const testItem = document.querySelector(`.test-item[data-id="${testId}"]`);
+                testItem.classList.remove('status-approved', 'status-rejected');
+                
+                if (value === 'verified') {
+                    testItem.classList.add('status-approved');
+                } else if (value === 'rejected') {
+                    testItem.classList.add('status-rejected');
+                }
+            })
+            .catch(error => {
+                console.error('Error updating test:', error);
+            });
+        }
+        
+        // Function to update max_diffs value
+        function updateMaxDiffs(pdfName, testId, change) {
+            // Get current value
+            const currentElement = document.getElementById(`max-diffs-${testId}`);
+            const currentValue = parseInt(currentElement.textContent, 10);
+            
+            // Calculate new value (prevent going below 0)
+            const newValue = Math.max(0, currentValue + change);
+            
+            // Update UI immediately for responsiveness
+            currentElement.textContent = newValue;
+            
+            // Send update to server
+            updateTestStatus(pdfName, testId, 'max_diffs', newValue);
+        }
+        
+        // Toggle edit mode for a field
+        function toggleEditMode(testId) {
+            const editables = document.querySelectorAll(`.editable[data-id="${testId}"]`);
+            
+            editables.forEach(editable => {
+                // Special handling for math fields
+                if (editable.classList.contains('math-edit')) {
+                    toggleMathEdit(testId);
+                    return;
+                }
+                
+                const field = editable.dataset.field;
+                const currentValue = editable.innerText;
+                
+                // Create textarea
+                const textarea = document.createElement('textarea');
+                textarea.value = currentValue;
+                textarea.dataset.field = field;
+                textarea.dataset.originalValue = currentValue;
+                
+                // Replace the span with textarea
+                editable.parentNode.replaceChild(textarea, editable);
+                
+                // Focus the textarea
+                textarea.focus();
+                
+                // Function to save and exit edit mode
+                function saveAndExitForField() {
+                    const newValue = textarea.value;
+                    const pdfName = '{{ pdf_name }}';
+                    
+                    // If value changed, save it
+                    if (newValue !== textarea.dataset.originalValue) {
+                        updateTestStatus(pdfName, testId, field, newValue);
+                    }
+                    
+                    // Create span again
+                    const span = document.createElement('span');
+                    span.className = 'editable';
+                    span.dataset.field = field;
+                    span.dataset.id = testId;
+                    span.innerText = newValue;
+                    span.onclick = function() { startEditField(this); };
+                    
+                    // Replace textarea with span
+                    if (textarea.parentNode) {
+                        textarea.parentNode.replaceChild(span, textarea);
+                    }
+                    
+                    // Important: Reset edit mode flag
+                    isEditMode = false;
+                }
+                
+                // Add keydown event to handle Enter key
+                textarea.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault(); // Prevent default Enter behavior
+                        saveAndExitForField(); // Save directly instead of blur
+                    }
+                });
+                
+                // Add blur event to save changes
+                textarea.addEventListener('blur', function() {
+                    saveAndExitForField();
+                });
+            });
+        }
+        
+        // Start editing a field when clicked directly
+        function startEditField(element) {
+            const field = element.dataset.field;
+            const testId = element.dataset.id;
+            
+            // Special handling for math fields
+            if (element.classList.contains('math-edit')) {
+                const currentValue = element.innerText;
+                
+                // Create textarea
+                const textarea = document.createElement('textarea');
+                textarea.value = currentValue;
+                textarea.dataset.field = field;
+                textarea.dataset.originalValue = currentValue;
+                
+                // Replace the span with textarea
+                element.parentNode.replaceChild(textarea, element);
+                
+                // Focus the textarea
+                textarea.focus();
+                
+                // Function to save and exit edit mode
+                function saveAndExit() {
+                    const newValue = textarea.value;
+                    const pdfName = '{{ pdf_name }}';
+                    
+                    // If value changed, save it
+                    if (newValue !== textarea.dataset.originalValue) {
+                        updateTestStatus(pdfName, testId, field, newValue);
+                    }
+                    
+                    // Create span again
+                    const span = document.createElement('span');
+                    span.className = 'editable math-edit';
+                    span.style.display = 'none';
+                    span.dataset.field = field;
+                    span.dataset.id = testId;
+                    span.innerText = newValue;
+                    
+                    // Replace textarea with span
+                    if (textarea.parentNode) {
+                        textarea.parentNode.replaceChild(span, textarea);
+                    }
+                    
+                    // Also update and render the math display element
+                    const mathDisplay = document.querySelector(`.math-display[data-id="${testId}"]`);
+                    if (mathDisplay) {
+                        mathDisplay.textContent = newValue;
+                        mathDisplay.style.display = 'inline-block';
+                        
+                        // Render math with KaTeX
+                        try {
+                            katex.render(newValue, mathDisplay, {
+                                displayMode: true,
+                                throwOnError: false
+                            });
+                        } catch (error) {
+                            console.error("KaTeX rendering error:", error);
+                            mathDisplay.textContent = newValue;
+                        }
+                    }
+                    
+                    // Important: Reset edit mode flag
+                    isEditMode = false;
+                }
+                
+                // Add keydown event to handle Enter key
+                textarea.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault(); // Prevent default Enter behavior
+                        saveAndExit(); // Save directly rather than triggering blur
+                    }
+                });
+                
+                // Add blur event to save changes
+                textarea.addEventListener('blur', function() {
+                    saveAndExit();
+                });
+                
+                return;
+            }
+            
+            // Regular (non-math) field handling
+            const currentValue = element.innerText;
+            
+            // Create textarea
+            const textarea = document.createElement('textarea');
+            textarea.value = currentValue;
+            textarea.dataset.field = field;
+            textarea.dataset.originalValue = currentValue;
+            
+            // Replace the span with textarea
+            element.parentNode.replaceChild(textarea, element);
+            
+            // Focus the textarea
+            textarea.focus();
+            
+            // Function to save and exit edit mode
+            function saveAndExit() {
+                const newValue = textarea.value;
+                const pdfName = '{{ pdf_name }}';
+                
+                // If value changed, save it
+                if (newValue !== textarea.dataset.originalValue) {
+                    updateTestStatus(pdfName, testId, field, newValue);
+                }
+                
+                // Create span again
+                const span = document.createElement('span');
+                span.className = 'editable';
+                span.dataset.field = field;
+                span.dataset.id = testId;
+                span.innerText = newValue;
+                span.onclick = function() { startEditField(this); };
+                
+                // Replace textarea with span
+                if (textarea.parentNode) {
+                    textarea.parentNode.replaceChild(span, textarea);
+                }
+                
+                // Important: Reset edit mode flag
+                isEditMode = false;
+            }
+            
+            // Add keydown event to handle Enter key
+            textarea.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault(); // Prevent default Enter behavior
+                    saveAndExit(); // Save directly rather than triggering blur
+                }
+            });
+            
+            // Add blur event to save changes
+            textarea.addEventListener('blur', function() {
+                saveAndExit();
+            });
+        }
+        
+        // Function to reject all tests and move to next PDF
+        function rejectAllAndNextPdf() {
+            fetch('/reject_all', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    pdf: '{{ pdf_name }}'
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Go to the next PDF
+                    document.querySelector('form[action="/next_pdf"] button').click();
+                }
+            })
+            .catch(error => {
+                console.error('Error rejecting all tests:', error);
+            });
+        }
+        
+        // Reject all tests for the current PDF
+        document.getElementById('reject-all-btn').addEventListener('click', function() {
+            rejectAllAndNextPdf();
+        });
+        
+        // Keyboard navigation variables
+        let currentTestIndex = 0;
+        let testItems = [];
+        let isEditMode = false;
+        
+        // Function to highlight the current test item
+        function highlightCurrentTest() {
+            // Clear current highlight
+            document.querySelectorAll('.test-item.highlighted').forEach(item => {
+                item.classList.remove('highlighted');
+            });
+            
+            // Highlight current item
+            if (testItems.length > 0 && currentTestIndex >= 0 && currentTestIndex < testItems.length) {
+                testItems[currentTestIndex].classList.add('highlighted');
+                
+                // Scroll to the item if needed
+                testItems[currentTestIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                
+                // Automatically highlight text in PDF for the current test
+                const testId = testItems[currentTestIndex].dataset.id;
+                highlightText(testId);
+            }
+        }
+        
+        // Function to set the current test by index
+        function setCurrentTest(index) {
+            if (index >= 0 && index < testItems.length) {
+                currentTestIndex = index;
+                highlightCurrentTest();
+            }
+        }
+        
+        // Function to move to the next test
+        function moveToNextTest() {
+            if (currentTestIndex < testItems.length - 1) {
+                currentTestIndex++;
+                highlightCurrentTest();
+            } else {
+                // We're at the last test, move to the next PDF
+                document.querySelector('form[action="/next_pdf"] button').click();
+            }
+        }
+        
+        // Function to move to the previous test
+        function moveToPrevTest() {
+            if (currentTestIndex > 0) {
+                currentTestIndex--;
+                highlightCurrentTest();
+            }
+        }
+        
+        // Function to perform action on current test
+        function actionOnCurrentTest(action) {
+            const testItem = testItems[currentTestIndex];
+            if (!testItem) return;
+            
+            const testId = testItem.dataset.id;
+            const pdfName = '{{ pdf_name }}';
+            const testType = testItem.querySelector('.test-type').textContent.toLowerCase();
+            
+            switch (action) {
+                case 'approve':
+                    updateTestStatus(pdfName, testId, 'checked', 'verified');
+                    testItem.classList.remove('status-rejected');
+                    testItem.classList.add('status-approved');
+                    moveToNextTest();
+                    break;
+                    
+                case 'reject':
+                    updateTestStatus(pdfName, testId, 'checked', 'rejected');
+                    testItem.classList.remove('status-approved');
+                    testItem.classList.add('status-rejected');
+                    moveToNextTest();
+                    break;
+                    
+                case 'edit':
+                    isEditMode = true;
+                    // Special handling for math tests
+                    if (testType === 'math') {
+                        const mathDisplay = testItem.querySelector(`.math-display[data-id="${testId}"]`);
+                        if (mathDisplay) {
+                            toggleMathEdit(testId);
+                            return;
+                        }
+                    }
+                    // Regular handling for other test types
+                    toggleEditMode(testId);
+                    break;
+                    
+                // We no longer need a highlight case as it happens automatically
+            }
+        }
+        
+        // Toggle keyboard help visibility
+        function toggleKeyboardHelp() {
+            const helpPanel = document.getElementById('keyboard-help');
+            helpPanel.classList.toggle('show');
+        }
+        
+        // Keyboard event handler
+        function handleKeyboardShortcuts(event) {
+            // Skip if in edit mode or if modifier keys are pressed
+            if (isEditMode || event.ctrlKey || event.altKey || event.metaKey) return;
+            
+            // Get the active element to check if we're in a form field
+            const activeElement = document.activeElement;
+            const isInFormField = activeElement.tagName === 'INPUT' || 
+                                 activeElement.tagName === 'TEXTAREA' || 
+                                 activeElement.isContentEditable;
+            
+            // Skip if in a form field
+            if (isInFormField) return;
+            
+            switch (event.key.toLowerCase()) {
+                case 'arrowup':
+                    moveToPrevTest();
+                    event.preventDefault();
+                    break;
+                    
+                case 'arrowdown':
+                    moveToNextTest();
+                    event.preventDefault();
+                    break;
+                    
+                case 'a':
+                    actionOnCurrentTest('approve');
+                    event.preventDefault();
+                    break;
+                    
+                case 'r':
+                    actionOnCurrentTest('reject');
+                    event.preventDefault();
+                    break;
+                    
+                case 'e':
+                    actionOnCurrentTest('edit');
+                    event.preventDefault();
+                    break;
+                    
+                // H key removed as highlighting is now automatic
+                
+                case 'n':
+                    // Go to next PDF
+                    document.querySelector('form[action="/next_pdf"] button').click();
+                    event.preventDefault();
+                    break;
+                    
+                case 'p':
+                    // Go to previous PDF
+                    document.querySelector('form[action="/prev_pdf"] button').click();
+                    event.preventDefault();
+                    break;
+                    
+                case 'q':
+                    // Reject all tests and go to next PDF
+                    rejectAllAndNextPdf();
+                    event.preventDefault();
+                    break;
+                    
+                case '+':
+                case '=':
+                    // Increase max_diffs for current test
+                    if (testItems.length > 0 && currentTestIndex >= 0 && currentTestIndex < testItems.length) {
+                        const testId = testItems[currentTestIndex].dataset.id;
+                        const pdfName = '{{ pdf_name }}';
+                        updateMaxDiffs(pdfName, testId, 1);
+                    }
+                    event.preventDefault();
+                    break;
+                    
+                case '-':
+                    // Decrease max_diffs for current test
+                    if (testItems.length > 0 && currentTestIndex >= 0 && currentTestIndex < testItems.length) {
+                        const testId = testItems[currentTestIndex].dataset.id;
+                        const pdfName = '{{ pdf_name }}';
+                        updateMaxDiffs(pdfName, testId, -1);
+                    }
+                    event.preventDefault();
+                    break;
+                    
+                case '?':
+                    toggleKeyboardHelp();
+                    event.preventDefault();
+                    break;
+            }
+        }
+        
+        // Function to render math with KaTeX
+        function renderMath() {
+            const mathElements = document.querySelectorAll('.math-display');
+            mathElements.forEach(elem => {
+                try {
+                    katex.render(elem.textContent, elem, {
+                        displayMode: true,
+                        throwOnError: false
+                    });
+                } catch (error) {
+                    console.error("KaTeX rendering error:", error);
+                    // If rendering fails, show the raw LaTeX
+                    elem.textContent = elem.textContent;
+                }
+            });
+        }
+
+        // Custom edit mode for math fields
+        function toggleMathEdit(testId) {
+            const mathDisplay = document.querySelector(`.math-display[data-id="${testId}"]`);
+            const mathEdit = document.querySelector(`.math-edit[data-id="${testId}"]`);
+            
+            if (mathDisplay.style.display !== 'none') {
+                // Switch to edit mode
+                mathDisplay.style.display = 'none';
+                mathEdit.style.display = 'inline-block';
+                startEditField(mathEdit);
+            } else {
+                // Switch back to display mode with rendered math
+                const newValue = mathEdit.value || mathEdit.textContent;
+                mathDisplay.textContent = newValue;
+                try {
+                    katex.render(newValue, mathDisplay, {
+                        displayMode: true,
+                        throwOnError: false
+                    });
+                } catch (error) {
+                    console.error("KaTeX rendering error:", error);
+                    mathDisplay.textContent = newValue;
+                }
+                mathDisplay.style.display = 'inline-block';
+                mathEdit.style.display = 'none';
+            }
+        }
+
+        // Add click event listeners to all editable fields and initialize keyboard navigation
+        document.addEventListener('DOMContentLoaded', function() {
+            // Render all math on page load
+            renderMath();
+            
+            // Set up math display fields - clicking on rendered math starts edit mode
+            const mathDisplays = document.querySelectorAll('.math-display');
+            mathDisplays.forEach(mathDisplay => {
+                mathDisplay.onclick = function() {
+                    isEditMode = true;
+                    const testId = this.getAttribute('data-id');
+                    toggleMathEdit(testId);
+                };
+            });
+            
+            // Set up regular editable fields
+            const editables = document.querySelectorAll('.editable:not(.math-edit)');
+            editables.forEach(editable => {
+                editable.onclick = function() { 
+                    isEditMode = true;
+                    startEditField(this); 
+                };
+            });
+            
+            // Get all test items for keyboard navigation
+            testItems = Array.from(document.querySelectorAll('.test-item'));
+            
+            // Add click event listeners to test items
+            testItems.forEach((item, index) => {
+                item.addEventListener('click', function(e) {
+                    // Only handle clicks on the test item itself or its direct children
+                    // Ignore clicks on buttons, editable elements, and math displays
+                    if (e.target.tagName !== 'BUTTON' && 
+                        !e.target.closest('.editable') &&
+                        !e.target.closest('.math-display') &&
+                        !e.target.classList.contains('kbd-shortcut')) {
+                        setCurrentTest(index);
+                        e.stopPropagation();
+                    }
+                });
+            });
+            
+            // Highlight first test
+            if (testItems.length > 0) {
+                highlightCurrentTest();
+            }
+            
+            // Add keyboard event listener
+            document.addEventListener('keydown', handleKeyboardShortcuts);
+            
+            // Flag to track if we're in edit mode
+            const originalBlurHandlers = [];
+            
+            // Override blur handlers on textareas to reset edit mode flag
+            const addEditModeReset = function(textarea) {
+                const originalBlur = textarea.onblur;
+                originalBlurHandlers.push(originalBlur);
+                
+                textarea.onblur = function(e) {
+                    isEditMode = false;
+                    if (originalBlur) originalBlur.call(this, e);
+                };
+            };
+            
+            // Show keyboard help initially
+            toggleKeyboardHelp();
+            setTimeout(function() {
+                if (document.getElementById('keyboard-help').classList.contains('show')) {
+                    toggleKeyboardHelp();
+                }
+            }, 5000); // Hide after 5 seconds
+        });
+    </script>
+</body>
+</html>
