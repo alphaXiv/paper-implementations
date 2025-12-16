@@ -12,6 +12,8 @@ This repository provides a comparative evaluation of **DeepSeek-OCR** and **OLMO
 
 The easiest way to set up and run the complete evaluation is using the automated speedrun script:
 
+(Use 1xH100 80GB SXM and we used Lambda Labs Lambda Stack 22.04 image for this setup)
+
 ```bash
 ./speedrun.sh [language_filter]
 ```
