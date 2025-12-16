@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Merged Documents</title>
+    
+    <!-- KaTeX CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    
+    <style>
+        /* CSS styles */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            background-color: #fff;
+            padding: 40px;
+            margin: 20px;
+            width: 60%;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            line-height: 1.8;
+            position: relative;
+        }
+        
+        /* Navigation */
+        .nav-container {
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 1001;
+            padding: 15px 0;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #dee2e6;
+        }
+        
+        .nav-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .nav-select {
+            flex: 1;
+            max-width: 400px;
+        }
+        
+        .nav-select select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        /* Toggle button styles */
+        .toggle-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        
+        .toggle-button:hover {
+            background: #45a049;
+        }
+        
+        .toggle-button.raw-mode {
+            background: #2196F3;
+        }
+        
+        .toggle-button.raw-mode:hover {
+            background: #0b7dda;
+        }
+        
+        /* Document separator */
+        .document-separator {
+            margin: 40px 0;
+            padding: 20px 0;
+            border-top: 3px solid #dee2e6;
+            position: relative;
+        }
+        
+        .document-separator::before {
+            content: attr(data-doc-number);
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 0 15px;
+            color: #6c757d;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .document {
+            margin-bottom: 40px;
+        }
+        
+        .page-section {
+            display: flex;
+            flex-direction: row;
+            margin-bottom: 20px;
+            transition: background-color 0.3s ease;
+            clear: both;
+        }
+        .page-section:hover {
+            background-color: #f5f5f5;
+        }
+        .page-section .text {
+            flex: 2;
+            padding: 10px;
+            text-align: justify;
+        }
+        .page-section .image {
+            flex: 1;
+            padding: 10px;
+        }
+        .page-section img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ccc;
+        }
+        
+        /* Raw text display */
+        .text-content.raw pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 0;
+        }
+        
+        /* Markdown rendered content */
+        .text-content.markdown {
+            font-family: Arial, sans-serif;
+        }
+        
+        .text-content.markdown h1 { margin-top: 24px; margin-bottom: 16px; }
+        .text-content.markdown h2 { margin-top: 20px; margin-bottom: 14px; }
+        .text-content.markdown h3 { margin-top: 18px; margin-bottom: 12px; }
+        .text-content.markdown h4 { margin-top: 16px; margin-bottom: 10px; }
+        .text-content.markdown h5 { margin-top: 14px; margin-bottom: 8px; }
+        .text-content.markdown h6 { margin-top: 12px; margin-bottom: 6px; }
+        
+        .text-content.markdown p {
+            margin-bottom: 1em;
+        }
+        
+        .text-content.markdown ul, .text-content.markdown ol {
+            margin-bottom: 1em;
+            padding-left: 2em;
+        }
+        
+        .text-content.markdown blockquote {
+            border-left: 4px solid #ddd;
+            padding-left: 1em;
+            margin: 1em 0;
+            color: #666;
+        }
+        
+        .text-content.markdown code {
+            background-color: #f4f4f4;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        .text-content.markdown pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 1em 0;
+        }
+        
+        .text-content.markdown pre code {
+            background: none;
+            padding: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1.5em;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px 15px;
+            text-align: left;
+            vertical-align: top;
+            font-size: 14px;
+        }
+
+        th {
+            background-color: #f4f4f4;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 2px solid #ccc;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        td img {
+            max-width: 100%;
+            height: auto; 
+            display: block;
+        }
+
+        table caption {
+            caption-side: bottom;
+            text-align: right;
+            font-size: 12px;
+            color: #777;
+            padding: 5px 0;
+        }
+        
+        /* KaTeX display math centering */
+        .katex-display {
+            margin: 1em 0;
+        }
+        
+        /* Metadata styles */
+        .metadata-container {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: #495057;
+        }
+        
+        .metadata-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        
+        .metadata-item {
+            display: flex;
+            align-items: baseline;
+        }
+        
+        .metadata-label {
+            font-weight: 600;
+            color: #6c757d;
+            margin-right: 5px;
+            min-width: fit-content;
+        }
+        
+        .metadata-value {
+            color: #212529;
+            word-break: break-word;
+        }
+        
+        .metadata-source-file {
+            grid-column: 1 / -1;
+            margin-top: 5px;
+            padding-top: 10px;
+            border-top: 1px solid #dee2e6;
+        }
+        
+        /* Document count */
+        .doc-count {
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+
+    </style>
+    
+    <!-- Marked.js for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <!-- KaTeX JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation controls -->
+        <div class="nav-container">
+            <div class="nav-controls">
+                <div class="nav-select">
+                    <select id="documentSelect">
+                        <option value="">Jump to document...</option>
+                        {% for doc in documents %}
+                        <option value="doc-{{ loop.index }}">Document {{ loop.index }}: {{ doc.id[:50] }}...</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button class="toggle-button" id="toggleView">
+                    <span id="toggleText">📝 Markdown View</span>
+                </button>
+            </div>
+            <div class="doc-count">
+                Total documents: {{ documents|length }}
+            </div>
+        </div>
+        
+        {% for doc in documents %}
+        {% if loop.index > 1 %}
+        <div class="document-separator" data-doc-number="Document {{ loop.index }}"></div>
+        {% endif %}
+        
+        <div class="document" id="doc-{{ loop.index }}">
+            <!-- Metadata Section -->
+            <div class="metadata-container">
+                <div class="metadata-grid">
+                    {% if doc.metadata.source %}
+                    <div class="metadata-item">
+                        <span class="metadata-label">Source:</span>
+                        <span class="metadata-value">{{ doc.metadata.source }}</span>
+                    </div>
+                    {% endif %}
+                    {% if doc.metadata.olmocr_version %}
+                    <div class="metadata-item">
+                        <span class="metadata-label">OlmOCR:</span>
+                        <span class="metadata-value">v{{ doc.metadata.olmocr_version }}</span>
+                    </div>
+                    {% endif %}
+                    {% if doc.metadata.created %}
+                    <div class="metadata-item">
+                        <span class="metadata-label">Created:</span>
+                        <span class="metadata-value">{{ doc.metadata.created }}</span>
+                    </div>
+                    {% endif %}
+                    {% if doc.metadata.pdf_pages %}
+                    <div class="metadata-item">
+                        <span class="metadata-label">Pages:</span>
+                        <span class="metadata-value">{{ doc.metadata.pdf_pages }}</span>
+                    </div>
+                    {% endif %}
+                    {% if doc.metadata.tokens_in %}
+                    <div class="metadata-item">
+                        <span class="metadata-label">Tokens In:</span>
+                        <span class="metadata-value">{{ doc.metadata.tokens_in }}</span>
+                    </div>
+                    {% endif %}
+                    {% if doc.metadata.tokens_out %}
+                    <div class="metadata-item">
+                        <span class="metadata-label">Tokens Out:</span>
+                        <span class="metadata-value">{{ doc.metadata.tokens_out }}</span>
+                    </div>
+                    {% endif %}
+                    {% if doc.attributes.primary_language %}
+                    <div class="metadata-item">
+                        <span class="metadata-label">Language:</span>
+                        <span class="metadata-value">{{ doc.attributes.primary_language[0] }}</span>
+                    </div>
+                    {% endif %}
+                    {% if doc.attributes.rotation_correction %}
+                    <div class="metadata-item">
+                        <span class="metadata-label">Rotation:</span>
+                        <span class="metadata-value">{{ doc.attributes.rotation_correction[0] }}°</span>
+                    </div>
+                    {% endif %}
+                    {% if doc.metadata.source_file %}
+                    <div class="metadata-item metadata-source-file">
+                        <span class="metadata-label">File:</span>
+                        <span class="metadata-value">{{ doc.metadata.source_file }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% for page in doc.pages %}
+            <div class="page-section" id="doc-{{ loop.index0 }}-page-{{ page.page_num }}">
+                <div class="text">
+                    <div class="text-content markdown" data-raw-text="{{ page.text }}">
+                        <!-- Content will be rendered by JavaScript -->
+                    </div>
+                </div>
+                {% if page.image %}
+                <div class="image">
+                    <a href="{{ doc.s3_link }}#page={{ page.page_num }}" target="_blank">
+                    <img src="data:image/webp;base64,{{ page.image }}" alt="Page {{ page.page_num }} Image">
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <script>
+        // Store the current view mode
+        let isMarkdownView = true;
+        
+        // Configure marked options
+        marked.setOptions({
+            breaks: true,
+            gfm: true,
+            tables: true,
+            headerIds: false,
+            mangle: false
+        });
+        
+        // Function to render LaTeX expressions to HTML
+        function renderLatexToHtml(text) {
+            const patterns = [
+                { regex: /\$\$([\s\S]+?)\$\$/g, display: true },   // Display math $$...$$
+                { regex: /\\\[([\s\S]+?)\\\]/g, display: true },   // Display math \[...\]
+                { regex: /\$([^\$\n]+?)\$/g, display: false },     // Inline math $...$
+                { regex: /\\\((.+?)\\\)/g, display: false }        // Inline math \(...\)
+            ];
+            
+            let result = text;
+            patterns.forEach(({ regex, display }) => {
+                result = result.replace(regex, (match, latex) => {
+                    try {
+                        return katex.renderToString(latex, {
+                            displayMode: display,
+                            throwOnError: false
+                        });
+                    } catch (e) {
+                        return match; // Return original if error
+                    }
+                });
+            });
+            return result;
+        }
+        
+        // Function to render markdown and LaTeX
+        function renderMarkdown() {
+            document.querySelectorAll('.text-content').forEach(element => {
+                const rawText = element.getAttribute('data-raw-text');
+                
+                if (isMarkdownView) {
+                    element.className = 'text-content markdown';
+                    // Render LaTeX first, then markdown
+                    element.innerHTML = marked.parse(renderLatexToHtml(rawText));
+                } else {
+                    element.className = 'text-content raw';
+                    element.innerHTML = '<pre>' + rawText + '</pre>';
+                }
+            });
+        }
+        
+        // Toggle button functionality
+        document.getElementById('toggleView').addEventListener('click', function() {
+            isMarkdownView = !isMarkdownView;
+            const button = this;
+            const toggleText = document.getElementById('toggleText');
+            
+            if (isMarkdownView) {
+                button.className = 'toggle-button';
+                toggleText.textContent = '📝 Markdown View';
+            } else {
+                button.className = 'toggle-button raw-mode';
+                toggleText.textContent = '📄 Raw Text View';
+            }
+            
+            renderMarkdown();
+        });
+        
+        // Document navigation
+        document.getElementById('documentSelect').addEventListener('change', function() {
+            if (this.value) {
+                const element = document.getElementById(this.value);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    // Reset the select after navigation
+                    setTimeout(() => {
+                        this.value = '';
+                    }, 100);
+                }
+            }
+        });
+        
+        // Initial render when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            renderMarkdown();
+        });
+    </script>
+
+</body>
+</html>
