@@ -1,5 +1,0 @@
-agent_r1
-data
-examples
-scripts
-verl
