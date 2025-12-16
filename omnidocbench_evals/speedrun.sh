@@ -72,9 +72,10 @@ conda run -n deepseek-ocr pip install -e .[deepseek-ocr] --extra-index-url https
 conda run -n deepseek-ocr pip install flash_attn==2.7.3 --no-build-isolation
 
 cd src/omnidocbench_evals/DeepSeek-OCR-master/DeepSeek-OCR-vllm
-# Configure config.py
-sed -i "s|INPUT_PATH = 'data/OmniDocBench/images/'|INPUT_PATH = '../../../../data/OmniDocBench/images/'|" config.py
-sed -i "s|OUTPUT_PATH = 'outputs/deepseek_ocr/'|OUTPUT_PATH = '../../../../outputs/deepseek_ocr/'|" config.py
+# Configure config.py with absolute paths
+DEEPSEEK_ABS_PATH="$ABS_PATH/src/omnidocbench_evals/DeepSeek-OCR-master/DeepSeek-OCR-vllm"
+sed -i "s|INPUT_PATH = 'data/OmniDocBench/images/'|INPUT_PATH = '$ABS_PATH/data/OmniDocBench/images/'|" config.py
+sed -i "s|OUTPUT_PATH = 'outputs/deepseek_ocr/'|OUTPUT_PATH = '$ABS_PATH/outputs/deepseek_ocr/'|" config.py
 echo "DeepSeek-OCR setup complete."
 
 # Run DeepSeek-OCR inference
@@ -83,11 +84,11 @@ conda run -n deepseek-ocr python run_dpsk_ocr_eval_batch.py
 echo "DeepSeek-OCR inference complete. Outputs in outputs/deepseek_ocr/"
 
 echo "Cleaning up the outputs/deepseek_ocr/ directory..."
-rm ../../../../outputs/deepseek_ocr/*.png
+rm -f $ABS_PATH/outputs/deepseek_ocr/*.png
 
 echo "Cleaning complete. Now setting up olmOCR2.."
 
-cd ../../../../src/omnidocbench-evals/olmocr
+cd $ABS_PATH/src/omnidocbench_evals/olmocr
 
 echo "=========================================="
 
@@ -104,21 +105,21 @@ echo "OLMOCR setup complete."
 # Run OLMOCR inference
 echo "Running OLMOCR inference..."
 # Assume PDFs are in data/OmniDocBench/pdfs/ (created by image_to_pdf.py)
-mkdir -p ../../../outputs/olmocr_workspace
+mkdir -p $ABS_PATH/outputs/olmocr_workspace
 # Create a text file listing all PDFs
-find ../../../data/OmniDocBench/pdfs/ -name "*.pdf" -type f > ../../../outputs/olmocr_workspace/pdf_list.txt
-echo "Found $(wc -l < ../../../outputs/olmocr_workspace/pdf_list.txt) PDF files to process"
+find $ABS_PATH/data/OmniDocBench/pdfs/ -name "*.pdf" -type f > $ABS_PATH/outputs/olmocr_workspace/pdf_list.txt
+echo "Found $(wc -l < $ABS_PATH/outputs/olmocr_workspace/pdf_list.txt) PDF files to process"
 # Use eval to properly activate the conda environment so vllm is in PATH
 eval "$(conda shell.bash hook)"
 conda activate olmocr
-python -m olmocr.pipeline ../../../outputs/olmocr_workspace --markdown --pdfs ../../../outputs/olmocr_workspace/pdf_list.txt
+python -m olmocr.pipeline $ABS_PATH/outputs/olmocr_workspace --markdown --pdfs $ABS_PATH/outputs/olmocr_workspace/pdf_list.txt
 conda deactivate
 echo "OLMOCR inference complete. Converting JSONL to markdown..."
 # Convert JSONL results to markdown files
-python ../../../src/omnidocbench-evals/olmocr/convert_jsonl_to_markdown.py
+python $ABS_PATH/src/omnidocbench_evals/olmocr/convert_jsonl_to_markdown.py
 echo "Markdown files created in outputs/olmocr_workspace/markdown/"
 
-cd ../../..
+cd $ABS_PATH
 
 echo "=========================================="
 
@@ -126,7 +127,7 @@ echo "=========================================="
 echo "Setting up Chandra OCR..."
 # Reuse olmocr env to avoid conflicts
 conda run -n olmocr pip install -e .[chandra-ocr]
-cd src/omnidocbench-evals/chandra-ocr
+cd $ABS_PATH/src/omnidocbench_evals/chandra-ocr
 echo "Chandra OCR setup complete."
 
 # Check for API key
@@ -141,7 +142,7 @@ else
     echo "Chandra OCR complete. Check outputs for results."
 fi
 
-cd ../../..
+cd $ABS_PATH
 
 # Evaluation
 echo "=========================================="
@@ -162,17 +163,17 @@ echo "Running Evaluation on OmniDocBench dataset..."
 echo "Language filter: $LANGUAGE_FILTER"
 echo ""
 
-cd src/omnidocbench_evals/OmniDocBench
+cd $ABS_PATH/src/omnidocbench_evals/OmniDocBench
 
 # ==========================================
 # DEEPSEEK-OCR EVALUATION
 # ==========================================
 echo "Starting DeepSeek-OCR Evaluation..."
-echo "Output directory: ../../../outputs/deepseek_ocr/"
+echo "Output directory: $ABS_PATH/outputs/deepseek_ocr/"
 
 # Update config paths for DeepSeek results
-sed -i "s|data_path: .*/OmniDocBench.json|data_path: ../../../data/OmniDocBench/OmniDocBench.json|" configs/end2end.yaml
-sed -i "s|data_path: output_results_markdown|data_path: ../../../outputs/deepseek_ocr/|" configs/end2end.yaml
+sed -i "s|data_path: .*/OmniDocBench.json|data_path: $ABS_PATH/data/OmniDocBench/OmniDocBench.json|" configs/end2end.yaml
+sed -i "s|data_path: output_results_markdown|data_path: $ABS_PATH/outputs/deepseek_ocr/|" configs/end2end.yaml
 
 # Apply language filter to configuration
 if [ "$LANGUAGE_FILTER" != "all" ]; then
@@ -201,11 +202,11 @@ echo ""
 # OLMOCR2 EVALUATION
 # ==========================================
 echo "Starting OLMOCR2 Evaluation..."
-echo "Output directory: ../../../outputs/olmocr_workspace/markdown/"
+echo "Output directory: $ABS_PATH/outputs/olmocr_workspace/markdown/"
 
 # Update config paths for OLMOCR results
-sed -i "s|data_path: .*/OmniDocBench.json|data_path: ../../../data/OmniDocBench/OmniDocBench.json|" configs/end2end.yaml
-sed -i "s|data_path: output_results_markdown|data_path: ../../../outputs/olmocr_workspace/markdown/|" configs/end2end.yaml
+sed -i "s|data_path: .*/OmniDocBench.json|data_path: $ABS_PATH/data/OmniDocBench/OmniDocBench.json|" configs/end2end.yaml
+sed -i "s|data_path: output_results_markdown|data_path: $ABS_PATH/outputs/olmocr_workspace/markdown/|" configs/end2end.yaml
 
 # Apply language filter to configuration
 if [ "$LANGUAGE_FILTER" != "all" ]; then
@@ -253,15 +254,15 @@ echo "Language filter: $LANGUAGE_FILTER"
 echo ""
 
 # Navigate back to omnidocbench_evals root directory
-cd ../../../
+cd $ABS_PATH
 
 # Generate comprehensive results summary
 python run_evaluation.py \
-    --result-dir "./src/omnidocbench_evals/OmniDocBench/result" \
+    --result-dir "$ABS_PATH/src/omnidocbench_evals/OmniDocBench/result" \
     --ocr-types deepseek olmocr2 \
     --language "$LANGUAGE_FILTER" \
     --match-method quick_match \
-    --output "./results_${LANGUAGE_FILTER}.csv"
+    --output "$ABS_PATH/results_${LANGUAGE_FILTER}.csv"
 
 echo ""
 echo "=========================================="
