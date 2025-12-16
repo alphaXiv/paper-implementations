@@ -1,6 +1,0 @@
-default_stage:
-  default_modifiers:
-    QuantizationModifier:
-      targets: [Linear]
-      ignore: ['re:.*lm_head', 're:model.visual.*']
-      scheme: FP8_DYNAMIC
