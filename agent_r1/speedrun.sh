@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# Speedrun script for Agent-R1 setup and training
+# Speedrun script for agent_r1 setup and training
 # Combines commands from docs/getting_started/quickstart.md
 
 set -e  # Exit on any error
 
 
 echo "=========================================="
-echo "Agent-R1 Speedrun Setup and Training"
+echo "agent_r1 Speedrun Setup and Training"
 echo "=========================================="
 
 # Check if WANDB_API_KEY is set (optional but recommended for logging)
@@ -46,42 +46,42 @@ sudo docker run -d --gpus all --name verl-agent-r1 \
 echo "Waiting for container to start..."
 sleep 10
 
-# Install Agent-R1 dependencies
-echo "Installing Agent-R1 dependencies..."
-sudo docker exec verl-agent-r1 bash -c "cd /workspace/Agent-R1 && pip3 install -e ." || {
-    echo "Failed to install Agent-R1 dependencies."
+# Install agent_r1 dependencies
+echo "Installing agent_r1 dependencies..."
+sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && pip3 install -e ." || {
+    echo "Failed to install agent_r1 dependencies."
     exit 1
 }
 
-# Initialize Git submodules
-echo "Initializing Git submodules..."
-sudo docker exec verl-agent-r1 bash -c "git config --global --add safe.directory /workspace && git config --global --add safe.directory /workspace/Agent-R1 && cd /workspace/Agent-R1 && git submodule update --init --recursive" || {
-    echo "Failed to initialize Git submodules."
+# Clone VERL from Agent-R1 repo
+echo "Cloning VERL from Agent-R1 repo..."
+sudo docker exec verl-agent-r1 bash -c "git config --global --add safe.directory '*' && cd /workspace && git clone https://github.com/alphaXiv/Agent-R1.git && cd Agent-R1 && git submodule update --init --recursive && cp -r verl /workspace/agent_r1/src/ && cd /workspace && rm -rf Agent-R1" || {
+    echo "Failed to clone VERL from Agent-R1."
     exit 1
 }
 
 # Install VERL
 echo "Installing VERL..."
-sudo docker exec verl-agent-r1 bash -c "cd /workspace/Agent-R1/src/verl && pip3 install -e ." || {
+sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1/src/verl && pip3 install -e ." || {
     echo "Failed to install VERL."
     exit 1
 }
 
 # Download and preprocess HotpotQA dataset
 echo "Downloading and preprocessing HotpotQA dataset..."
-sudo docker exec verl-agent-r1 bash -c "cd /workspace/Agent-R1 && mkdir -p data/hotpotqa && python src/examples/data_preprocess/hotpotqa.py --local_dir ./data/hotpotqa" || {
+sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && mkdir -p data/hotpotqa && python src/examples/data_preprocess/hotpotqa.py --local_dir ./data/hotpotqa" || {
     echo "Failed to download and preprocess HotpotQA dataset."
     exit 1
 }
 
 # Build HotpotQA search index
 echo "Building HotpotQA search index..."
-sudo docker exec verl-agent-r1 bash -c "cd /workspace/Agent-R1 && mkdir -p data/corpus/hotpotqa && wget -q https://huggingface.co/datasets/BeIR/hotpotqa/resolve/main/corpus.jsonl.gz -O data/corpus/hotpotqa/corpus.jsonl.gz && gunzip -c data/corpus/hotpotqa/corpus.jsonl.gz > data/corpus/hotpotqa/hpqa_corpus.jsonl" || {
+sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && mkdir -p data/corpus/hotpotqa && wget -q https://huggingface.co/datasets/BeIR/hotpotqa/resolve/main/corpus.jsonl.gz -O data/corpus/hotpotqa/corpus.jsonl.gz && gunzip -c data/corpus/hotpotqa/corpus.jsonl.gz > data/corpus/hotpotqa/hpqa_corpus.jsonl" || {
     echo "Failed to download corpus data."
     exit 1
 }
 
-sudo docker exec verl-agent-r1 bash -c "cd /workspace/Agent-R1/src/scripts/hotpotqa_search && python process_hotpotqa.py" || {
+sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1/src/scripts/hotpotqa_search && python process_hotpotqa.py" || {
     echo "Failed to build search index."
     exit 1
 }
@@ -98,10 +98,10 @@ fi
 # Run PPO training (default choice for speedrun)
 echo "=========================================="
 echo "Starting PPO Training on HotpotQA"
-echo "This will take approximately 10-12 hours on 4xA100 80GB GPUs"
+echo "This will take approximately 12 hours on 4xA100 80GB GPUs"
 echo "=========================================="
 
-sudo docker exec verl-agent-r1 bash -c "cd /workspace/Agent-R1 && cp src/examples/trainer/run_ppo_hotpotqa.sh ./ && bash run_ppo_hotpotqa.sh" || {
+sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && cp src/examples/trainer/run_ppo_hotpotqa.sh ./ && bash run_ppo_hotpotqa.sh" || {
     echo "Training failed."
     exit 1
 }
@@ -111,8 +111,8 @@ sudo docker exec verl-agent-r1 bash -c "cd /workspace/Agent-R1 && cp src/example
 echo "=========================================="
 echo "Training Complete!"
 echo "=========================================="
-echo "Check the results and logs in the Agent-R1 directory."
-echo "You can also check Weights & Biases for training metrics if configured."</content>
+echo "Check the results and logs in the agent_r1 directory."
+echo "You can also check Weights & Biases for training metrics if configured."
 
 wait # Wait for all background processes to finish
 
@@ -120,10 +120,10 @@ wait # Wait for all background processes to finish
 # Run GRPO training (default choice for speedrun)
 echo "=========================================="
 echo "Starting GRPO Training on HotpotQA"
-echo "This will take approximately 10-12 hours on 4xA100 80GB GPUs"
+echo "This will take approximately 18-24 hours on 4xA100 80GB GPUs"
 echo "=========================================="
 
-sudo docker exec verl-agent-r1 bash -c "cd /workspace/Agent-R1 && cp src/examples/trainer/run_grpo_hotpotqa.sh ./ && bash run_grpo_hotpotqa.sh" || {
+sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && cp src/examples/trainer/run_grpo_hotpotqa.sh ./ && bash run_grpo_hotpotqa.sh" || {
     echo "Training failed."
     exit 1
 }
@@ -132,7 +132,7 @@ sudo docker exec verl-agent-r1 bash -c "cd /workspace/Agent-R1 && cp src/example
 echo "=========================================="
 echo "Training Complete!"
 echo "=========================================="
-echo "Check the results and logs in the Agent-R1 directory."
+echo "Check the results and logs in the agent_r1 directory."
 echo "You can also check Weights & Biases for training metrics if configured."</content>
 
 wait # Wait for all background processes to finish
@@ -145,7 +145,7 @@ echo "Starting RPP Training on HotpotQA"
 echo "This will take approximately 10-12 hours on 4xA100 80GB GPUs"
 echo "=========================================="
 
-sudo docker exec verl-agent-r1 bash -c "cd /workspace/Agent-R1 && cp src/examples/trainer/run_rpp_hotpotqa.sh ./ && bash run_rpp_hotpotqa.sh" || {
+sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && cp src/examples/trainer/run_rpp_hotpotqa.sh ./ && bash run_rpp_hotpotqa.sh" || {
     echo "Training failed."
     exit 1
 }
@@ -155,7 +155,8 @@ sudo docker exec verl-agent-r1 bash -c "cd /workspace/Agent-R1 && cp src/example
 echo "=========================================="
 echo "Training Complete!"
 echo "=========================================="
-echo "Check the results and logs in the Agent-R1 directory."
-echo "You can also check Weights & Biases for training metrics if configured."</content>
+echo "Check the results and logs in the agent_r1 directory."
+echo "You can also check Weights & Biases for training metrics if configured."
 
 wait # Wait for all background processes to finish
+
