@@ -1,0 +1,13 @@
+
+trained_models/
+
+# Python cache files
+__pycache__/
+*.pyc
+checkpoints/
+*.egg-info
+
+# Data and outputs
+/data/
+/outputs/
+/wandb/
