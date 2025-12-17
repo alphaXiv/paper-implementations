@@ -363,6 +363,7 @@ smoke_test() {
 
 # ============================================================================
 # Main Execution Logic
+# IMPORTANT: when re-running you may comment out the building dataset steps
 # ============================================================================
 
 case $TASK in
