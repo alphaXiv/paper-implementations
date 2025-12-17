@@ -1,8 +1,8 @@
-# Less is More: Recursive Reasoning with Tiny Networks
+# Tiny Recursive Reasoning
 
-This is the codebase for the paper: "Less is More: Recursive Reasoning with Tiny Networks". TRM is a recursive reasoning approach that achieves amazing scores of 45% on ARC-AGI-1 and 8% on ARC-AGI-2 using a tiny 7M parameters neural network.
+This is an implementation of the paper: "Less is More: Recursive Reasoning with Tiny Networks". It is forked from the original author's codebase [here](https://github.com/SamsungSAILMontreal/TinyRecursiveModels). We provide some re-organization of the original work as well as a Nanochat-style speedrun bash script that takes care of environment setup, training, and evaluation. We also provide independently generated [weights](https://huggingface.co/collections/alphaXiv/reproducing-trm) that work for ARC-AGI 1, maze, and sudoku tasks. 
 
-[Paper](https://www.alphaxiv.org/abs/2510.04871)
+TRM is a recursive reasoning approach that achieves amazing scores of 45% on ARC-AGI-1 and 8% on ARC-AGI-2 using a tiny 7M parameters neural network. Read the paper [here](https://www.alphaxiv.org/abs/2510.04871)
 
 ### How TRM works
 
