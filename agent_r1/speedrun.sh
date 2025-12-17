@@ -53,10 +53,10 @@ sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && pip3 install -
     exit 1
 }
 
-# Clone VERL from Agent-R1 repo
-echo "Cloning VERL from Agent-R1 repo..."
-sudo docker exec verl-agent-r1 bash -c "git config --global --add safe.directory '*' && cd /workspace && git clone https://github.com/alphaXiv/Agent-R1.git && cd Agent-R1 && git submodule update --init --recursive && cp -r verl /workspace/agent_r1/src/ && cd /workspace && rm -rf Agent-R1" || {
-    echo "Failed to clone VERL from Agent-R1."
+# Clone VERL from official repo
+echo "Cloning VERL from official repo..."
+sudo docker exec verl-agent-r1 bash -c "git config --global --add safe.directory '*' && cd /workspace/agent_r1/src && git clone https://github.com/volcengine/verl.git && cd verl && git checkout a43ead6" || {
+    echo "Failed to clone VERL from official repo."
     exit 1
 }
 

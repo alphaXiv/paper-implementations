@@ -28,7 +28,7 @@
 
 The easiest way to set up and train Agent-R1 is using the automated speedrun script:
 
-Use 4xH100 80 SXM (we used Lambda Labs with GPU Base image  22.04 for this setup)
+Use 4xH100 80 SXM (we used Lambda Labs with GPU Base image  22.04 (12.8 CUDA) for this setup)
 
 ```bash
 ./speedrun.sh
@@ -45,13 +45,10 @@ This script will automatically:
 8. Run training on HotpotQA using PPO, GRPO, and RPP algorithms
 
 **Prerequisites:**
-- Docker with GPU support (nvidia-docker or Docker with `--gpus all` flag)
+- Docker with GPU support (nvidia-docker or Docker with `--gpus all` flag - best to use already setup docker and CUDA environment like Lambda Labs GPU Base image 22.04)
 - NVIDIA CUDA-compatible GPUs (4xA100 80GB recommended for full training)
 - At least 500GB free disk space for models and data
 - Optional: Weights & Biases API key for logging (`export WANDB_API_KEY="your_key_here"`)
-
-**Training Time:**
-- Approximately 10-12 hours per algorithm on 4xA100 80GB GPUs
 
 ### For Detailed Documentation
 
