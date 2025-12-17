@@ -8,14 +8,13 @@ set -e  # Exit on error
 # This script provides a one-file solution for building datasets, training,
 # and evaluating TRM models on ARC-AGI, Sudoku, and Maze tasks.
 #
-# Usage: ./speedrun.sh [TASK] [MODE]
+# Usage: ./speedrun.sh [TASK]
 #   TASK: arc1 | arc2 | sudoku | maze | all
-#   MODE: single-gpu | multi-gpu (default: single-gpu)
 #
 # Examples:
-#   ./speedrun.sh arc1              # ARC-AGI-1 on single GPU
-#   ./speedrun.sh sudoku multi-gpu  # Sudoku on 8 GPUs
-#   ./speedrun.sh all multi-gpu     # All tasks on 8 GPUs
+#   ./speedrun.sh arc1              # ARC-AGI-1 on all available GPUs
+#   ./speedrun.sh sudoku            # Sudoku on all available GPUs
+#   ./speedrun.sh all               # All tasks on all available GPUs
 # ============================================================================
 
 # Detect number of GPUs dynamically
@@ -33,40 +32,14 @@ fi
 
 # Configuration
 TASK=${1:-"arc1"}  # Default to ARC-AGI-1
-MODE=${2:-"auto"}  # Default to auto-detect based on GPU count
-
-# Auto-detect mode based on GPU count
-if [ "$MODE" == "auto" ]; then
-    if [ "$DETECTED_GPUS" -ge 2 ]; then
-        MODE="multi-gpu"
-        NUM_GPUS=$DETECTED_GPUS
-    else
-        MODE="single-gpu"
-        NUM_GPUS=1
-    fi
-else
-    # Manual override
-    if [ "$MODE" == "multi-gpu" ]; then
-        NUM_GPUS=${NUM_GPUS:-$DETECTED_GPUS}
-        if [ "$NUM_GPUS" -gt "$DETECTED_GPUS" ]; then
-            echo "WARNING: Requested $NUM_GPUS GPUs but only $DETECTED_GPUS available."
-            NUM_GPUS=$DETECTED_GPUS
-        fi
-    else
-        NUM_GPUS=1
-    fi
-fi
+NUM_GPUS=$DETECTED_GPUS  # Use all available GPUs
 
 echo "=========================================="
 echo "TinyRecursiveModels Training & Evaluation"
 echo "=========================================="
 echo "Detected GPUs: $DETECTED_GPUS"
 echo "Task: $TASK"
-echo "Mode: $MODE"
 echo "Using GPUs: $NUM_GPUS"
-if [ "$MODE" = "multi-gpu" ]; then
-    echo "Number of GPUs: $NUM_GPUS"
-fi
 echo "=========================================="
 echo ""
 
@@ -106,11 +79,26 @@ uv pip install -e .
 # Create necessary directories
 mkdir -p data checkpoints logs results wandb
 
-# Login to Weights & Biases if API key is set
+# Login to Weights & Biases
 if [ -n "$WANDB_API_KEY" ]; then
     echo "Logging in to Weights & Biases..."
     wandb login "$WANDB_API_KEY"
     echo "W&B login successful!"
+else
+    echo "Weights & Biases API key not found in environment variable WANDB_API_KEY"
+    echo "Would you like to enter your W&B API key now? (y/n)"
+    read -p "" -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "Enter your W&B API key:"
+        read -s wandb_key
+        echo "Logging in to Weights & Biases..."
+        wandb login "$wandb_key"
+        echo "W&B login successful!"
+        export WANDB_API_KEY="$wandb_key"
+    else
+        exit 1
+    fi
 fi
 
 echo "Environment setup complete!"
@@ -122,7 +110,7 @@ echo ""
 
 build_arc1_dataset() {
     echo "[Step 1/4] Building ARC-AGI-1 dataset..."
-    python -m trm.data.build_arc_dataset \
+    python -m src.tiny_recursive_models.data.build_arc_dataset \
         --input-file-prefix kaggle/combined/arc-agi \
         --output-dir data/arc1concept-aug-1000 \
         --subsets training evaluation concept \
@@ -133,7 +121,7 @@ build_arc1_dataset() {
 
 build_arc2_dataset() {
     echo "[Step 1/4] Building ARC-AGI-2 dataset..."
-    python -m trm.data.build_arc_dataset \
+    python -m src.tiny_recursive_models.data.build_arc_dataset \
         --input-file-prefix kaggle/combined/arc-agi \
         --output-dir data/arc2concept-aug-1000 \
         --subsets training2 evaluation2 concept \
@@ -144,7 +132,7 @@ build_arc2_dataset() {
 
 build_sudoku_dataset() {
     echo "[Step 1/4] Building Sudoku-Extreme dataset..."
-    python -m trm.data.build_sudoku_dataset \
+    python -m src.tiny_recursive_models.data.build_sudoku_dataset \
         --output-dir data/sudoku-extreme-1k-aug-1000 \
         --subsample-size 1000 \
         --num-aug 1000
@@ -154,7 +142,7 @@ build_sudoku_dataset() {
 
 build_maze_dataset() {
     echo "[Step 1/4] Building Maze-Hard 30x30 dataset..."
-    python -m trm.data.build_maze_dataset
+    python -m src.tiny_recursive_models.data.build_maze_dataset
     echo "Maze-Hard dataset built successfully!"
     echo ""
 }
@@ -167,11 +155,6 @@ train_arc1() {
     local run_name="pretrain_att_arc1concept_$(date +%Y%m%d_%H%M%S)"
     local batch_size=1536
     local nproc=$NUM_GPUS
-    
-    if [ "$MODE" = "single-gpu" ]; then
-        batch_size=64
-        nproc=1
-    fi
     
     echo "[Step 2/4] Training ARC-AGI-1 model..."
     echo "Run name: $run_name"
@@ -201,11 +184,6 @@ train_arc2() {
     local batch_size=1536
     local nproc=$NUM_GPUS
     
-    if [ "$MODE" = "single-gpu" ]; then
-        batch_size=64
-        nproc=1
-    fi
-    
     echo "[Step 2/4] Training ARC-AGI-2 model..."
     echo "Run name: $run_name"
     echo "Batch size: $batch_size"
@@ -233,11 +211,6 @@ train_sudoku_mlp() {
     local run_name="pretrain_mlp_t_sudoku_$(date +%Y%m%d_%H%M%S)"
     local batch_size=1536
     local nproc=$NUM_GPUS
-    
-    if [ "$MODE" = "single-gpu" ]; then
-        batch_size=64
-        nproc=1
-    fi
     
     echo "[Step 2/4] Training Sudoku model (MLP-Tiny variant)..."
     echo "Run name: $run_name"
@@ -271,11 +244,6 @@ train_sudoku_att() {
     local batch_size=1536
     local nproc=$NUM_GPUS
     
-    if [ "$MODE" = "single-gpu" ]; then
-        batch_size=64
-        nproc=1
-    fi
-    
     echo "[Step 2/4] Training Sudoku model (Attention variant)..."
     echo "Run name: $run_name"
     echo "Batch size: $batch_size"
@@ -306,11 +274,6 @@ train_maze() {
     local run_name="pretrain_att_maze30x30_$(date +%Y%m%d_%H%M%S)"
     local batch_size=1536
     local nproc=$NUM_GPUS
-    
-    if [ "$MODE" = "single-gpu" ]; then
-        batch_size=64
-        nproc=1
-    fi
     
     echo "[Step 2/4] Training Maze-Hard 30x30 model..."
     echo "Run name: $run_name"
@@ -347,11 +310,6 @@ evaluate_model() {
     local eval_name=$(basename $checkpoint_path)
     local nproc=$NUM_GPUS
     local batch_size=1536
-    
-    if [ "$MODE" = "single-gpu" ]; then
-        nproc=1
-        batch_size=64
-    fi
     
     echo "[Step 3/4] Evaluating model..."
     echo "Checkpoint: $checkpoint_path"
@@ -409,7 +367,7 @@ smoke_test() {
 
 case $TASK in
     arc1)
-        build_arc1_dataset
+        # build_arc1_dataset
         train_arc1
         evaluate_model "$LAST_CHECKPOINT" "$LAST_DATASET"
         ;;
@@ -455,10 +413,10 @@ case $TASK in
         echo "Running all tasks (this will take a VERY long time)..."
         echo ""
         
-        # build_arc1_dataset
-        # build_arc2_dataset
-        # build_sudoku_dataset
-        # build_maze_dataset
+        build_arc1_dataset
+        build_arc2_dataset
+        build_sudoku_dataset
+        build_maze_dataset
         
         train_arc1
         evaluate_model "$LAST_CHECKPOINT" "$LAST_DATASET"
@@ -481,7 +439,7 @@ case $TASK in
     *)
         echo "ERROR: Invalid task '$TASK'"
         echo ""
-        echo "Usage: $0 [TASK] [MODE]"
+        echo "Usage: $0 [TASK]"
         echo ""
         echo "Available tasks:"
         echo "  arc1        - Train and evaluate on ARC-AGI-1"
@@ -491,14 +449,10 @@ case $TASK in
         echo "  all         - Run all tasks sequentially"
         echo "  smoke-test  - Quick verification test with pre-trained model"
         echo ""
-        echo "Available modes:"
-        echo "  single-gpu  - Use 1 GPU (batch size adjusted)"
-        echo "  multi-gpu   - Use 8 GPUs (default, set NUM_GPUS to change)"
-        echo ""
         echo "Examples:"
         echo "  $0 arc1"
-        echo "  $0 sudoku multi-gpu"
-        echo "  NUM_GPUS=4 $0 maze multi-gpu"
+        echo "  $0 sudoku"
+        echo "  $0 all"
         echo "  $0 smoke-test"
         exit 1
         ;;
@@ -514,7 +468,7 @@ echo "=========================================="
 echo ""
 echo "Summary:"
 echo "  Task: $TASK"
-echo "  Mode: $MODE"
+echo "  GPUs used: $NUM_GPUS"
 if [ -n "$LAST_CHECKPOINT" ]; then
     echo "  Last checkpoint: $LAST_CHECKPOINT"
     echo "  Evaluation results: checkpoints/eval_$(basename $LAST_CHECKPOINT)"

@@ -1,12 +1,12 @@
 """Neural network models and components."""
 
 # Import submodules
-from trm.models import architectures
+from tiny_recursive_models.models import architectures
 
 # Import commonly used utilities
-from trm.models.common import trunc_normal_init_
-from trm.models.losses import ACTLossHead, IGNORE_LABEL_ID
-from trm.models.ema import EMAHelper
+from tiny_recursive_models.models.common import trunc_normal_init_
+from tiny_recursive_models.models.losses import ACTLossHead, IGNORE_LABEL_ID
+from tiny_recursive_models.models.ema import EMAHelper
 
 __all__ = [
     "architectures",

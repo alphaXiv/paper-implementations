@@ -1,10 +1,10 @@
 """Evaluation utilities."""
 
-from trm.evaluation.evaluator import (
+from tiny_recursive_models.evaluation.evaluator import (
     evaluate,
     create_evaluators,
 )
-from trm.evaluation.arc import ARC
+from tiny_recursive_models.evaluation.arc import ARC
 
 __all__ = [
     "evaluate",

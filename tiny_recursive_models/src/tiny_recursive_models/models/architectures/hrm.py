@@ -6,9 +6,9 @@ import torch.nn.functional as F
 from torch import nn
 from pydantic import BaseModel
 
-from trm.models.common import trunc_normal_init_
-from trm.models.layers import rms_norm, SwiGLU, Attention, RotaryEmbedding, CosSin, CastedEmbedding, CastedLinear
-from trm.models.sparse_embedding import CastedSparseEmbedding
+from tiny_recursive_models.models.common import trunc_normal_init_
+from tiny_recursive_models.models.layers import rms_norm, SwiGLU, Attention, RotaryEmbedding, CosSin, CastedEmbedding, CastedLinear
+from tiny_recursive_models.models.sparse_embedding import CastedSparseEmbedding
 
 @dataclass
 class HierarchicalReasoningModel_ACTV1InnerCarry:
