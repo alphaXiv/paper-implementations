@@ -367,7 +367,7 @@ smoke_test() {
 
 case $TASK in
     arc1)
-        # build_arc1_dataset
+        build_arc1_dataset
         train_arc1
         evaluate_model "$LAST_CHECKPOINT" "$LAST_DATASET"
         ;;
