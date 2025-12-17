@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from tqdm import tqdm
 from huggingface_hub import hf_hub_download
 
-from trm.data.common import PuzzleDatasetMetadata, dihedral_transform
+from tiny_recursive_models.data.common import PuzzleDatasetMetadata, dihedral_transform
 
 
 CHARSET = "# SGo"

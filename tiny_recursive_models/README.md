@@ -14,7 +14,7 @@ TRM is a recursive reasoning approach that achieves amazing scores of 45% on ARC
 
 ## Quickstart
 
-We used Lambda Labs Image 22.4 with 4xH100 80GB SXM GPUs instance with CUDA version 12.8. More info in [REPORT.md](docs/REPORT.md)
+We used Lambda Labs Image 22.4 with 8xH100 80GB SXM GPUs instance with CUDA version 12.8. More info in [REPORT.md](docs/REPORT.md)
 
 ### One-Line Setup with speedrun.sh
 
@@ -22,17 +22,13 @@ The easiest way to get started is using our `speedrun.sh` script that handles ev
 
 ```bash
 # Single task (auto-detects GPU count)
-./speedrun.sh arc1              # ARC-AGI-1
-./speedrun.sh arc2              # ARC-AGI-2
-./speedrun.sh sudoku            # Sudoku-Extreme
-./speedrun.sh maze              # Maze-Hard 30x30
-
-# Force single or multi-GPU mode
-./speedrun.sh arc1 single-gpu   # Use 1 GPU
-./speedrun.sh arc2 multi-gpu    # Use all available GPUs
+./speedrun.sh arc1              # ARC-AGI-1  -8xH100 ~60 hrs)
+./speedrun.sh arc2              # ARC-AGI-2  -8xH100 ~60 hrs)
+./speedrun.sh sudoku            # Sudoku-Extreme (1xH100 ~3 hrs 40GB GPU one will work fine)
+./speedrun.sh maze              # Maze-Hard 30x30 (8xH100 ~ 8hrs)
 
 # Run all tasks
-./speedrun.sh all multi-gpu
+./speedrun.sh all 
 ```
 
 The script automatically:
