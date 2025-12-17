@@ -22,17 +22,17 @@ The easiest way to get started is using our `speedrun.sh` script that handles ev
 
 ```bash
 # Single task (auto-detects GPU count)
-./speedrun.sh arc1              # ARC-AGI-1
-./speedrun.sh arc2              # ARC-AGI-2
-./speedrun.sh sudoku            # Sudoku-Extreme
-./speedrun.sh maze              # Maze-Hard 30x30
+bash speedrun.sh arc1              # ARC-AGI-1
+bash speedrun.sh arc2              # ARC-AGI-2
+bash speedrun.sh sudoku            # Sudoku-Extreme
+bash speedrun.sh maze              # Maze-Hard 30x30
 
 # Force single or multi-GPU mode
-./speedrun.sh arc1 single-gpu   # Use 1 GPU
-./speedrun.sh arc2 multi-gpu    # Use all available GPUs
+bash speedrun.sh arc1 single-gpu   # Use 1 GPU
+bash speedrun.sh arc2 multi-gpu    # Use all available GPUs
 
 # Run all tasks
-./speedrun.sh all multi-gpu
+bash speedrun.sh all 
 ```
 
 The script automatically:
@@ -42,28 +42,6 @@ The script automatically:
 - Builds datasets
 - Trains models
 - Evaluates results
-
-### Manual Setup
-
-If you prefer manual installation:
-
-```bash
-# 1) Install uv (if not already installed)
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# 2) Create env with uv
-uv venv .venv && source .venv/bin/activate
-
-# 3) Install PyTorch (CUDA 12.8)
-uv pip install --pre --upgrade torch torchvision torchaudio \
-  --index-url https://download.pytorch.org/whl/nightly/cu128
-
-# 4) Install project dependencies
-uv pip install -e .
-
-# 5) Optional: log to Weights & Biases
-# wandb login
-```
 
 ### Evaluating Pre-trained Models
 
@@ -77,19 +55,13 @@ We provide pre-trained model weights:
 
 ```bash
 # Full evaluation (uses all available GPUs)
-./speedrun-inference.sh arc1    # ARC-AGI-1
-./speedrun-inference.sh maze    # Maze-Hard
-./speedrun-inference.sh sudoku  # Sudoku-Extreme
+bash speedrun-inference.sh arc1    # ARC-AGI-1
+bash speedrun-inference.sh maze    # Maze-Hard
+bash speedrun-inference.sh sudoku  # Sudoku-Extreme
 
 # Evaluate all models
-./speedrun-inference.sh all
+bash speedrun-inference.sh all
 ```
-
-The script automatically:
-- Installs dependencies with `uv`
-- Builds required datasets
-- Downloads models from HuggingFace
-- Runs full evaluation and saves results
 
 
 **Note:** The `speedrun.sh` script handles all dataset building, training, and evaluation automatically. Manual commands are provided for advanced users who need custom configurations.
