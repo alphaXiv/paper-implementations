@@ -31,36 +31,6 @@ The easiest way to get started is using our `speedrun.sh` script that handles ev
 ./speedrun.sh all 
 ```
 
-The script automatically:
-- Installs `uv` if not present
-- Creates virtual environment with `uv venv`
-- Installs PyTorch and dependencies
-- Builds datasets
-- Trains models
-- Evaluates results
-
-### Manual Setup
-
-If you prefer manual installation:
-
-```bash
-# 1) Install uv (if not already installed)
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# 2) Create env with uv
-uv venv .venv && source .venv/bin/activate
-
-# 3) Install PyTorch (CUDA 12.8)
-uv pip install --pre --upgrade torch torchvision torchaudio \
-  --index-url https://download.pytorch.org/whl/nightly/cu128
-
-# 4) Install project dependencies
-uv pip install -e .
-
-# 5) Optional: log to Weights & Biases
-# wandb login
-```
-
 ### Evaluating Pre-trained Models
 
 We provide pre-trained model weights:
@@ -80,12 +50,6 @@ We provide pre-trained model weights:
 # Evaluate all models
 ./speedrun-inference.sh all
 ```
-
-The script automatically:
-- Installs dependencies with `uv`
-- Builds required datasets
-- Downloads models from HuggingFace
-- Runs full evaluation and saves results
 
 
 **Note:** The `speedrun.sh` script handles all dataset building, training, and evaluation automatically. Manual commands are provided for advanced users who need custom configurations.
@@ -108,6 +72,3 @@ This report includes evaluation results, performance comparisons, and insights f
 - PyTorch install: pick wheels matching your CUDA; on macOS (CPU/MPS) training will be very slow — prefer Linux + NVIDIA GPU for training.
 - NCCL errors: ensure you run under `torchrun` on a Linux box with GPUs and that `nvidia-smi` shows all devices.
 - Checkpoints and EMA: training saves EMA by default when `ema=True`; the eval script applies EMA unless disabled.
-
-
-This code is based on the original Tiny Recursive Model [code](https://github.com/SamsungSAILMontreal/TinyRecursiveModels).
