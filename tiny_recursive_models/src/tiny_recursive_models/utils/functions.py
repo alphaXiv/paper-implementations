@@ -2,7 +2,7 @@ import importlib
 import inspect
 
 
-def load_model_class(identifier: str, prefix: str = "trm.models."):
+def load_model_class(identifier: str, prefix: str = "tiny_recursive_models.models."):
     module_path, class_name = identifier.split('@')
 
     # Import the module
@@ -12,7 +12,7 @@ def load_model_class(identifier: str, prefix: str = "trm.models."):
     return cls
 
 
-def get_model_source_path(identifier: str, prefix: str = "trm.models."):
+def get_model_source_path(identifier: str, prefix: str = "tiny_recursive_models.models."):
     module_path, class_name = identifier.split('@')
 
     module = importlib.import_module(prefix + module_path)

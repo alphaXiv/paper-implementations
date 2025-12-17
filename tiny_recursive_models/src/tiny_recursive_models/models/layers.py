@@ -11,7 +11,7 @@ import torch.nn.functional as F
 #    from flash_attn import flash_attn_func  # type: ignore[import]
 from torch.nn.functional import scaled_dot_product_attention
 
-from trm.models.common import trunc_normal_init_
+from tiny_recursive_models.models.common import trunc_normal_init_
 
 
 CosSin = Tuple[torch.Tensor, torch.Tensor]

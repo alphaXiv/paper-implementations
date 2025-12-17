@@ -8,20 +8,20 @@ import torch.distributed as dist
 from torch import nn
 from torch.utils.data import DataLoader
 
-from trm.training.config import PretrainConfig, TrainState
-from trm.training.checkpoint import load_checkpoint
-from trm.utils import load_model_class
+from tiny_recursive_models.training.config import PretrainConfig, TrainState
+from tiny_recursive_models.training.checkpoint import load_checkpoint
+from tiny_recursive_models.utils import load_model_class
 
 # Import optimizer from our vendored implementation
 try:
-    from trm.training.optimizers import AdamATan2
+    from tiny_recursive_models.training.optimizers import AdamATan2
 except Exception:
     AdamATan2 = None
 
 # Import from trm package
-from trm.data.puzzle_dataset import PuzzleDataset, PuzzleDatasetConfig
-from trm.data.common import PuzzleDatasetMetadata
-from trm.models.sparse_embedding import CastedSparseEmbeddingSignSGD_Distributed
+from tiny_recursive_models.data.puzzle_dataset import PuzzleDataset, PuzzleDatasetConfig
+from tiny_recursive_models.data.common import PuzzleDatasetMetadata
+from tiny_recursive_models.models.sparse_embedding import CastedSparseEmbeddingSignSGD_Distributed
 
 
 def create_dataloader(config: PretrainConfig, split: str, rank: int, world_size: int, **kwargs):
