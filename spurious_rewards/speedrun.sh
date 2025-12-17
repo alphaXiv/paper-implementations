@@ -13,17 +13,26 @@ fi
 
 
 
-# Install uv (if not already installed)
-command -v uv &> /dev/null || curl -LsSf https://astral.sh/uv/install.sh | sh
+# Check if conda is available
+if ! command -v conda &> /dev/null; then
+    echo "ERROR: conda not found. Please install Miniconda or Anaconda first."
+    echo "Visit: https://docs.conda.io/projects/miniconda/en/latest/"
+    exit 1
+fi
 
-# Create a .venv local virtual environment (if it doesn't exist)
-[ -d ".venv" ] || uv venv --python 3.10
+# Create conda environment if it doesn't exist
+ENV_NAME="spurious-rewards-env"
+if ! conda env list | grep -q "^${ENV_NAME} "; then
+    echo "Creating conda environment: $ENV_NAME"
+    conda create -n $ENV_NAME python=3.10 -y
+fi
 
-# Activate venv
-source .venv/bin/activate
+# Activate conda environment
+echo "Activating conda environment: $ENV_NAME"
+eval "$(conda shell.bash hook)"
+conda activate $ENV_NAME
 
-# Install all dependencies using uv
-uv sync
+
 
 
 # Check if WANDB_API_KEY is set
@@ -41,21 +50,22 @@ wandb login "$WANDB_API_KEY"
 # Navigate to code directory
 cd src/spurious_rewards/code
 
-# Install flash_attn with proper build isolation handling
-uv pip install flash_attn==2.7.0.post2 --no-build-isolation
+# Install PyTorch and dependencies
+echo "Installing PyTorch and dependencies..."
+pip install -r requirements.txt
+pip uninstall vllm -y
+pip install vllm==0.7.2
 
-# Install the package in editable mode
-uv pip install -e .
 
 # Modify setup.py to pin vllm version for CUDA 12.8 compatibility
 # Change extras_require vllm from ["vllm"] to ["vllm==0.7.2"]
 sed -i 's/"vllm": \["vllm"\]/"vllm": ["vllm==0.7.2"]/g' setup.py
 
 # Install flash_attn with proper build isolation handling
-uv pip install flash_attn==2.7.0.post2 --no-build-isolation
+pip install flash_attn==2.7.0.post2 --no-build-isolation
 
 # Install the package in editable mode
-uv pip install -e .
+pip install -e .
 
 # Get the data from RLVR repository
 echo "Cloning RLVR-Fine-Tuning-Spurious-Rewards for data..."
