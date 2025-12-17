@@ -34,17 +34,17 @@ from contextlib import nullcontext
 import torch.backends.cudnn as cudnn
 from hydra import initialize, compose
 from omegaconf import OmegaConf
-from trm.models.ema import EMAHelper
+from tiny_recursive_models.models.ema import EMAHelper
 from glob import glob
 import math
 
 # Import functions and classes from trm library
-from trm.training import (
+from tiny_recursive_models.training import (
     PretrainConfig,
     create_dataloader,
     init_train_state,
 )
-from trm.evaluation import (
+from tiny_recursive_models.evaluation import (
     create_evaluators,
     evaluate,
 )

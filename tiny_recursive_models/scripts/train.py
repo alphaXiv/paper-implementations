@@ -60,20 +60,20 @@ from omegaconf import DictConfig
 # optimizer package isn't installed. If unavailable, AdamATan2 will be
 # set to None and optimizer construction should be skipped for eval.
 try:
-    from trm.training.optimizers import AdamATan2
+    from tiny_recursive_models.training.optimizers import AdamATan2
 except Exception:
     AdamATan2 = None
 
-from trm.data import PuzzleDataset, PuzzleDatasetConfig, PuzzleDatasetMetadata
-from trm.utils import load_model_class, get_model_source_path
-from trm.models.sparse_embedding import CastedSparseEmbeddingSignSGD_Distributed
-from trm.models.ema import EMAHelper
-from trm.training import (
+from tiny_recursive_models.data import PuzzleDataset, PuzzleDatasetConfig, PuzzleDatasetMetadata
+from tiny_recursive_models.utils import load_model_class, get_model_source_path
+from tiny_recursive_models.models.sparse_embedding import CastedSparseEmbeddingSignSGD_Distributed
+from tiny_recursive_models.models.ema import EMAHelper
+from tiny_recursive_models.training import (
     PretrainConfig, TrainState, ArchConfig, LossConfig, EvaluatorConfig,
     create_dataloader, create_model, init_train_state, train_batch,
     save_train_state, load_checkpoint, compute_lr,
 )
-from trm.evaluation import evaluate, create_evaluators
+from tiny_recursive_models.evaluation import evaluate, create_evaluators
 
 
 def save_code_and_config(config: PretrainConfig):

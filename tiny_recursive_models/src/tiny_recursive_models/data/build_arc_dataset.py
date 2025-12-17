@@ -8,7 +8,7 @@ import numpy as np
 from argdantic import ArgParser
 from pydantic import BaseModel
 
-from trm.data.common import PuzzleDatasetMetadata, dihedral_transform, inverse_dihedral_transform
+from tiny_recursive_models.data.common import PuzzleDatasetMetadata, dihedral_transform, inverse_dihedral_transform
 
 
 cli = ArgParser()

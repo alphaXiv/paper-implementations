@@ -1,3 +1,4 @@
+// Vendored code from https://github.com/imoneoi/adam-atan2 to mitigate some setup issues we ran into
 #include "adam_atan2.h"
 
 #include <ATen/core/Tensor.h>
