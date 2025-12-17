@@ -42,63 +42,59 @@ if [ -z "$HF_TOKEN" ]; then
     echo "Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads."
 fi
 
-# # Download OmniDocBench dataset
-# echo "Downloading OmniDocBench dataset..."
-# conda run -n base pip install huggingface_hub
-# python -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='opendatalab/OmniDocBench', repo_type='dataset', local_dir='data/OmniDocBench')"
-# echo "Dataset downloaded to data/OmniDocBench"
+# Download OmniDocBench dataset
+echo "Downloading OmniDocBench dataset..."
+conda run -n base pip install huggingface_hub
+python -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='opendatalab/OmniDocBench', repo_type='dataset', local_dir='data/OmniDocBench')"
+echo "Dataset downloaded to data/OmniDocBench"
 
-# # Convert images to PDFs for OLMOCR
-# echo "Converting images to PDFs for OLMOCR..."
+# Convert images to PDFs for OLMOCR
+echo "Converting images to PDFs for OLMOCR..."
 # Install basic dependencies
 conda run -n base pip install PyMuPDF tqdm 
 
 # Get absolute path
 ABS_PATH=$(pwd)
 
-# # Assume the images are in data/OmniDocBench/images/
-# # Edit the script to set input_dir and output_dir
+# Assume the images are in data/OmniDocBench/images/
+# Edit the script to set input_dir and output_dir
 
-# sed -i "s|input_directory = .*|input_directory = \"$ABS_PATH/data/OmniDocBench/images/\"|" src/omnidocbench_evals/OmniDocBench/tools/image_to_pdf.py
-# sed -i "s|output_directory = .*|output_directory = \"$ABS_PATH/data/OmniDocBench/pdfs/\"|" src/omnidocbench_evals/OmniDocBench/tools/image_to_pdf.py
-# python src/omnidocbench_evals/OmniDocBench/tools/image_to_pdf.py
-# echo "PDFs created."
+sed -i "s|input_directory = .*|input_directory = \"$ABS_PATH/data/OmniDocBench/images/\"|" src/omnidocbench_evals/OmniDocBench/tools/image_to_pdf.py
+sed -i "s|output_directory = .*|output_directory = \"$ABS_PATH/data/OmniDocBench/pdfs/\"|" src/omnidocbench_evals/OmniDocBench/tools/image_to_pdf.py
+python src/omnidocbench_evals/OmniDocBench/tools/image_to_pdf.py
+echo "PDFs created."
 
-# # Setup DeepSeek-OCR
-# echo "Setting up DeepSeek-OCR..."
+# Setup DeepSeek-OCR
+echo "Setting up DeepSeek-OCR..."
 
-# conda create -n deepseek-ocr python=3.12.9 -y
-# conda run -n deepseek-ocr pip install -e .[deepseek-ocr] --extra-index-url https://download.pytorch.org/whl/cu118
-# conda run -n deepseek-ocr pip install flash_attn==2.7.3 --no-build-isolation
+conda create -n deepseek-ocr python=3.12.9 -y
+conda run -n deepseek-ocr pip install -e .[deepseek-ocr] --extra-index-url https://download.pytorch.org/whl/cu118
+conda run -n deepseek-ocr pip install flash_attn==2.7.3 --no-build-isolation
 
-# cd src/omnidocbench_evals/DeepSeek-OCR-master/DeepSeek-OCR-vllm
-# # Configure config.py with absolute paths
-# DEEPSEEK_ABS_PATH="$ABS_PATH/src/omnidocbench_evals/DeepSeek-OCR-master/DeepSeek-OCR-vllm"
-# sed -i "s|INPUT_PATH = 'data/OmniDocBench/images/'|INPUT_PATH = '$ABS_PATH/data/OmniDocBench/images/'|" config.py
-# sed -i "s|OUTPUT_PATH = 'outputs/deepseek_ocr/'|OUTPUT_PATH = '$ABS_PATH/outputs/deepseek_ocr/'|" config.py
-# echo "DeepSeek-OCR setup complete."
+cd src/omnidocbench_evals/DeepSeek-OCR-master/DeepSeek-OCR-vllm
+# Configure config.py with absolute paths
+DEEPSEEK_ABS_PATH="$ABS_PATH/src/omnidocbench_evals/DeepSeek-OCR-master/DeepSeek-OCR-vllm"
+sed -i "s|INPUT_PATH = 'data/OmniDocBench/images/'|INPUT_PATH = '$ABS_PATH/data/OmniDocBench/images/'|" config.py
+sed -i "s|OUTPUT_PATH = 'outputs/deepseek_ocr/'|OUTPUT_PATH = '$ABS_PATH/outputs/deepseek_ocr/'|" config.py
+echo "DeepSeek-OCR setup complete."
 
-# # Run DeepSeek-OCR inference
-# echo "Running DeepSeek-OCR inference..."
-# conda run -n deepseek-ocr python run_dpsk_ocr_eval_batch.py
-# echo "DeepSeek-OCR inference complete. Outputs in outputs/deepseek_ocr/"
+# Run DeepSeek-OCR inference
+echo "Running DeepSeek-OCR inference..."
+conda run -n deepseek-ocr python run_dpsk_ocr_eval_batch.py
+echo "DeepSeek-OCR inference complete. Outputs in outputs/deepseek_ocr/"
 
-# echo "Cleaning up the outputs/deepseek_ocr/ directory..."
-# rm -f $ABS_PATH/outputs/deepseek_ocr/*.png
+echo "Cleaning up the outputs/deepseek_ocr/ directory..."
+rm -f $ABS_PATH/outputs/deepseek_ocr/*.png
 
-# echo "Cleaning complete. Now setting up olmOCR2.."
-
-cd $ABS_PATH/src/omnidocbench_evals/olmocr
-
-# echo "=========================================="
+echo "Cleaning complete. Now setting up olmOCR2.."
 
 # Setup OLMOCR
 echo "Setting up OLMOCR..."
 sudo apt-get update
 sudo apt-get install -y poppler-utils ttf-mscorefonts-installer msttcorefonts fonts-crosextra-caladea fonts-crosextra-carlito gsfonts lcdf-typetools
 conda create -n olmocr python=3.11 -y
-# Install olmocr from source
-conda run -n olmocr pip install -e $ABS_PATH/src/omnidocbench_evals/olmocr
+# Install olmocr from PyPI
+conda run -n olmocr pip install olmocr
 conda run -n olmocr pip install vllm==0.11.0 --extra-index-url https://download.pytorch.org/whl/cu128
 
 echo "OLMOCR setup complete."
@@ -117,7 +113,7 @@ python -m olmocr.pipeline $ABS_PATH/outputs/olmocr_workspace --markdown --pdfs $
 conda deactivate
 echo "OLMOCR inference complete. Converting JSONL to markdown..."
 # Convert JSONL results to markdown files
-python $ABS_PATH/src/omnidocbench_evals/olmocr/convert_jsonl_to_markdown.py
+python $ABS_PATH/src/omnidocbench_evals/tools/convert_jsonl_to_markdown.py
 echo "Markdown files created in outputs/olmocr_workspace/markdown/"
 
 cd $ABS_PATH
