@@ -413,16 +413,16 @@ case $TASK in
         echo "Running all tasks (this will take a VERY long time)... Make sure to choose between arc-ag1 and arc-agi2!"
         echo ""
         
-        # build_arc1_dataset
-        # build_arc2_dataset
-        # build_sudoku_dataset
-        # build_maze_dataset
+        build_arc1_dataset
+        build_arc2_dataset
+        build_sudoku_dataset
+        build_maze_dataset
         
-        # train_arc1
-        # evaluate_model "$LAST_CHECKPOINT" "$LAST_DATASET"
+        train_arc1
+        evaluate_model "$LAST_CHECKPOINT" "$LAST_DATASET"
         
-        # train_arc2
-        # evaluate_model "$LAST_CHECKPOINT" "$LAST_DATASET"
+        train_arc2
+        evaluate_model "$LAST_CHECKPOINT" "$LAST_DATASET"
         
         train_sudoku_mlp
         evaluate_model "$LAST_CHECKPOINT" "$LAST_DATASET"
