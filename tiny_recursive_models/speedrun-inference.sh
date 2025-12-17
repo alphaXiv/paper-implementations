@@ -100,7 +100,7 @@ build_arc1_dataset() {
     fi
     
     echo "[Step 1/3] Building ARC-AGI-1 dataset..."
-    python -m trm.data.build_arc_dataset \
+    python -m trtiny_recursive_modelsm.data.build_arc_dataset \
         --input-file-prefix kaggle/combined/arc-agi \
         --output-dir data/arc1concept-aug-1000 \
         --subsets training evaluation concept \
@@ -116,7 +116,7 @@ build_arc2_dataset() {
     fi
     
     echo "[Step 1/3] Building ARC-AGI-2 dataset..."
-    python -m trm.data.build_arc_dataset \
+    python -m tiny_recursive_models.data.build_arc_dataset \
         --input-file-prefix kaggle/combined/arc-agi \
         --output-dir data/arc2concept-aug-1000 \
         --subsets training2 evaluation2 concept \
@@ -132,7 +132,7 @@ build_sudoku_dataset() {
     fi
     
     echo "[Step 1/3] Building Sudoku-Extreme dataset..."
-    python -m trm.data.build_sudoku_dataset \
+    python -m tiny_recursive_models.data.build_sudoku_dataset \
         --output-dir data/sudoku-extreme-1k-aug-1000 \
         --subsample-size 1000 \
         --num-aug 1000
@@ -147,7 +147,7 @@ build_maze_dataset() {
     fi
     
     echo "[Step 1/3] Building Maze-Hard 30x30 dataset..."
-    python -m trm.data.build_maze_dataset
+    python -m tiny_recursive_models.data.build_maze_dataset
     echo "Maze-Hard dataset built successfully!"
     echo ""
 }
