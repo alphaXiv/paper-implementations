@@ -50,6 +50,18 @@ class BaseTool(ABC):
             return False
 
 class BaseToolEnv(ABC):
+    """
+    Agent-R1 Core Abstraction: Tool Environment
+
+    The Tool Environment defines the state transition function for agent-tool interactions.
+    This is where Agent-R1 extends beyond standard VERL by providing a clean interface
+    for multi-turn tool interactions. Environments handle:
+    - Parsing tool calls from LLM responses
+    - Executing tools in controlled environments
+    - Formatting tool responses for continued reasoning
+    - Managing conversation state across multiple turns
+    """
+
     @abstractmethod
     def step(self, raw_response: str) -> Tuple[str, List[bool], bool]:
         """

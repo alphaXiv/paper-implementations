@@ -86,10 +86,6 @@ class AdvantageEstimator(str, Enum):
 
     GAE = "gae"
     GRPO = "grpo"
-    REINFORCE_PLUS_PLUS = "reinforce_plus_plus"
-    REINFORCE_PLUS_PLUS_BASELINE = "reinforce_plus_plus_baseline"
-    REMAX = "remax"
-    RLOO = "rloo"
 
 
 @dataclass
@@ -216,38 +212,6 @@ def compute_advantage(data: DataProto, adv_estimator, gamma=1.0, lam=1.0, num_re
         )
         data.batch["advantages"] = advantages
         data.batch["returns"] = returns
-    elif adv_estimator == AdvantageEstimator.REINFORCE_PLUS_PLUS_BASELINE:
-        advantages, returns = core_algos.compute_reinforce_plus_plus_baseline_outcome_advantage(
-            token_level_rewards=data.batch["token_level_rewards"],
-            action_mask=data.batch["action_mask"],
-            index=data.non_tensor_batch["uid"],
-        )
-        data.batch["advantages"] = advantages
-        data.batch["returns"] = returns
-    elif adv_estimator == AdvantageEstimator.REINFORCE_PLUS_PLUS:
-        advantages, returns = core_algos.compute_reinforce_plus_plus_outcome_advantage(
-            token_level_rewards=data.batch["token_level_rewards"],
-            action_mask=data.batch["action_mask"],
-            gamma=gamma,
-        )
-        data.batch["advantages"] = advantages
-        data.batch["returns"] = returns
-    elif adv_estimator == AdvantageEstimator.REMAX:
-        advantages, returns = core_algos.compute_remax_outcome_advantage(
-            token_level_rewards=data.batch["token_level_rewards"],
-            reward_baselines=data.batch["reward_baselines"],
-            action_mask=data.batch["action_mask"],
-        )
-        data.batch["advantages"] = advantages
-        data.batch["returns"] = returns
-    elif adv_estimator == AdvantageEstimator.RLOO:
-        advantages, returns = core_algos.compute_rloo_outcome_advantage(
-            token_level_rewards=data.batch["token_level_rewards"],
-            action_mask=data.batch["action_mask"],
-            index=data.non_tensor_batch["uid"],
-        )
-        data.batch["advantages"] = advantages
-        data.batch["returns"] = returns
     else:
         raise NotImplementedError
     return data
@@ -323,10 +287,6 @@ class RayAgentTrainer(object):
             self.use_critic = True
         elif self.config.algorithm.adv_estimator in [
             AdvantageEstimator.GRPO,
-            AdvantageEstimator.REINFORCE_PLUS_PLUS,
-            AdvantageEstimator.REMAX,
-            AdvantageEstimator.RLOO,
-            AdvantageEstimator.REINFORCE_PLUS_PLUS_BASELINE,
         ]:
             self.use_critic = False
         else:
@@ -1031,32 +991,12 @@ class RayAgentTrainer(object):
                             env=self.env,
                         )
 
-                    # for key in gen_batch_output.batch.keys():
-                    #     gen_batch_output.batch[key] = gen_batch_output.batch[key].long()
-
-                    
-                    if self.config.algorithm.adv_estimator == AdvantageEstimator.REMAX:
-                        with _timer("gen_max", timing_raw):
-                            gen_baseline_batch = deepcopy(gen_batch)
-                            gen_baseline_batch.meta_info["do_sample"] = False
-                            gen_baseline_output = self.actor_rollout_wg.generate_sequences(gen_baseline_batch)
-
-                            batch = batch.union(gen_baseline_output)
-                            reward_baseline_tensor = self.reward_fn(batch)
-                            reward_baseline_tensor = reward_baseline_tensor.sum(dim=-1)
-
-                            batch.pop(batch_keys=list(gen_baseline_output.batch.keys()))
-
-                            batch.batch["reward_baselines"] = reward_baseline_tensor
-
-                            del gen_baseline_batch, gen_baseline_output
-
                     batch = batch.union(gen_batch_output)
 
                     batch.batch["response_mask"] = compute_response_mask(batch)
                     # balance the number of valid tokens on each dp rank.
                     # Note that this breaks the order of data inside the batch.
-                    # Please take care when you implement group based adv computation such as GRPO and rloo
+                    # Please take care when you implement group based adv computation such as GRPO
                     if self.config.trainer.balance_batch:
                         self._balance_batch(batch, metrics=metrics)
 
@@ -1112,12 +1052,12 @@ class RayAgentTrainer(object):
                             reward_tensor, reward_extra_infos_dict = ray.get(future_reward)
 
                         # Add process rewards from tool calls
-                        # process_rewards = self._compute_process_rewards(batch, envs, reward_tensor)
-                        # batch.batch["process_rewards"] = process_rewards  # Store process rewards for logging
+                        process_rewards = self._compute_process_rewards(batch, envs, reward_tensor)
+                        batch.batch["process_rewards"] = process_rewards  # Store process rewards for logging
                         
                         # Combine final reward with process rewards if enabled
-                        # if self.config.algorithm.get("use_process_rewards", False):
-                        #     reward_tensor = reward_tensor + process_rewards
+                        if self.config.algorithm.get("use_process_rewards", False):
+                            reward_tensor = reward_tensor + process_rewards
                         
                         batch.batch["token_level_scores"] = reward_tensor
 
@@ -1206,6 +1146,17 @@ class RayAgentTrainer(object):
 
                 # TODO: make a canonical logger that supports various backend
                 logger.log(data=metrics, step=self.global_steps)
+
+                # Print to console for clean training experience
+                loss = metrics.get("actor/pg_loss", 0)
+                grad_norm = metrics.get("actor/grad_norm", 0)
+                lr = metrics.get("actor/lr", 0)
+                step_time = metrics.get("timing/step", 0)
+                tokens_per_sec = metrics.get("throughput/tokens_per_sec", 0)
+                mfu = metrics.get("perf/mfu/actor", 0)
+                rewards_mean = metrics.get("critic/rewards/mean", 0)
+                advantages_mean = metrics.get("critic/advantages/mean", 0)
+                print(f"Step {self.global_steps:05d} | Loss: {loss:.6f} | Grad Norm: {grad_norm:.4f} | LR: {lr:.6f} | Rewards: {rewards_mean:.4f} | Adv: {advantages_mean:.4f} | Step Time: {step_time:.2f}s | Tok/sec: {tokens_per_sec:.0f} | MFU: {mfu:.2f}")
 
                 if is_last_step:
                     pprint(f"Final validation metrics: {last_val_metrics}")

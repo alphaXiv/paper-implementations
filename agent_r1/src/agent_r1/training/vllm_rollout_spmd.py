@@ -292,6 +292,10 @@ class vLLMRollout(BaseRollout):
                 if "multi_modal_inputs" in non_tensor_batch.keys():
                     non_tensor_batch["multi_modal_inputs"] = _repeat_interleave(non_tensor_batch["multi_modal_inputs"], self.sampling_params.n)
                 # NOTE(linjunrong): for multi-turn https://github.com/volcengine/verl/pull/1037
+                # Agent-R1 Extension: Multi-turn tool interactions require preserving
+                # tool configurations across conversation turns. This ensures that
+                # agents can maintain context and continue using tools effectively
+                # throughout extended reasoning chains.
                 if "tools_kwargs" in non_tensor_batch.keys():
                     non_tensor_batch["tools_kwargs"] = _repeat_interleave(non_tensor_batch["tools_kwargs"], self.sampling_params.n)
 

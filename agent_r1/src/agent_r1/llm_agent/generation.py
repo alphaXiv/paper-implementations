@@ -279,20 +279,20 @@ class ToolGenerationManager:
             length_exceeded = effective_len > self.config.max_prompt_length
 
             if length_exceeded.sum() > 0:
-                print("[WARNING] SEQUENCE LENGTH EXCEEDED MAX PROMPT LENGTH")
+                
                 active_mask[length_exceeded] = 0
 
             raw_prompt_ids = rollings.non_tensor_batch['raw_prompt_ids']
             length_exceeded = [len(prompt_id) > self.config.max_prompt_length for prompt_id in raw_prompt_ids]
             if any(length_exceeded):
-                print("[WARNING] SEQUENCE LENGTH EXCEEDED MAX PROMPT LENGTH")
+                
                 for prompt_id, length_exceeded_ in zip(raw_prompt_ids, length_exceeded):
                     if length_exceeded_:
-                        print(f"[DEBUG] LENGTH {len(prompt_id)}: {self.tokenizer.decode(prompt_id)}")
+                        
                 active_mask[length_exceeded] = 0
             
             if not active_mask.sum():
-                print("[WARNING] NO ACTIVE SEQUENCES")
+               
                 break
             
             if hasattr(rollings, 'non_tensor_batch') and rollings.non_tensor_batch:
@@ -363,7 +363,7 @@ class ToolGenerationManager:
                 tool_images
             )
  
-        print("ACTIVE_TRAJ_NUM:", active_num_list)
+        
 
         # Compose final output
         final_output = {}

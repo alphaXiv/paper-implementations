@@ -140,12 +140,7 @@ class TaskRunner:
             Role.Critic: global_pool_id,
         }
 
-        # we should adopt a multi-source reward function here
-        # - for rule-based rm, we directly call a reward score
-        # - for model-based rm, we call a model
-        # - for code related prompt, we send to a sandbox if there are test cases
-        # - finally, we combine all the rewards together
-        # - The reward type depends on the tag of the data
+       
         if config.reward_model.enable:
             if config.reward_model.strategy in ["fsdp", "fsdp2"]:
                 from verl.workers.fsdp_workers import RewardModelWorker
@@ -217,13 +212,7 @@ def create_rl_dataset(data_paths, data_config, tokenizer, processor, env=None):
 
     from .agent_rl_dataset import ToolRLDataset
 
-    # if "custom_cls" in data_config and data_config.custom_cls.get("path", None) is not None:
-    #     from verl.utils.import_utils import load_extern_type
 
-    #     dataset_cls = load_extern_type(data_config.custom_cls.path, data_config.custom_cls.name)
-    #     if not issubclass(dataset_cls, Dataset):
-    #         raise TypeError(f"The custom dataset class '{data_config.custom_cls.name}' from '{data_config.custom_cls.path}' must inherit from torch.utils.data.Dataset")
-    # else:
     dataset_cls = ToolRLDataset
     print(f"Using dataset class: {dataset_cls.__name__}")
 

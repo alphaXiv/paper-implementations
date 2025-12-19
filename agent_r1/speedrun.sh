@@ -5,10 +5,42 @@
 
 set -e  # Exit on any error
 
+# Parse command line arguments
+ALGORITHM=""
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        ppo|grpo)
+            ALGORITHM="$1"
+            shift
+            ;;
+        -h|--help)
+            echo "Usage: $0 [ALGORITHM]"
+            echo "ALGORITHM: ppo (default), grpo"
+            echo ""
+            echo "Examples:"
+            echo "  $0              # Run PPO training (default)"
+            echo "  $0 ppo          # Run PPO training"
+            echo "  $0 grpo         # Run GRPO training"
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Use -h or --help for usage information."
+            exit 1
+            ;;
+    esac
+done
+
+# Default to PPO if no algorithm specified
+if [ -z "$ALGORITHM" ]; then
+    echo "No algorithm specified. Defaulting to PPO."
+    ALGORITHM="ppo"
+fi
 
 echo "=========================================="
 echo "agent_r1 Speedrun Setup and Training"
 echo "=========================================="
+echo "Selected algorithm: $ALGORITHM"
 
 # Check if WANDB_API_KEY is set (optional but recommended for logging)
 if [ -z "$WANDB_API_KEY" ]; then
@@ -31,6 +63,17 @@ sudo docker pull hiyouga/verl:ngc-th2.6.0-cu126-vllm0.8.3-flashinfer0.2.2-cxx11a
 
 # Start Docker container
 echo "Starting Docker container..."
+
+echo "Checking for existing docker containers named 'verl-agent-r1'..."
+if [ "$(sudo docker ps -aq -f name=verl-agent-r1)" ]; then
+    echo "Container 'verl-agent-r1' already exists. Removing existing container..."
+    sudo docker rm -f verl-agent-r1 || {
+        echo "Failed to remove existing container. Please check Docker status."
+        exit 1
+    }
+    echo "Existing container removed."
+fi
+
 sudo docker run -d --gpus all --name verl-agent-r1 \
     --ipc=host \
     --ulimit memlock=-1 \
@@ -95,68 +138,39 @@ if [ ! -z "$WANDB_API_KEY" ]; then
     }
 fi
 
-# Run PPO training (default choice for speedrun)
-echo "=========================================="
-echo "Starting PPO Training on HotpotQA"
-echo "This will take approximately 12 hours on 4xA100 80GB GPUs"
-echo "=========================================="
+# Run training based on selected algorithm
+case "$ALGORITHM" in
+    ppo)
+        echo "=========================================="
+        echo "Starting PPO Training on HotpotQA"
+        echo "This will take approximately 12 hours on 4xA100 80GB GPUs"
+        echo "=========================================="
 
-sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && cp src/examples/trainer/run_ppo_hotpotqa.sh ./ && bash run_ppo_hotpotqa.sh" || {
-    echo "Training failed."
-    exit 1
-}
+        sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && cp src/examples/trainer/run_ppo_hotpotqa.sh ./ && bash run_ppo_hotpotqa.sh" || {
+            echo "Training failed."
+            exit 1
+        }
+        ;;
+    grpo)
+        echo "=========================================="
+        echo "Starting GRPO Training on HotpotQA"
+        echo "This will take approximately 18-24 hours on 4xA100 80GB GPUs"
+        echo "=========================================="
 
-
-
-echo "=========================================="
-echo "Training Complete!"
-echo "=========================================="
-echo "Check the results and logs in the agent_r1 directory."
-echo "You can also check Weights & Biases for training metrics if configured."
-
-wait # Wait for all background processes to finish
-
-
-# Run GRPO training (default choice for speedrun)
-echo "=========================================="
-echo "Starting GRPO Training on HotpotQA"
-echo "This will take approximately 18-24 hours on 4xA100 80GB GPUs"
-echo "=========================================="
-
-sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && cp src/examples/trainer/run_grpo_hotpotqa.sh ./ && bash run_grpo_hotpotqa.sh" || {
-    echo "Training failed."
-    exit 1
-}
-
-
-echo "=========================================="
-echo "Training Complete!"
-echo "=========================================="
-echo "Check the results and logs in the agent_r1 directory."
-echo "You can also check Weights & Biases for training metrics if configured."</content>
-
-wait # Wait for all background processes to finish
-
-
-
-# Run RPP training (default choice for speedrun)
-echo "=========================================="
-echo "Starting RPP Training on HotpotQA"
-echo "This will take approximately 10-12 hours on 4xA100 80GB GPUs"
-echo "=========================================="
-
-sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && cp src/examples/trainer/run_rpp_hotpotqa.sh ./ && bash run_rpp_hotpotqa.sh" || {
-    echo "Training failed."
-    exit 1
-}
-
-
+        sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && cp src/examples/trainer/run_grpo_hotpotqa.sh ./ && bash run_grpo_hotpotqa.sh" || {
+            echo "Training failed."
+            exit 1
+        }
+        ;;
+    *)
+        echo "Unknown algorithm: $ALGORITHM"
+        exit 1
+        ;;
+esac
 
 echo "=========================================="
 echo "Training Complete!"
 echo "=========================================="
 echo "Check the results and logs in the agent_r1 directory."
 echo "You can also check Weights & Biases for training metrics if configured."
-
-wait # Wait for all background processes to finish
 
