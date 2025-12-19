@@ -210,7 +210,7 @@ def create_rl_dataset(data_paths, data_config, tokenizer, processor, env=None):
     """
     from torch.utils.data import Dataset
 
-    from .datasetset import ToolRLDataset
+    from .dataset import ToolRLDataset
 
 
     dataset_cls = ToolRLDataset
