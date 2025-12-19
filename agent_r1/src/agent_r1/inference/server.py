@@ -11,7 +11,7 @@ from openai import OpenAI
 
 from agent_r1.tool.envs.nous import NousToolEnv
 from agent_r1.tool.tools import _default_tool
-import agent_r1.vllm_infer.config as default_config
+import agent_r1.inference.config as default_config
 
 # ANSI color codes for colored output
 COLORS = {

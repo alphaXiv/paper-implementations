@@ -17,7 +17,7 @@ from collections import defaultdict
 import torch
 
 from verl import DataProto
-from agent_r1.training.reward_score import _default_compute_score
+from agent_r1.training.rewards import _default_compute_score
 
 
 class AgentRewardManager:

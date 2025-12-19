@@ -34,7 +34,7 @@ from verl.utils.torch_functional import masked_mean
 from verl.utils.ulysses import gather_outpus_and_unpad, ulysses_pad_and_slice_inputs
 from verl.workers.critic import BasePPOCritic
 
-from agent_r1.training import core_algos
+from agent_r1.training import algorithms
 
 __all__ = ["DataParallelPPOCritic"]
 
@@ -225,7 +225,7 @@ class DataParallelPPOCritic(BasePPOCritic):
 
                     # assert not torch.any(torch.isnan(vpreds)).item()
 
-                    vf_loss, vf_clipfrac = core_algos.compute_value_loss(vpreds=vpreds,
+                    vf_loss, vf_clipfrac = algorithms.compute_value_loss(vpreds=vpreds,
                                                                          values=values,
                                                                          returns=returns,
                                                                          state_mask=state_mask,

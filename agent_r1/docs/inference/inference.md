@@ -52,7 +52,7 @@ For interactive conversations with the model:
 
 ```bash
 # Start the interactive chat interface
-python3 -m src.agent_r1.vllm_infer.chat
+python3 -m src.agent_r1.inference.chat
 ```
 
 This launches an interactive terminal where you can chat with the model directly, including support for tools if your model was trained with tool-use capabilities.
@@ -63,7 +63,7 @@ For automation or one-off queries:
 
 ```bash
 # Run a single inference query
-python3 -m src.agent_r1.vllm_infer.run --question "What is the capital of France?"
+python3 -m src.agent_r1.inference.server --question "What is the capital of France?"
 ```
 
 #### Advanced Usage
@@ -87,5 +87,5 @@ REPETITION_PENALTY = 1.1
 Then pass it to your inference script:
 
 ```bash
-python3 -m agent_r1.vllm_infer.chat --config path/to/custom_config.py
+python3 -m agent_r1.inference.chat --config path/to/custom_config.py
 ```

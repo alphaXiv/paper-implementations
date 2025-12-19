@@ -14,7 +14,7 @@
 """
 Note that we don't combine the main with ray_trainer as ray_trainer is used by other main.
 """
-from .agent_ray_trainer import RayAgentTrainer
+from .trainer import RayAgentTrainer
 
 from agent_r1.tool.envs import _default_env
 from agent_r1.tool.tools import _default_tool
@@ -124,7 +124,7 @@ class TaskRunner:
         else:
             raise NotImplementedError
 
-        from .agent_ray_trainer import ResourcePoolManager, Role
+        from .trainer import ResourcePoolManager, Role
 
         role_worker_mapping = {
             Role.ActorRollout: ray.remote(actor_rollout_cls),
@@ -210,7 +210,7 @@ def create_rl_dataset(data_paths, data_config, tokenizer, processor, env=None):
     """
     from torch.utils.data import Dataset
 
-    from .agent_rl_dataset import ToolRLDataset
+    from .datasetset import ToolRLDataset
 
 
     dataset_cls = ToolRLDataset

@@ -49,9 +49,9 @@ from verl.utils.torch_functional import masked_mean
 from verl.utils.tracking import ValidationGenerationsLogger
 from verl.workers.rollout.async_server import AsyncLLMServerManager
 
-from agent_r1.llm_agent.generation import ToolGenerationManager, ToolGenerationConfig
-from agent_r1.training import core_algos
-from agent_r1.training.core_algos import agg_loss
+from agent_r1.generation.manager import ToolGenerationManager, ToolGenerationConfig
+from agent_r1.training import algorithms
+from agent_r1.training.algorithms import agg_loss
 from agent_r1.training.metric_utils import (
     compute_data_metrics,
     compute_throughout_metrics,
@@ -141,7 +141,7 @@ class ResourcePoolManager:
                 raise ValueError(f"Resource pool {resource_pool_name}: {num_gpus}*{num_nodes}" + "cannot be satisfied in this ray cluster")
 
 
-def apply_kl_penalty(data: DataProto, kl_ctrl: core_algos.AdaptiveKLController, kl_penalty="kl", multi_turn=False):
+def apply_kl_penalty(data: DataProto, kl_ctrl: algorithms.AdaptiveKLController, kl_penalty="kl", multi_turn=False):
     responses = data.batch["responses"]
     response_length = responses.size(1)
     token_level_scores = data.batch["token_level_scores"]
@@ -161,7 +161,7 @@ def apply_kl_penalty(data: DataProto, kl_ctrl: core_algos.AdaptiveKLController, 
 
     # compute kl between ref_policy and current policy
     # When apply_kl_penalty, algorithm.use_kl_in_reward=True, so the reference model has been enabled.
-    kld = core_algos.kl_penalty(data.batch["old_log_probs"], data.batch["ref_log_prob"], kl_penalty=kl_penalty)  # (batch_size, response_length)
+    kld = algorithms.kl_penalty(data.batch["old_log_probs"], data.batch["ref_log_prob"], kl_penalty=kl_penalty)  # (batch_size, response_length)
     kld = kld * action_mask
     beta = kl_ctrl.value
 
@@ -194,7 +194,7 @@ def compute_advantage(data: DataProto, adv_estimator, gamma=1.0, lam=1.0, num_re
     # TODO: add other ways to estimate advantages
     
     if adv_estimator == AdvantageEstimator.GAE:
-        advantages, returns = core_algos.compute_gae_advantage_return(
+        advantages, returns = algorithms.compute_gae_advantage_return(
             token_level_rewards=data.batch["token_level_rewards"],
             values=data.batch["values"],
             action_mask=data.batch["action_mask"],
@@ -204,7 +204,7 @@ def compute_advantage(data: DataProto, adv_estimator, gamma=1.0, lam=1.0, num_re
         data.batch["advantages"] = advantages
         data.batch["returns"] = returns
     elif adv_estimator == AdvantageEstimator.GRPO:
-        advantages, returns = core_algos.compute_grpo_outcome_advantage(
+        advantages, returns = algorithms.compute_grpo_outcome_advantage(
             token_level_rewards=data.batch["token_level_rewards"],
             action_mask=data.batch["action_mask"],
             index=data.non_tensor_batch["uid"],
@@ -281,7 +281,7 @@ class RayAgentTrainer(object):
         # define in-reward KL control
         # kl loss control currently not suppoorted
         if config.algorithm.use_kl_in_reward:
-            self.kl_ctrl_in_reward = core_algos.get_kl_controller(config.algorithm.kl_ctrl)
+            self.kl_ctrl_in_reward = algorithms.get_kl_controller(config.algorithm.kl_ctrl)
 
         if self.config.algorithm.adv_estimator == AdvantageEstimator.GAE:
             self.use_critic = True
@@ -1152,10 +1152,23 @@ class RayAgentTrainer(object):
                 grad_norm = metrics.get("actor/grad_norm", 0)
                 lr = metrics.get("actor/lr", 0)
                 step_time = metrics.get("timing/step", 0)
-                tokens_per_sec = metrics.get("throughput/tokens_per_sec", 0)
+                tokens_per_sec = metrics.get("perf/throughput", 0)
                 mfu = metrics.get("perf/mfu/actor", 0)
                 rewards_mean = metrics.get("critic/rewards/mean", 0)
                 advantages_mean = metrics.get("critic/advantages/mean", 0)
+                
+                # Update tqdm progress bar with metrics
+                progress_bar.set_postfix({
+                    "loss": f"{loss:.4f}",
+                    "grad_norm": f"{grad_norm:.3f}",
+                    "lr": f"{lr:.6f}",
+                    "rewards": f"{rewards_mean:.3f}",
+                    "adv": f"{advantages_mean:.3f}",
+                    "step_time": f"{step_time:.1f}s",
+                    "tok/sec": f"{tokens_per_sec:.0f}",
+                    "mfu": f"{mfu:.2f}"
+                })
+                
                 print(f"Step {self.global_steps:05d} | Loss: {loss:.6f} | Grad Norm: {grad_norm:.4f} | LR: {lr:.6f} | Rewards: {rewards_mean:.4f} | Adv: {advantages_mean:.4f} | Step Time: {step_time:.2f}s | Tok/sec: {tokens_per_sec:.0f} | MFU: {mfu:.2f}")
 
                 if is_last_step:
