@@ -37,7 +37,7 @@ from verl.utils.torch_functional import logprobs_from_logits
 from verl.utils.ulysses import gather_outpus_and_unpad, ulysses_pad_and_slice_inputs
 from verl.workers.actor import BasePPOActor
 
-from agent_r1.src.core_algos import agg_loss, compute_policy_loss, kl_penalty
+from agent_r1.training.core_algos import agg_loss, compute_policy_loss, kl_penalty
 
 __all__ = ["DataParallelPPOActor"]
 

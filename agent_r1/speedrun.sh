@@ -42,21 +42,20 @@ echo "agent_r1 Speedrun Setup and Training"
 echo "=========================================="
 echo "Selected algorithm: $ALGORITHM"
 
-# Check if WANDB_API_KEY is set (optional but recommended for logging)
+# Check if WANDB_API_KEY is set 
 if [ -z "$WANDB_API_KEY" ]; then
     echo "WARNING: WANDB_API_KEY environment variable is not set."
     echo "Training will proceed without Weights & Biases logging."
     echo "To enable logging, set: export WANDB_API_KEY='your_key_here'"
     echo "Get your key from: https://wandb.ai/settings"
-else
-    echo "WANDB_API_KEY is set. Training will log to Weights & Biases."
+    exit 1
 fi
 
 # Pull Docker image if not already present
 echo "Pulling Docker image..."
 sudo docker pull hiyouga/verl:ngc-th2.6.0-cu126-vllm0.8.3-flashinfer0.2.2-cxx11abi0 || {
     echo "Failed to pull Docker image. Please check your Docker installation and network."
-    exit 1
+    
 }
 
 
@@ -98,7 +97,7 @@ sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && pip3 install -
 
 # Clone VERL from official repo
 echo "Cloning VERL from official repo..."
-sudo docker exec verl-agent-r1 bash -c "git config --global --add safe.directory '*' && cd /workspace/agent_r1/src && git clone https://github.com/volcengine/verl.git && cd verl && git checkout a43ead6" || {
+sudo docker exec verl-agent-r1 bash -c "if [ ! -d '/workspace/agent_r1/src/verl' ]; then git config --global --add safe.directory '*' && cd /workspace/agent_r1/src && git clone https://github.com/volcengine/verl.git && cd verl && git checkout a43ead6; else echo 'VERL already exists, skipping clone.'; fi" || {
     echo "Failed to clone VERL from official repo."
     exit 1
 }
@@ -119,12 +118,12 @@ sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && mkdir -p data/
 
 # Build HotpotQA search index
 echo "Building HotpotQA search index..."
-sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && mkdir -p data/corpus/hotpotqa && wget -q https://huggingface.co/datasets/BeIR/hotpotqa/resolve/main/corpus.jsonl.gz -O data/corpus/hotpotqa/corpus.jsonl.gz && gunzip -c data/corpus/hotpotqa/corpus.jsonl.gz > data/corpus/hotpotqa/hpqa_corpus.jsonl" || {
+sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && if [ ! -f 'data/corpus/hotpotqa/hpqa_corpus.jsonl' ]; then mkdir -p data/corpus/hotpotqa && wget -q https://huggingface.co/datasets/BeIR/hotpotqa/resolve/main/corpus.jsonl.gz -O data/corpus/hotpotqa/corpus.jsonl.gz && gunzip -c data/corpus/hotpotqa/corpus.jsonl.gz > data/corpus/hotpotqa/hpqa_corpus.jsonl; else echo 'HotpotQA corpus already exists, skipping download.'; fi" || {
     echo "Failed to download corpus data."
     exit 1
 }
 
-sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1/src/scripts/hotpotqa_search && python process_hotpotqa.py" || {
+sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && if [ -f 'data/hotpotqa/train.parquet' ] && [ -f 'data/hotpotqa/validation.parquet' ]; then echo 'HotpotQA data already exists, skipping search index processing.'; else cd src/scripts/hotpotqa_search && python process_hotpotqa.py; fi" || {
     echo "Failed to build search index."
     exit 1
 }

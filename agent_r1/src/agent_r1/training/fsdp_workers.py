@@ -439,7 +439,7 @@ class ActorRolloutRefWorker(Worker):
 
     @register(dispatch_mode=Dispatch.ONE_TO_ALL)
     def init_model(self):
-        from agent_r1.src.agent_dp_actor import DataParallelPPOActor
+        from agent_r1.training.agent_dp_actor import DataParallelPPOActor
         # This is used to import external_lib into the huggingface systems
         import_external_libs(self.config.model.get("external_lib", None))
 
@@ -886,7 +886,7 @@ class CriticWorker(Worker):
         # This is used to import external_lib into the huggingface systems
         import_external_libs(self.config.model.get("external_lib", None))
 
-        from agent_r1.src.agent_dp_critic import DataParallelPPOCritic
+        from agent_r1.training.agent_dp_critic import DataParallelPPOCritic
         self.critic_module, self.critic_optimizer, self.critic_lr_scheduler = self._build_critic_model_optimizer(
             self.config)
 

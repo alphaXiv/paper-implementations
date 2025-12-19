@@ -285,10 +285,7 @@ class ToolGenerationManager:
             raw_prompt_ids = rollings.non_tensor_batch['raw_prompt_ids']
             length_exceeded = [len(prompt_id) > self.config.max_prompt_length for prompt_id in raw_prompt_ids]
             if any(length_exceeded):
-                
-                for prompt_id, length_exceeded_ in zip(raw_prompt_ids, length_exceeded):
-                    if length_exceeded_:
-                        
+                  
                 active_mask[length_exceeded] = 0
             
             if not active_mask.sum():

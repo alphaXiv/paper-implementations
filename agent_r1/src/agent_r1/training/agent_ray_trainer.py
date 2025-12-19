@@ -50,16 +50,16 @@ from verl.utils.tracking import ValidationGenerationsLogger
 from verl.workers.rollout.async_server import AsyncLLMServerManager
 
 from agent_r1.llm_agent.generation import ToolGenerationManager, ToolGenerationConfig
-from agent_r1.src import core_algos
-from agent_r1.src.core_algos import agg_loss
-from agent_r1.src.metric_utils import (
+from agent_r1.training import core_algos
+from agent_r1.training.core_algos import agg_loss
+from agent_r1.training.metric_utils import (
     compute_data_metrics,
     compute_throughout_metrics,
     compute_timing_metrics,
     process_validation_metrics,
     reduce_metrics,
 )
-from agent_r1.src.reward import compute_reward, compute_reward_async
+from agent_r1.training.reward import compute_reward, compute_reward_async
 from agent_r1.tool.base import BaseToolEnv
 
 WorkerType = Type[Worker]
@@ -1052,12 +1052,12 @@ class RayAgentTrainer(object):
                             reward_tensor, reward_extra_infos_dict = ray.get(future_reward)
 
                         # Add process rewards from tool calls
-                        process_rewards = self._compute_process_rewards(batch, envs, reward_tensor)
-                        batch.batch["process_rewards"] = process_rewards  # Store process rewards for logging
+                        # process_rewards = self._compute_process_rewards(batch, envs, reward_tensor)
+                        # batch.batch["process_rewards"] = process_rewards  # Store process rewards for logging
                         
                         # Combine final reward with process rewards if enabled
-                        if self.config.algorithm.get("use_process_rewards", False):
-                            reward_tensor = reward_tensor + process_rewards
+                        # if self.config.algorithm.get("use_process_rewards", False):
+                        #     reward_tensor = reward_tensor + process_rewards
                         
                         batch.batch["token_level_scores"] = reward_tensor
 
