@@ -1,9 +1,0 @@
-fastapi
-uvicorn
-pydantic
-numpy
-faiss-cpu
-FlagEmbedding
-requests
-tqdm
-langchain
