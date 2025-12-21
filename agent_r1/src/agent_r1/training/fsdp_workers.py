@@ -371,7 +371,7 @@ class ActorRolloutRefWorker(Worker):
                     model_hf_config=self.actor_model_config,
                 )
             elif vllm_mode == "spmd":
-                from .vllm_rollout_spmd import vLLMRollout
+                from .rollout.vllm_rollout_spmd import vLLMRollout
                 from verl.workers.rollout.vllm_rollout import vLLMAsyncRollout
                 vllm_rollout_cls = vLLMRollout if self.config.rollout.mode == "sync" else vLLMAsyncRollout
                 rollout = vllm_rollout_cls(
