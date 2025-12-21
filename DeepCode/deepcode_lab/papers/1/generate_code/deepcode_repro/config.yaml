@@ -1,0 +1,40 @@
+llm:
+  anthropic_api_key: "${ANTHROPIC_API_KEY}"
+  openai_api_key: "${OPENAI_API_KEY}"
+  brave_search_api_key: "${BRAVE_SEARCH_API_KEY}"
+  
+  # Models
+  planning_model: "claude-3-5-sonnet-20240620"
+  coding_model: "claude-3-5-sonnet-20240620"
+  verification_model: "gpt-4o"
+  
+  # Parameters
+  temperature: 0.0
+  max_tokens: 4096
+  retry_attempts: 3
+
+sandbox:
+  docker_image: "deepcode-sandbox:latest"
+  container_name_prefix: "deepcode_worker"
+  timeout_seconds: 300
+  work_dir: "/workspace"
+  host_mount_dir: "./data/sandbox_mount"
+  
+rag:
+  vector_store_path: "./data/chromadb"
+  collection_name: "deepcode_knowledge"
+  embedding_model: "text-embedding-3-small" # Using OpenAI for embeddings
+  similarity_threshold: 0.7
+  max_results: 5
+  chunk_size: 1000
+  chunk_overlap: 200
+
+paths:
+  input_papers: "./data/input_papers"
+  output_repos: "./data/output_repos"
+  logs: "./logs"
+  blueprints: "./data/blueprints"
+
+memory:
+  max_context_window: 128000
+  summary_token_limit: 500

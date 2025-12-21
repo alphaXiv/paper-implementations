@@ -1,0 +1,96 @@
+$schema: ./schema/mcp-agent.config.schema.json
+anthropic:
+  default_model: claude-sonnet-4.5
+default_search_server: brave
+document_segmentation:
+  enabled: true
+  size_threshold_chars: 50000
+execution_engine: asyncio
+google:
+  default_model: gemini-3-pro-preview
+llm_provider: google
+logger:
+  level: info
+  path_settings:
+    path_pattern: logs/mcp-agent-{unique_id}.jsonl
+    timestamp_format: '%Y%m%d_%H%M%S'
+    unique_id: timestamp
+  progress_display: false
+  transports:
+  - console
+  - file
+mcp:
+  servers:
+    bocha-mcp:
+      args:
+      - tools/bocha_search_server.py
+      command: python3
+      env:
+        BOCHA_API_KEY: ''
+        PYTHONPATH: .
+    brave:
+      args:
+      - -y
+      - '@modelcontextprotocol/server-brave-search'
+      command: npx
+      env:
+        BRAVE_API_KEY: BSAaYZmPotjXAa2GCbBPfTRqEd934bW
+    code-implementation:
+      args:
+      - tools/code_implementation_server.py
+      command: python
+      description: Paper code reproduction tool server - provides file operations,
+        code execution, search and other functions
+      env:
+        PYTHONPATH: .
+    code-reference-indexer:
+      args:
+      - tools/code_reference_indexer.py
+      command: python
+      description: Code reference indexer server - Provides intelligent code reference
+        search from indexed repositories
+      env:
+        PYTHONPATH: .
+    command-executor:
+      args:
+      - tools/command_executor.py
+      command: python
+      env:
+        PYTHONPATH: .
+    document-segmentation:
+      args:
+      - tools/document_segmentation_server.py
+      command: python
+      description: Document segmentation server - Provides intelligent document analysis
+        and segmented reading to optimize token usage
+      env:
+        PYTHONPATH: .
+    fetch:
+      args:
+      - mcp-server-fetch
+      command: uvx
+    file-downloader:
+      args:
+      - tools/pdf_downloader.py
+      command: python
+      env:
+        PYTHONPATH: .
+    filesystem:
+      args:
+      - -y
+      - '@modelcontextprotocol/server-filesystem'
+      - .
+      command: npx
+    github-downloader:
+      args:
+      - tools/git_command.py
+      command: python
+      env:
+        PYTHONPATH: .
+openai:
+  base_max_tokens: 40000
+  default_model: anthropic/claude-sonnet-4.5
+  max_tokens_policy: adaptive
+  reasoning_effort: low
+  retry_max_tokens: 32768
+planning_mode: traditional

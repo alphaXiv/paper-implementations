@@ -1,0 +1,196 @@
+```yaml
+complete_reproduction_plan:
+  paper_info:
+    title: "DeepCode: Open Agentic Coding"
+    core_contribution: "A fully autonomous multi-agent framework for high-fidelity document-to-repository synthesis that solves the context bottleneck via principled information-flow management (CodeMem, CodeRAG, and Blueprinting)."
+
+  # SECTION 1: File Structure Design
+  file_structure: |
+    deepcode_repro/
+    ├── main.py                         # Central orchestration entry point (CLI)
+    ├── config.yaml                     # Configuration: LLM keys, Sandbox settings, RAG thresholds
+    ├── docker/
+    │   ├── Dockerfile                  # Ubuntu 22.04 base with Python env
+    │   └── entrypoint.sh               # Sandbox execution wrapper
+    ├── src/
+    │   ├── __init__.py
+    │   ├── core/
+    │   │   ├── __init__.py
+    │   │   ├── document_parser.py      # Hierarchical Content Segmentation (Algo 1)
+    │   │   ├── memory.py               # CodeMem state management & graph logic
+    │   │   ├── rag_engine.py           # CodeRAG indexing and adaptive retrieval
+    │   │   └── blueprint.py            # Blueprint JSON schema definitions
+    │   ├── agents/
+    │   │   ├── __init__.py
+    │   │   ├── base.py                 # LLM wrapper with MCP tool integration
+    │   │   ├── planning.py             # Concept, Algorithm, and Planning Agents
+    │   │   ├── coding.py               # Coding and Summarization Agents
+    │   │   └── verification.py         # Static Analysis, Modification, and Sandbox Agents
+    │   └── utils/
+    │       ├── mcp_tools.py            # Brave Search, Filesystem, Shell execution tools
+    │       ├── prompts.py              # System prompts for all 8 agents
+    │       └── logger.py               # Execution tracing
+    ├── experiments/
+    │   ├── run_paperbench.py           # Script to run evaluation on PaperBench dataset
+    │   └── validate_repro.py           # Internal validation script
+    ├── data/
+    │   ├── input_papers/               # PDF/Markdown sources
+    │   └── output_repos/               # Generated code repositories
+    ├── requirements.txt                # Python dependencies (PyPDF2, chromadb, docker, etc.)
+    └── README.md                       # Installation and usage instructions
+
+  # SECTION 2: Implementation Components
+  implementation_components: |
+    # COMPONENT 1: HIERARCHICAL CONTENT SEGMENTATION (src/core/document_parser.py)
+    # Purpose: Transform raw PDF/MD into structured chunks to overcome context limits.
+    # Algorithm:
+    # 1. Parse Document D -> Segments S = {(h_k, c_k)} (Header, Content).
+    # 2. Index S for semantic retrieval.
+    # Implementation Details:
+    # - Class: DocumentSegmenter
+    # - Method: parse_markdown(text) -> List[Segment]
+    # - Use 'marker-pdf' or 'PyMuPDF' to preserve header hierarchy.
+
+    # COMPONENT 2: PLANNING AGENT SWARM (src/agents/planning.py)
+    # Purpose: Synthesize the Implementation Blueprint (B) from segments.
+    # Sub-Agents:
+    # 1. Concept Agent: Queries S for high-level logic -> Conceptual Schema.
+    # 2. Algorithm Agent: Queries S for math/pseudocode -> Algorithmic Schema.
+    #    - Prompt: "Extract verbatim LaTeX for equations and step-by-step logic."
+    # 3. Planning Agent: Merges schemas -> Blueprint B.
+    # Data Structure (Blueprint B):
+    # - JSON object: { file_hierarchy: Tree, component_specs: Map, dev_plan: List[File] }
+
+    # COMPONENT 3: CODEMEM STATE MANAGEMENT (src/core/memory.py)
+    # Purpose: Maintain cross-file consistency without context saturation.
+    # Data Structure (Memory Entry m_t):
+    # - { file_path: str, core_purpose: str, public_interface: List[Sig], dependency_edges: {afferent, efferent} }
+    # Algorithm:
+    # - SelectRelevantMemory(M, target_file): Return subset of M where dependency exists.
+    # - Update: M_t = M_{t-1} U {SummarizationAgent(c_t)}
+
+    # COMPONENT 4: CODERAG ENGINE (src/core/rag_engine.py)
+    # Purpose: Conditional knowledge injection for underspecified designs.
+    # Algorithm (Adaptive Retrieval):
+    # 1. Decision: r_t = delta(Context, target_file) (1=Retrieve, 0=Skip).
+    # 2. If r_t=1: Query Index J for tuples (source_code, target_file, relationship_type, snippet).
+    # 3. Augment Context: X' = X U snippet.
+    # Implementation:
+    # - Vector Store: ChromaDB or FAISS.
+    # - Indexing: Pre-compute summaries of external reference repos.
+
+    # COMPONENT 5: STATEFUL GENERATION LOOP (src/agents/coding.py)
+    # Purpose: Iterative file generation.
+    # Algorithm:
+    # For target_file in Blueprint.dev_plan:
+    #   1. Context X = Blueprint + SelectRelevantMemory(M) + CodeRAG(target).
+    #   2. Code c_t = CodingAgent(X).
+    #   3. Summary m_t = SummarizationAgent(c_t).
+    #   4. Store c_t to disk; Store m_t to Memory.
+
+    # COMPONENT 6: VERIFICATION LOOP (src/agents/verification.py)
+    # Purpose: Ensure structural and functional correctness.
+    # Algorithm:
+    # 1. Static Pass:
+    #    - Report = AnalysisAgent(Repo, Blueprint).
+    #    - Repo = ModificationAgent(Repo, Report).
+    # 2. Dynamic Pass (Sandbox):
+    #    - Loop j=0 to Max_Iter:
+    #      - Trace = SandboxAgent.execute(Repo).
+    #      - If success: Break.
+    #      - Fix_Instructions = Analyze(Trace).
+    #      - Repo = ModificationAgent(Repo, Fix_Instructions).
+
+    # COMPONENT 7: SANDBOX ENVIRONMENT (src/utils/mcp_tools.py & docker/)
+    # Purpose: Secure execution environment.
+    # Implementation:
+    # - Docker container with 'python:3.9' or 'ubuntu:22.04'.
+    # - MCP Tool 'command_executor': Runs 'pytest', 'python main.py' inside container.
+    # - MCP Tool 'filesystem': Read/Write access limited to sandbox volume.
+
+  # SECTION 3: Validation & Evaluation
+  validation_approach: |
+    # EXPERIMENT 1: BLUEPRINT FIDELITY
+    # Goal: Verify the Planning Agent correctly extracts architecture.
+    # Procedure:
+    # 1. Input: "Attention is All You Need" (Transformer) paper.
+    # 2. Run Phase 1 (Planning).
+    # 3. Check Blueprint for existence of: 'attention.py', 'positional_encoding.py', 'transformer.py'.
+    # Success Criteria: Blueprint contains >90% of core components mentioned in paper.
+
+    # EXPERIMENT 2: CONTEXT EFFICIENCY (CODEMEM)
+    # Goal: Prove prompt size does not scale linearly with repo size.
+    # Procedure:
+    # 1. Generate a large repository (>20 files).
+    # 2. Log token count for the 20th file generation.
+    # Success Criteria: Token count < 8k (or fixed window) regardless of total repo size.
+
+    # EXPERIMENT 3: FUNCTIONAL CORRECTNESS (PAPERBENCH)
+    # Goal: Reproduce the 73.5% Pass@1 metric.
+    # Procedure:
+    # 1. Use the 'PaperBench' dataset (if available) or a subset of 10 ML papers.
+    # 2. Run full pipeline: Planning -> Coding -> Verification.
+    # 3. Execute generated tests in Docker.
+    # Success Criteria: >50% of repositories pass their internal tests (beating baseline 51.1%).
+
+    # EXPERIMENT 4: SELF-CORRECTION
+    # Goal: Validate the Verification Loop.
+    # Procedure:
+    # 1. Manually inject a syntax error and a logic error (wrong tensor shape) into a generated file.
+    # 2. Trigger the Verification Agent.
+    # Success Criteria: Agent detects error via stderr, generates correct patch, and tests pass.
+
+  # SECTION 4: Environment & Dependencies
+  environment_setup: |
+    # SYSTEM REQUIREMENTS
+    # - OS: Linux/macOS (for Docker compatibility)
+    # - Docker Engine: Installed and running
+    # - API Keys: Anthropic (Claude-3.5-Sonnet), OpenAI (GPT-4o), Brave Search
+
+    # PYTHON DEPENDENCIES (requirements.txt)
+    python>=3.10
+    pypdf>=3.0.0            # PDF parsing
+    marker-pdf>=0.2.0       # Advanced Markdown conversion
+    chromadb>=0.4.0         # Vector store for CodeRAG
+    docker>=6.1.0           # Python Docker SDK
+    pydantic>=2.0.0         # Data validation for Schemas
+    tenacity>=8.2.0         # Retry logic for API calls
+    anthropic>=0.7.0        # LLM Client
+    openai>=1.0.0           # LLM Client
+    pyyaml>=6.0             # Config handling
+
+    # DOCKER SANDBOX
+    # Base Image: ubuntu:22.04
+    # Packages: python3-pip, git, build-essential
+    # Isolation: Network disabled except for PyPI (if possible) or pre-installed common ML libs (torch, numpy, pandas, scipy, sklearn).
+
+  # SECTION 5: Implementation Strategy
+  implementation_strategy: |
+    # PHASE 1: INFRASTRUCTURE (Days 1-3)
+    # 1. Setup 'src/utils/base.py' to handle LLM API calls with retry logic.
+    # 2. Implement 'src/utils/mcp_tools.py' to wrap Docker execution.
+    # 3. Create the Dockerfile and verify 'entrypoint.sh' can run a simple "Hello World" python script.
+    # 4. Implement 'src/core/document_parser.py' and verify it chunks a sample PDF correctly.
+
+    # PHASE 2: THE BRAIN (PLANNING) (Days 4-7)
+    # 1. Implement 'src/agents/planning.py'.
+    # 2. Define the JSON schemas in 'src/core/blueprint.py'.
+    # 3. Test: Feed a paper, inspect the generated JSON Blueprint. Ensure math formulas are extracted as LaTeX.
+
+    # PHASE 3: THE ENGINE (CODING) (Days 8-12)
+    # 1. Implement 'src/core/memory.py' (CodeMem).
+    # 2. Implement 'src/agents/coding.py' (Generator & Summarizer).
+    # 3. Test: Manually provide a Blueprint. Run the loop. Check if File B imports File A correctly using the memory summary.
+    # 4. (Optional) Implement 'src/core/rag_engine.py' if external knowledge is needed immediately.
+
+    # PHASE 4: THE GUARDRAILS (VERIFICATION) (Days 13-15)
+    # 1. Implement 'src/agents/verification.py'.
+    # 2. Connect the Static Analysis -> Modification loop.
+    # 3. Connect the Sandbox Execution -> Modification loop.
+    # 4. Test: Inject errors and verify the agent fixes them.
+
+    # PHASE 5: INTEGRATION (Days 16+)
+    # 1. Create 'main.py' to chain Phase 2 -> Phase 3 -> Phase 4.
+    # 2. Run 'experiments/run_paperbench.py' on a small subset.
+    # 3. Tune prompts in 'src/utils/prompts.py' based on failure modes (e.g., if agent forgets imports).
+```
