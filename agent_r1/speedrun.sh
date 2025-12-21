@@ -123,7 +123,7 @@ sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && if [ ! -f 'dat
     exit 1
 }
 
-sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && if [ -f 'data/hotpotqa/train.parquet' ] && [ -f 'data/hotpotqa/validation.parquet' ]; then echo 'HotpotQA data already exists, skipping search index processing.'; else cd src/scripts/hotpotqa_search && python process_hotpotqa.py; fi" || {
+sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && if [ -f 'data/corpus/hotpotqa/index.bin' ]; then echo 'HotpotQA search index already exists, skipping index build.'; else echo 'Building FAISS search index (this may take some time)...'; cd src/scripts/hotpotqa_search && python process_hotpotqa.py; fi" || {
     echo "Failed to build search index."
     exit 1
 }

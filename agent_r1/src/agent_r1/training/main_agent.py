@@ -26,42 +26,6 @@ import ray
 
 from .reward import load_reward_manager
 
-
-def get_custom_reward_fn(config):
-    import importlib.util
-    import sys
-
-    reward_fn_config = config.get("custom_reward_function") or {}
-    file_path = reward_fn_config.get("path")
-    if not file_path:
-        return None
-
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"Reward function file '{file_path}' not found.")
-
-    spec = importlib.util.spec_from_file_location("custom_module", file_path)
-    module = importlib.util.module_from_spec(spec)
-    try:
-        sys.modules["custom_module"] = module
-        spec.loader.exec_module(module)
-    except Exception as e:
-        raise RuntimeError(f"Error loading module from '{file_path}': {e}") from e
-
-    function_name = reward_fn_config.get("name")
-    if not hasattr(module, function_name):
-        raise AttributeError(f"Reward function '{function_name}' not found in '{file_path}'.")
-
-    print(f"using customized reward function '{function_name}' from '{file_path}'")
-    raw_fn = getattr(module, function_name)
-
-    reward_kwargs = dict(reward_fn_config.get("reward_kwargs", {}))
-
-    def wrapped_fn(*args, **kwargs):
-        return raw_fn(*args, **kwargs, **reward_kwargs)
-
-    return wrapped_fn
-
-
 @hydra.main(config_path="config", config_name="agent_trainer", version_base=None)
 def main(config):
     run_agent(config)
@@ -103,8 +67,7 @@ class TaskRunner:
         processor = hf_processor(local_path, use_fast=True)  # used for multimodal LLM, could be none
 
         # define worker classes
-        if config.actor_rollout_ref.actor.strategy in ["fsdp", "fsdp2"]:
-            assert config.critic.strategy in ["fsdp", "fsdp2"]
+        if config.actor_rollout_ref.actor.strategy in ["fsdp2"]:
             assert config.actor_rollout_ref.actor.strategy == config.critic.strategy
             from .fsdp_workers import ActorRolloutRefWorker, CriticWorker
             from verl.single_controller.ray import RayWorkerGroup
@@ -112,15 +75,6 @@ class TaskRunner:
 
             actor_rollout_cls = AsyncActorRolloutRefWorker if config.actor_rollout_ref.rollout.mode == "async" else ActorRolloutRefWorker
             ray_worker_group_cls = RayWorkerGroup
-
-        elif config.actor_rollout_ref.actor.strategy == "megatron":
-            assert config.actor_rollout_ref.actor.strategy == config.critic.strategy
-            from verl.single_controller.ray.megatron import NVMegatronRayWorkerGroup
-            from verl.workers.megatron_workers import ActorRolloutRefWorker, CriticWorker
-
-            actor_rollout_cls = ActorRolloutRefWorker
-            ray_worker_group_cls = NVMegatronRayWorkerGroup
-
         else:
             raise NotImplementedError
 
@@ -139,17 +93,6 @@ class TaskRunner:
             Role.ActorRollout: global_pool_id,
             Role.Critic: global_pool_id,
         }
-
-       
-        if config.reward_model.enable:
-            if config.reward_model.strategy in ["fsdp", "fsdp2"]:
-                from verl.workers.fsdp_workers import RewardModelWorker
-            elif config.reward_model.strategy == "megatron":
-                from verl.workers.megatron_workers import RewardModelWorker
-            else:
-                raise NotImplementedError
-            role_worker_mapping[Role.RewardModel] = ray.remote(RewardModelWorker)
-            mapping[Role.RewardModel] = global_pool_id
 
         # use reference model
         if config.algorithm.use_kl_in_reward or config.actor_rollout_ref.actor.use_kl_loss:
