@@ -899,7 +899,7 @@ class RayAgentTrainer(object):
                     process_rewards[i, token_pos] = env_rewards[tool_idx]
         
         # Apply normalization to process rewards
-        process_rewards = self.prime_norm(process_rewards)
+        process_rewards = self.token_norm(process_rewards)
         
         return process_rewards
 
