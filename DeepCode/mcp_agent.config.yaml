@@ -1,10 +1,14 @@
 $schema: ./schema/mcp-agent.config.schema.json
-anthropic: null
+anthropic:
+  default_model: claude-sonnet-4.5
 default_search_server: brave
 document_segmentation:
-  enabled: false
+  enabled: true
   size_threshold_chars: 50000
 execution_engine: asyncio
+google:
+  default_model: gemini-3-pro-preview
+llm_provider: google
 logger:
   level: info
   path_settings:
@@ -25,35 +29,12 @@ mcp:
         BOCHA_API_KEY: ''
         PYTHONPATH: .
     brave:
-      # macos and linux should use this
       args:
       - -y
       - '@modelcontextprotocol/server-brave-search'
       command: npx
-
-      # windows should use this
-      # args:
-      # # please use the correct path for your system
-      # - C:/Users/LEGION/AppData/Roaming/npm/node_modules/@modelcontextprotocol/server-brave-search/dist/index.js
-      # command: node
       env:
-        BRAVE_API_KEY: ''
-    filesystem:
-      # macos and linux should use this
-      args:
-      - -y
-      - '@modelcontextprotocol/server-filesystem'
-      - .
-      command: npx
-
-      # windows should use this
-      # args:
-      # # please use the correct path for your system
-      # - C:/Users/LEGION/AppData/Roaming/npm/node_modules/@modelcontextprotocol/server-filesystem/dist/index.js
-      # - .
-      # command: node
-
-
+        BRAVE_API_KEY: BSAaYZmPotjXAa2GCbBPfTRqEd934bW
     code-implementation:
       args:
       - tools/code_implementation_server.py
@@ -94,33 +75,22 @@ mcp:
       command: python
       env:
         PYTHONPATH: .
+    filesystem:
+      args:
+      - -y
+      - '@modelcontextprotocol/server-filesystem'
+      - .
+      command: npx
     github-downloader:
       args:
       - tools/git_command.py
       command: python
       env:
         PYTHONPATH: .
-# LLM Provider Priority (选择使用哪个LLM / Choose which LLM to use)
-# Options: "anthropic", "google", "openai"
-# If not set or provider unavailable, will fallback to first available provider
-llm_provider: "google"  # 设置为 "google", "anthropic", 或 "openai"
-
 openai:
   base_max_tokens: 40000
-  # default_model: google/gemini-2.5-pro
   default_model: anthropic/claude-sonnet-4.5
-  # default_model: openai/gpt-oss-120b
-  # default_model: deepseek/deepseek-v3.2-exp
-  # default_model: moonshotai/kimi-k2-thinking
-  reasoning_effort: low  # Only for thinking models
   max_tokens_policy: adaptive
+  reasoning_effort: low
   retry_max_tokens: 32768
-
-# Configuration for Google AI (Gemini)
-google:
-  default_model: "gemini-3-pro-preview"
-
-anthropic:
-  default_model: "claude-sonnet-4.5"
-
 planning_mode: traditional
