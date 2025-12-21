@@ -831,7 +831,7 @@ class RayAgentTrainer(object):
         global_balance_stats = log_seqlen_unbalance(seqlen_list=global_seqlen_lst, partitions=global_partition_lst, prefix=logging_prefix)
         metrics.update(global_balance_stats)
 
-    def prime_norm(self, token_level_scores):
+    def token_norm(self, token_level_scores):
         """
         Apply normalization to token level scores.
         This helps stabilize training by considering cumulative effects and scaling rewards.
