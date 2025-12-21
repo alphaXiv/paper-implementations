@@ -123,7 +123,7 @@ sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && if [ ! -f 'dat
     exit 1
 }
 
-sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && if [ -f 'data/hotpotqa/train.parquet' ] && [ -f 'data/hotpotqa/validation.parquet' ]; then echo 'HotpotQA data already exists, skipping search index processing.'; else cd src/scripts/hotpotqa_search && python process_hotpotqa.py; fi" || {
+sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && if [ ! -f 'data/corpus/hotpotqa/index.bin' ]; then echo 'Building FAISS search index...' && cd src/scripts/hotpotqa_search && python process_hotpotqa.py; else echo 'FAISS index already exists, skipping search index processing.'; fi" || {
     echo "Failed to build search index."
     exit 1
 }
@@ -142,7 +142,7 @@ case "$ALGORITHM" in
     ppo)
         echo "=========================================="
         echo "Starting PPO Training on HotpotQA"
-        echo "This will take approximately 12 hours on 4xA100 80GB GPUs"
+        echo "This will take approximately 12 hours on 4xH100 80GB GPUs"
         echo "=========================================="
 
         sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && cp src/examples/trainer/run_ppo_hotpotqa.sh ./ && bash run_ppo_hotpotqa.sh" || {
@@ -153,7 +153,7 @@ case "$ALGORITHM" in
     grpo)
         echo "=========================================="
         echo "Starting GRPO Training on HotpotQA"
-        echo "This will take approximately 18-24 hours on 4xA100 80GB GPUs"
+        echo "This will take approximately 18-24 hours on 4xH100 80GB GPUs"
         echo "=========================================="
 
         sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && cp src/examples/trainer/run_grpo_hotpotqa.sh ./ && bash run_grpo_hotpotqa.sh" || {
