@@ -23,10 +23,10 @@ from agent_r1.training.rewards import _default_compute_score
 class AgentRewardManager:
     """The reward manager."""
 
-    def __init__(self, tokenizer, num_examine, compute_score=None, reward_fn_key="data_source") -> None:
+    def __init__(self, tokenizer, num_examine, reward_fn_key="data_source") -> None:
         self.tokenizer = tokenizer
         self.num_examine = num_examine  # the number of batches of decoded responses to print to the console
-        self.compute_score = compute_score or _default_compute_score
+        self.compute_score = _default_compute_score
         self.reward_fn_key = reward_fn_key
 
     def __call__(self, data: DataProto, return_dict=False):

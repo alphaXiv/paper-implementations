@@ -240,20 +240,18 @@ class RayAgentTrainer(object):
         role_worker_mapping: dict[Role, WorkerType],
         resource_pool_manager: ResourcePoolManager,
         ray_worker_group_cls: RayWorkerGroup = RayWorkerGroup,
-        processor=None,
         reward_fn=None,
         val_reward_fn=None,
-        train_dataset: Optional[Dataset] = None,
-        val_dataset: Optional[Dataset] = None,
+        train_dataset: Dataset = None,
+        val_dataset: Dataset = None,
         collate_fn=None,
-        train_sampler: Optional[Sampler] = None,
+        train_sampler: Sampler = None,
         env: Optional[BaseToolEnv] = None,
         val_env: Optional[BaseToolEnv] = None,
     ):
         # assert torch.cuda.is_available(), 'cuda must be available on driver'
 
         self.tokenizer = tokenizer
-        self.processor = processor
         self.config = config
         self.reward_fn = reward_fn
         self.val_reward_fn = val_reward_fn
@@ -412,21 +410,7 @@ class RayAgentTrainer(object):
         """
         Creates the train and validation dataloaders.
         """
-        # TODO: we have to make sure the batch size is divisible by the dp size
-        from .main_agent import create_rl_dataset, create_rl_sampler
-
-        if train_dataset is None:
-            train_dataset = create_rl_dataset(self.config.data.train_files, self.config.data, self.tokenizer, self.processor, self.env)
-        if val_dataset is None:
-            val_dataset = create_rl_dataset(self.config.data.val_files, self.config.data, self.tokenizer, self.processor, self.val_env)
         self.train_dataset, self.val_dataset = train_dataset, val_dataset
-
-        if train_sampler is None:
-            train_sampler = create_rl_sampler(self.config.data, self.train_dataset)
-        if collate_fn is None:
-            from verl.utils.dataset.rl_dataset import collate_fn as default_collate_fn
-
-            collate_fn = default_collate_fn
 
         self.train_dataloader = StatefulDataLoader(
             dataset=self.train_dataset,
@@ -541,10 +525,9 @@ class RayAgentTrainer(object):
 
         generation_manager = ToolGenerationManager(
             tokenizer=self.tokenizer,
-            processor=self.processor,
             actor_rollout_wg=self.actor_rollout_wg,
             config=gen_config,
-            is_validation = True,
+            is_validation=True,
         )
 
         for test_data in self.val_dataloader:
@@ -954,7 +937,6 @@ class RayAgentTrainer(object):
 
         generation_manager = ToolGenerationManager(
             tokenizer=self.tokenizer,
-            processor=self.processor,
             actor_rollout_wg=self.actor_rollout_wg,
             config=gen_config,
         )
@@ -971,8 +953,6 @@ class RayAgentTrainer(object):
                 # pop those keys for generation
                 batch_keys_to_pop = ["input_ids", "attention_mask", "position_ids"]
                 non_tensor_batch_keys_to_pop = ["raw_prompt_ids"]
-                if "multi_modal_inputs" in batch.non_tensor_batch:
-                    non_tensor_batch_keys_to_pop.extend(["multi_modal_data", "multi_modal_inputs"])
                 if "raw_prompt" in batch.non_tensor_batch:
                     non_tensor_batch_keys_to_pop.append("raw_prompt")
                 if "tools_kwargs" in batch.non_tensor_batch:
@@ -1012,10 +992,7 @@ class RayAgentTrainer(object):
                             reward_tensor = self.rm_wg.compute_rm_score(batch)
                             batch = batch.union(reward_tensor)
 
-                        if self.config.reward_model.launch_reward_fn_async:
-                            future_reward = compute_reward_async.remote(batch, self.config, self.tokenizer)
-                        else:
-                            reward_tensor, reward_extra_infos_dict = compute_reward(batch, self.reward_fn)
+                        reward_tensor, reward_extra_infos_dict = compute_reward(batch, self.reward_fn)
 
                     # recompute old_log_probs
                     with _timer("old_log_prob", timing_raw):

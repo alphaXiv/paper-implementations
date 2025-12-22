@@ -1291,32 +1291,3 @@ class RewardModelWorker(Worker):
 
         output = output.to("cpu")
         return output
-
-
-# ================================= Async related workers =================================
-class AsyncActorRolloutRefWorker(ActorRolloutRefWorker):
-    def _build_rollout(self, trust_remote_code=False):
-        rollout, rollout_sharding_manager = super()._build_rollout(trust_remote_code)
-
-        # NOTE: rollout is not actually initialized here, it's deferred
-        # to be initialized by AsyncvLLMServer.
-
-        self.vllm_tp_size = self.config.rollout.tensor_model_parallel_size
-        self.vllm_dp_rank = int(os.environ["RANK"]) // self.vllm_tp_size
-        self.vllm_tp_rank = int(os.environ["RANK"]) % self.vllm_tp_size
-
-        # used for sleep/wake_up
-        rollout.sharding_manager = rollout_sharding_manager
-
-        return rollout, rollout_sharding_manager
-
-    @register(dispatch_mode=Dispatch.DP_COMPUTE_PROTO)
-    def generate_sequences(self, prompts: DataProto):
-        raise NotImplementedError("AsyncActorRolloutRefWorker does not support generate_sequences")
-
-    @register(dispatch_mode=Dispatch.DIRECT_ROLLOUT_METHOD)
-    def execute_method(self, method: Union[str, bytes], *args, **kwargs):
-        """Called by ExternalRayDistributedExecutor collective_rpc."""
-        if self.vllm_tp_rank == 0 and method != "execute_model":
-            print(f"[DP={self.vllm_dp_rank},TP={self.vllm_tp_rank}] execute_method: {method if isinstance(method, str) else 'Callable'}")
-        return self.rollout.execute_method(method, *args, **kwargs)

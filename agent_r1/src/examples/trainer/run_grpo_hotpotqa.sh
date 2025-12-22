@@ -2,7 +2,7 @@ export BASE_MODEL='Qwen/Qwen2.5-1.5B-Instruct'
 export PROJECT_NAME='hotpotqa'
 export EXPERIMENT_NAME=grpo-qwen2.5-1.5b-instruct
 
-python3 -m src.agent_r1.training.main_agent \
+python3 -m src.agent_r1.training.train_rl_agent \
     algorithm.adv_estimator=grpo \
     data.train_files=['data/hotpotqa/train.parquet'] \
     data.val_files=['data/hotpotqa/validation.parquet'] \

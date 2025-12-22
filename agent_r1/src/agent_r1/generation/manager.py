@@ -30,13 +30,11 @@ class ToolGenerationManager:
     def __init__(
         self,
         tokenizer,
-        processor,
         actor_rollout_wg,
         config: ToolGenerationConfig,
         is_validation: bool = False,
     ):
         self.tokenizer = tokenizer
-        self.processor = processor
         self.actor_rollout_wg = actor_rollout_wg
         self.config = config
         self.is_validation = is_validation
@@ -136,29 +134,7 @@ class ToolGenerationManager:
         
         for i, (tool_response, tool_responses_image) in enumerate(zip(tool_responses, tool_responses_images)):
             row_dict={}
-            if is_multi_modal and '<image>' in tool_response and tool_responses_image is not None:
-                assert len(tool_responses_image) == tool_response.count('<image>'), f"[WARNING] TOOL RESPONSE IMAGE NUMBER NOT MATCH, {len(tool_responses_image)} != {tool_response.count('<image>')} for {tool_response}"
-                raw_tool_responses.append(tool_response.replace('<image>', '<|vision_start|><|image_pad|><|vision_end|>'))
-                row_dict['multi_modal_data'] = {'image': tool_responses_image}
-                image_inputs = self.processor.image_processor(row_dict['multi_modal_data']['image'], return_tensors='pt')
-                row_dict['multi_modal_inputs'] = {key: val for key, val in image_inputs.items()}
-                image_grid_thw = image_inputs['image_grid_thw']
-                if image_grid_thw is not None:
-                    merge_length = self.processor.image_processor.merge_size**2
-                    index = 0
-                    while '<image>' in tool_response:
-                        tool_response = tool_response.replace(
-                            '<image>',
-                            '<|vision_start|>' + '<|placeholder|>' * (image_grid_thw[index].prod() // merge_length) +
-                            '<|vision_end|>',
-                            1,
-                        )
-                        index += 1
-
-                    tool_response = tool_response.replace('<|placeholder|>', self.processor.image_token)
-
-            else:
-                raw_tool_responses.append(tool_response)
+            raw_tool_responses.append(tool_response)
             formatted_tool_responses.append(tool_response)
             row_dict_list.append(row_dict)
 
@@ -204,40 +180,7 @@ class ToolGenerationManager:
         ])
 
         new_attention_mask = self.tensor_fn.create_attention_mask(new_input_ids)
-        
-        if is_multi_modal:
-            multi_modal_data = rollings.non_tensor_batch['multi_modal_data']
-            multi_modal_inputs = rollings.non_tensor_batch['multi_modal_inputs']
-
-            new_multi_modal_data = []
-            new_multi_modal_inputs = []
-
-            for row_dict, multi_modal_data_, multi_modal_inputs_ in zip(row_dict_list, multi_modal_data, multi_modal_inputs):
-                if 'multi_modal_data' in row_dict.keys():
-                    new_multi_modal_data.append({"image":multi_modal_data_['image'] + row_dict['multi_modal_data']['image']})
-                else:
-                    new_multi_modal_data.append({"image":multi_modal_data_['image']})
-                if 'multi_modal_inputs' in row_dict.keys():
-                    new_multi_modal_inputs.append({key: torch.cat((val,row_dict['multi_modal_inputs'][key]),dim=0) for key, val in multi_modal_inputs_.items()})
-                else:
-                    new_multi_modal_inputs.append({key: val for key, val in multi_modal_inputs_.items()})
-
-            rollings.non_tensor_batch['multi_modal_data'] = np.array(new_multi_modal_data, dtype=object)
-            rollings.non_tensor_batch['multi_modal_inputs'] = np.array(new_multi_modal_inputs, dtype=object)
-
-            from verl.models.transformers.qwen2_vl import get_rope_index
-            new_postion_ids = []
-            for i in range(len(new_multi_modal_data)):
-                new_postion_ids.append(get_rope_index(
-                    processor=self.processor,
-                    input_ids=new_input_ids[i],
-                    image_grid_thw=new_multi_modal_inputs[i]['image_grid_thw'],
-                    attention_mask=new_attention_mask[i],
-                ))
-
-            new_position_ids = torch.stack(new_postion_ids, dim=0)
-        else:
-            new_position_ids = self.tensor_fn.create_position_ids(new_attention_mask)
+        new_position_ids = self.tensor_fn.create_position_ids(new_attention_mask)
 
         rollings.batch['input_ids'] = new_input_ids
         rollings.batch['position_ids'] = new_position_ids
@@ -372,21 +315,7 @@ class ToolGenerationManager:
             rollings.batch['responses'].long()
         ], dim=1)
         final_output['attention_mask'] = self.tensor_fn.create_attention_mask(final_output['input_ids'])
-        if "multi_modal_data" in rollings.non_tensor_batch.keys():
-            from verl.models.transformers.qwen2_vl import get_rope_index
-            position_ids = []
-            for i in range(len(rollings.non_tensor_batch['multi_modal_data'])):
-                position_ids.append(get_rope_index(
-                    processor=self.processor,
-                    input_ids=final_output['input_ids'][i],
-                    image_grid_thw=rollings.non_tensor_batch['multi_modal_inputs'][i]['image_grid_thw'],
-                    attention_mask=final_output['attention_mask'][i],
-                ))
-
-            position_ids = torch.stack(position_ids, dim=0)
-            final_output['position_ids'] = position_ids
-        else:
-            final_output['position_ids'] = self.tensor_fn.create_position_ids(final_output['attention_mask'])
+        final_output['position_ids'] = self.tensor_fn.create_position_ids(final_output['attention_mask'])
 
         response_length = final_output['responses'].shape[-1]
         response_mask = final_output['attention_mask'][:, -response_length:]
