@@ -39,23 +39,23 @@ def run_agent(config) -> None:
             num_cpus=config.ray_init.num_cpus,
         )
 
-    runner = TaskRunner.remote()
+    runner = TrainingOrchestrator.remote()
     ray.get(runner.run.remote(config))
 
 
-@ray.remote(num_cpus=1)  # please make sure main_task is not scheduled on head
-class TaskRunner:
+@ray.remote(num_cpus=1)  # Lightweight coordinator - reserves minimal resources for orchestration
+class TrainingOrchestrator:
     def run(self, config):
         from pprint import pprint
         from omegaconf import OmegaConf
         from verl.utils.fs import copy_to_local
         from verl.utils import hf_tokenizer
 
-        from .fsdp_workers import ActorRolloutRefWorker, CriticWorker
+        from .workers import ActorRolloutRefWorker, CriticWorker
         from verl.single_controller.ray import RayWorkerGroup
-        from .trainer import ResourcePoolManager, Role
+        from agent_r1.training.utils.resource_pool import ResourcePoolManager, Role
 
-        from .agent_reward_manager import AgentRewardManager
+        from .rewards.reward_scorer import RewardScorer
         from verl.utils.dataset.rl_dataset import collate_fn
         from .dataset import ToolRLDataset
 
@@ -87,13 +87,13 @@ class TaskRunner:
         }
         resource_pool_manager = ResourcePoolManager(resource_pool_spec=resource_pool_spec, mapping=mapping)
 
-        reward_fn = AgentRewardManager(
+        reward_fn = RewardScorer(
             tokenizer=tokenizer,
             num_examine=num_examine,
             reward_fn_key=config.data.reward_fn_key,
         )
 
-        val_reward_fn = AgentRewardManager(
+        val_reward_fn = RewardScorer(
             tokenizer=tokenizer,
             num_examine=num_examine,
             reward_fn_key=config.data.reward_fn_key,

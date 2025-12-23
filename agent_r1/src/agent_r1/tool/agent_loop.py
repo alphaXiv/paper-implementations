@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from PIL import Image
 import numpy as np
 
-from .tensor_utils import TensorHelper, TensorConfig
+from agent_r1.tool.utils import TensorHelper, TensorConfig
 from agent_r1.tool.base import BaseToolEnv, BaseImageToolEnv
 
 from verl import DataProto

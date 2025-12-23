@@ -55,21 +55,6 @@ class ToolRLDataset(RLHFDataset):
                     system_msg = [{"role": "system", "content": self.env.system_prompt}]
                     messages = system_msg + messages
         
-        # Handle image/video content if present
-        if self.image_key in example or self.video_key in example:
-            for message in messages:
-                content = message["content"]
-                content_list = []
-                for segment in re.split("(<image>|<video>)", content):
-                    if segment == "<image>":
-                        content_list.append({"type": "image"})
-                    elif segment == "<video>":
-                        content_list.append({"type": "video"})
-                    else:
-                        content_list.append({"type": "text", "text": segment})
-
-                message["content"] = content_list
-
         return messages
 
     def __getitem__(self, item):

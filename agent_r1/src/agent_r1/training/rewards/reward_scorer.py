@@ -17,28 +17,44 @@ from collections import defaultdict
 import torch
 
 from verl import DataProto
-from agent_r1.training.rewards import _default_compute_score
+from . import _default_compute_score
 
 
-class AgentRewardManager:
-    """The reward manager."""
+class RewardScorer:
+    """
+    Computes rewards for agent responses by comparing them against ground truth.
+    
+    For each generated response:
+    1. Decodes token IDs to text
+    2. Routes to dataset-specific scoring function (HotpotQA, GSM8K, ReTool, etc.)
+    3. Returns reward signal based on answer correctness and format compliance
+    
+    The reward is placed at the last response token for RL training.
+    
+    Args:
+        tokenizer: HuggingFace tokenizer for decoding sequences
+        num_examine: Number of examples per data source to print to console for debugging
+        reward_fn_key: Key in non_tensor_batch to identify the data source (default: "data_source")
+    """
 
     def __init__(self, tokenizer, num_examine, reward_fn_key="data_source") -> None:
         self.tokenizer = tokenizer
-        self.num_examine = num_examine  # the number of batches of decoded responses to print to the console
+        self.num_examine = num_examine
         self.compute_score = _default_compute_score
         self.reward_fn_key = reward_fn_key
 
     def __call__(self, data: DataProto, return_dict=False):
-        """We will expand this function gradually based on the available datasets"""
-
-        # If there is rm score, we directly return rm score. Otherwise, we compute via rm_score_fn
-        if "rm_scores" in data.batch.keys():
-            if return_dict:
-                return {"reward_tensor": data.batch["rm_scores"]}
-            else:
-                return data.batch["rm_scores"]
-
+        """
+        Compute rewards for a batch of generated responses.
+        
+        Args:
+            data: DataProto containing prompts, responses, attention masks, and ground truth
+            return_dict: If True, returns dict with reward_tensor and extra_info; 
+                        if False, returns only reward_tensor
+        
+        Returns:
+            reward_tensor or dict containing reward_tensor and reward_extra_info
+        """
         reward_tensor = torch.zeros_like(data.batch["responses"], dtype=torch.float32)
         reward_extra_info = defaultdict(list)
 
@@ -46,9 +62,7 @@ class AgentRewardManager:
 
         for i in range(len(data)):
             data_item = data[i]  # DataProtoItem
-
             prompt_ids = data_item.batch["prompts"]
-
             prompt_length = prompt_ids.shape[-1]
 
             valid_prompt_length = data_item.batch["attention_mask"][:prompt_length].sum()
@@ -58,9 +72,7 @@ class AgentRewardManager:
             valid_response_length = data_item.batch["attention_mask"][prompt_length:].sum()
             valid_response_ids = response_ids[:valid_response_length]
 
-            # decode
             sequences = torch.cat((valid_prompt_ids, valid_response_ids))
-
             sequences_str = self.tokenizer.decode(sequences, skip_special_tokens=False)
             pad_token_id = self.tokenizer.pad_token_id
             sequences_str = sequences_str.split(self.tokenizer.decode([pad_token_id]))[0]

@@ -12,18 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Core training components
-from .core import ToolRLDataset, RayAgentTrainer, AgentValidator
+from agent_r1.training.ppo.actor_update import DataParallelR1PPOActor
+from agent_r1.training.ppo.critic_update import DataParallelR1PPOCritic
+from agent_r1.training.ppo import algorithms
 
-# Rollout backends
-from .workers import vLLMRollout, vLLMAsyncRollout
-
-__all__ = [
-    # Core
-    "ToolRLDataset",
-    "RayAgentTrainer",
-    "AgentValidator",
-    # Rollout
-    "vLLMRollout",
-    "vLLMAsyncRollout",
-]
+__all__ = ["DataParallelR1PPOActor", "DataParallelR1PPOCritic", "algorithms"]

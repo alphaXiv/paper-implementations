@@ -15,14 +15,105 @@
 Metrics related to the PPO trainer.
 """
 
+import json
+import os
 from collections import defaultdict
+from contextlib import contextmanager
 from functools import partial
 from typing import Any, Callable, Dict, List
 
 import numpy as np
 import torch
+from codetiming import Timer
 
 from verl import DataProto
+
+@contextmanager
+def timing_context(name: str, timing_raw: Dict[str, float]):
+    with Timer(name=name, logger=None) as timer:
+        yield
+    if name not in timing_raw:
+        timing_raw[name] = 0
+    timing_raw[name] += timer.last
+
+
+def dump_generations(
+    inputs: List[str],
+    outputs: List[str],
+    scores: List[float],
+    reward_extra_infos_dict: Dict[str, List[Any]],
+    dump_path: str,
+    global_steps: int,
+):
+    """Dump rollout/validation samples as JSONL.
+    
+    Args:
+        inputs: List of input prompts
+        outputs: List of generated outputs
+        scores: List of scores for each generation
+        reward_extra_infos_dict: Dictionary of extra reward information
+        dump_path: Directory path to save the JSONL file
+        global_steps: Current global training step
+    """
+    os.makedirs(dump_path, exist_ok=True)
+    filename = os.path.join(dump_path, f"{global_steps}.jsonl")
+
+    n = len(inputs)
+    base_data = {
+        "input": inputs,
+        "output": outputs,
+        "score": scores,
+        "step": [global_steps] * n,
+    }
+
+    for k, v in reward_extra_infos_dict.items():
+        if len(v) == n:
+            base_data[k] = v
+
+    with open(filename, "w") as f:
+        for i in range(n):
+            entry = {k: v[i] for k, v in base_data.items()}
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+    print(f"Dumped generations to {filename}")
+
+
+def log_val_generations(
+    inputs: List[str],
+    outputs: List[str],
+    scores: List[float],
+    logger_config: str,
+    validation_generations_logger,
+    global_steps: int,
+    num_generations_to_log: int,
+):
+    """Log a table of validation samples to the configured logger (wandb or swanlab).
+    
+    Args:
+        inputs: List of input prompts
+        outputs: List of generated outputs
+        scores: List of scores for each generation
+        logger_config: The logger type/config ('wandb' or 'swanlab')
+        validation_generations_logger: The ValidationGenerationsLogger instance
+        global_steps: Current global training step
+        num_generations_to_log: Number of generations to log (0 to disable)
+    """
+    if num_generations_to_log == 0:
+        return
+
+    # Create tuples of (input, output, score) and sort by input text
+    samples = list(zip(inputs, outputs, scores))
+    samples.sort(key=lambda x: x[0])  # Sort by input text
+
+    # Use fixed random seed for deterministic shuffling
+    rng = np.random.RandomState(42)
+    rng.shuffle(samples)
+
+    # Take first N samples after shuffling
+    samples = samples[:num_generations_to_log]
+
+    # Log to each configured logger
+    validation_generations_logger.log(logger_config, samples, global_steps)
 
 
 def reduce_metrics(metrics: Dict[str, List[Any]]) -> Dict[str, Any]:
