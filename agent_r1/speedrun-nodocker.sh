@@ -125,18 +125,18 @@ else
 fi || {
     echo "Failed to clone VERL from official repo."
     exit 1
-}
+}      
 
- 
 # Install VERL
 echo "Installing VERL..."
 
-pip3 install -e src/verl || {
+pip3 install -e . || {
     echo "Failed to install VERL."
     
     exit 1
 }
 
+cd ../../
 
 
 echo "=========================================="
@@ -159,7 +159,9 @@ else
 
 fi
 
+wait
 
+# Download and preprocess HotpotQA dataset
 python src/examples/data_preprocess/hotpotqa.py --local_dir "$DATA_DIR/hotpotqa" || {
     echo "Failed to download and preprocess HotpotQA dataset."
     exit 1
@@ -179,7 +181,7 @@ fi || {
 # Build FAISS search index if it doesn't exist
 if [ ! -f "$DATA_DIR/corpus/hotpotqa/index.bin" ]; then
     echo 'Building FAISS search index...'
-    cd src/scripts/hotpotqa_search && python process_hotpotqa.py || {
+    python src/scripts/hotpotqa_search/process_hotpotqa.py || {
         echo "Failed to build search index."
         exit 1
     }
