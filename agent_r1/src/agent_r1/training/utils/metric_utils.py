@@ -12,29 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-Metrics related to the PPO trainer.
+Agent-specific metric utilities.
+Extended from verl with additional metrics for process rewards, turns, accuracy, and format.
 """
 
 import json
 import os
-from collections import defaultdict
-from contextlib import contextmanager
-from functools import partial
-from typing import Any, Callable, Dict, List
+from typing import Any, Dict, List
 
 import numpy as np
 import torch
-from codetiming import Timer
 
 from verl import DataProto
-
-@contextmanager
-def timing_context(name: str, timing_raw: Dict[str, float]):
-    with Timer(name=name, logger=None) as timer:
-        yield
-    if name not in timing_raw:
-        timing_raw[name] = 0
-    timing_raw[name] += timer.last
+from verl.trainer.ppo.metric_utils import _compute_response_info
 
 
 def dump_generations(
@@ -116,29 +106,15 @@ def log_val_generations(
     validation_generations_logger.log(logger_config, samples, global_steps)
 
 
-def reduce_metrics(metrics: Dict[str, List[Any]]) -> Dict[str, Any]:
-    for key, val in metrics.items():
-        metrics[key] = np.mean(val)
-    return metrics
-
-
-def _compute_response_info(batch: DataProto) -> Dict[str, Any]:
-    response_length = batch.batch["responses"].shape[-1]
-
-    prompt_mask = batch.batch["attention_mask"][:, :-response_length]
-    response_mask = batch.batch["attention_mask"][:, -response_length:]
-
-    prompt_length = prompt_mask.sum(-1).float()
-    response_length = response_mask.sum(-1).float()  # (batch_size,)
-
-    return dict(
-        response_mask=response_mask,
-        prompt_length=prompt_length,
-        response_length=response_length,
-    )
-
-
 def compute_data_metrics(batch: DataProto, use_critic: bool = True) -> Dict[str, Any]:
+    """Compute data metrics with agent-specific extensions.
+    
+    Extended from verl to include:
+    - Process rewards metrics
+    - Turns metrics  
+    - Accuracy metrics
+    - Format score metrics
+    """
     # TODO: add response length
     sequence_score = batch.batch["token_level_scores"].sum(-1)
     sequence_reward = batch.batch["token_level_rewards"].sum(-1)
@@ -260,141 +236,3 @@ def compute_data_metrics(batch: DataProto, use_critic: bool = True) -> Dict[str,
         )
     
     return metrics
-
-
-def compute_timing_metrics(batch: DataProto, timing_raw: Dict[str, float]) -> Dict[str, Any]:
-    response_info = _compute_response_info(batch)
-    num_prompt_tokens = torch.sum(response_info["prompt_length"]).item()
-    num_response_tokens = torch.sum(response_info["response_length"]).item()
-    num_overall_tokens = num_prompt_tokens + num_response_tokens
-
-    num_tokens_of_section = {
-        "gen": num_response_tokens,
-        **{name: num_overall_tokens for name in ["ref", "values", "adv", "update_critic", "update_actor"]},
-    }
-
-    return {
-        **{f"timing_s/{name}": value for name, value in timing_raw.items()},
-        **{f"timing_per_token_ms/{name}": timing_raw[name] * 1000 / num_tokens_of_section[name] for name in set(num_tokens_of_section.keys()) & set(timing_raw.keys())},
-    }
-
-
-def compute_throughout_metrics(batch: DataProto, timing_raw: Dict[str, float], n_gpus: int) -> Dict[str, Any]:
-    total_num_tokens = sum(batch.meta_info["global_token_num"])
-    time = timing_raw["step"]
-    # estimated_flops, promised_flops = flops_function.estimate_flops(num_tokens, time)
-    # f"Actual TFLOPs/s/GPU​": estimated_flops/(n_gpus),
-    # f"Theoretical TFLOPs/s/GPU​": promised_flops,
-    return {
-        "perf/total_num_tokens": total_num_tokens,
-        "perf/time_per_step": time,
-        "perf/throughput": total_num_tokens / (time * n_gpus),
-    }
-
-
-def bootstrap_metric(
-    data: list[Any],
-    subset_size: int,
-    reduce_fns: list[Callable[[np.ndarray], float]],
-    n_bootstrap: int = 1000,
-    seed: int = 42,
-) -> list[tuple[float, float]]:
-    np.random.seed(seed)
-
-    bootstrap_metric_lsts = [[] for _ in range(len(reduce_fns))]
-    for _ in range(n_bootstrap):
-        bootstrap_idxs = np.random.choice(len(data), size=subset_size, replace=True)
-        bootstrap_data = [data[i] for i in bootstrap_idxs]
-        for i, reduce_fn in enumerate(reduce_fns):
-            bootstrap_metric_lsts[i].append(reduce_fn(bootstrap_data))
-    return [(np.mean(lst), np.std(lst)) for lst in bootstrap_metric_lsts]
-
-
-def calc_maj_val(data: list[dict[str, Any]], vote_key: str, val_key: str) -> float:
-    """
-    Calculate the majority voting metric
-    """
-    vote2vals = defaultdict(list)
-    for d in data:
-        vote2vals[d[vote_key]].append(d[val_key])
-
-    vote2cnt = {k: len(v) for k, v in vote2vals.items()}
-    maj_vote = max(vote2cnt, key=vote2cnt.get)
-
-    maj_val = vote2vals[maj_vote][0]
-
-    return maj_val
-
-
-def process_validation_metrics(data_sources: list[str], sample_inputs: list[str], infos_dict: dict[str, list[Any]], seed: int = 42) -> dict[str, dict[str, dict[str, float]]]:
-    """Process validation metrics into a structured format.
-
-    Args:
-        data_sources: Array of data source identifiers for each sample
-        sample_inputs: List of input prompts
-        infos_dict: variable name -> list of values for each sample
-
-    Returns:
-        dict[str, dict[str, dict[str, float]]]: data source -> variable name -> metric value
-    """
-    # Group metrics by data source, prompt and variable
-    data_src2prompt2var2vals = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
-    for sample_idx, data_source in enumerate(data_sources):
-        prompt = sample_inputs[sample_idx]
-        var2vals = data_src2prompt2var2vals[data_source][prompt]
-        for var_name, var_vals in infos_dict.items():
-            var2vals[var_name].append(var_vals[sample_idx])
-
-    # Calculate metrics for each group
-    data_src2prompt2var2metric = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
-    for data_source, prompt2var2vals in data_src2prompt2var2vals.items():
-        for prompt, var2vals in prompt2var2vals.items():
-            for var_name, var_vals in var2vals.items():
-                if isinstance(var_vals[0], str):
-                    continue
-
-                metric = {}
-                n_resps = len(var_vals)
-                metric[f"mean@{n_resps}"] = np.mean(var_vals)
-
-                if n_resps > 1:
-                    metric[f"std@{n_resps}"] = np.std(var_vals)
-
-                    ns = []
-                    n = 2
-                    while n < n_resps:
-                        ns.append(n)
-                        n *= 2
-                    ns.append(n_resps)
-
-                    for n in ns:
-                        [(bon_mean, bon_std), (won_mean, won_std)] = bootstrap_metric(data=var_vals, subset_size=n, reduce_fns=[np.max, np.min], seed=seed)
-                        metric[f"best@{n}/mean"], metric[f"best@{n}/std"] = bon_mean, bon_std
-                        metric[f"worst@{n}/mean"], metric[f"worst@{n}/std"] = won_mean, won_std
-                        if var2vals.get("pred", None) is not None:
-                            vote_data = [{"val": val, "pred": pred} for val, pred in zip(var_vals, var2vals["pred"])]
-                            [(maj_n_mean, maj_n_std)] = bootstrap_metric(
-                                data=vote_data,
-                                subset_size=n,
-                                reduce_fns=[partial(calc_maj_val, vote_key="pred", val_key="val")],
-                                seed=seed,
-                            )
-                            metric[f"maj@{n}/mean"], metric[f"maj@{n}/std"] = maj_n_mean, maj_n_std
-
-                data_src2prompt2var2metric[data_source][prompt][var_name] = metric
-
-    # Aggregate metrics across prompts
-    data_src2var2metric2prompt_vals = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
-    for data_source, prompt2var2metric in data_src2prompt2var2metric.items():
-        for prompt, var2metric in prompt2var2metric.items():
-            for var_name, metric in var2metric.items():
-                for metric_name, metric_val in metric.items():
-                    data_src2var2metric2prompt_vals[data_source][var_name][metric_name].append(metric_val)
-
-    data_src2var2metric2val = defaultdict(lambda: defaultdict(lambda: defaultdict(float)))
-    for data_source, var2metric2prompt_vals in data_src2var2metric2prompt_vals.items():
-        for var_name, metric2prompt_vals in var2metric2prompt_vals.items():
-            for metric_name, prompt_vals in metric2prompt_vals.items():
-                data_src2var2metric2val[data_source][var_name][metric_name] = np.mean(prompt_vals)
-
-    return data_src2var2metric2val

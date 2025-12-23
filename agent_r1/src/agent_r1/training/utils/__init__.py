@@ -15,11 +15,12 @@
 from agent_r1.training.utils.checkpoint_manager import CheckpointManager
 from agent_r1.training.utils.resource_pool import ResourcePoolManager, Role, AdvantageEstimator
 from agent_r1.training.utils.metric_utils import (
-    timing_context,
     dump_generations,
     log_val_generations,
-    reduce_metrics,
     compute_data_metrics,
+)
+from verl.trainer.ppo.metric_utils import (
+    reduce_metrics,
     compute_timing_metrics,
     compute_throughout_metrics,
     bootstrap_metric,
@@ -32,7 +33,6 @@ __all__ = [
     "ResourcePoolManager",
     "Role",
     "AdvantageEstimator",
-    "timing_context",
     "dump_generations",
     "log_val_generations",
     "reduce_metrics",

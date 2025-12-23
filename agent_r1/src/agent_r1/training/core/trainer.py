@@ -59,14 +59,16 @@ from agent_r1.training.ppo.algorithms import (
 from agent_r1.training.utils.checkpoint_manager import CheckpointManager
 from agent_r1.training.utils.metric_utils import (
     compute_data_metrics,
-    compute_throughout_metrics,
-    compute_timing_metrics,
     dump_generations,
     log_val_generations,
+)
+from verl.trainer.ppo.metric_utils import (
+    compute_throughout_metrics,
+    compute_timing_metrics,
     process_validation_metrics,
     reduce_metrics,
-    timing_context,
 )
+from verl.trainer.ppo.ray_trainer import _timer
 from agent_r1.training.utils.resource_pool import AdvantageEstimator, ResourcePoolManager, Role
 from agent_r1.training.core.validator import AgentValidator
 from agent_r1.tool.base import BaseToolEnv
@@ -315,8 +317,8 @@ class RayAgentTrainer(object):
 
                 is_last_step = self.global_steps >= self.total_training_steps
 
-                with timing_context("step", timing_raw):
-                    with timing_context("gen", timing_raw):
+                with _timer("step", timing_raw):
+                    with _timer("gen", timing_raw):
                         gen_batch_output = generation_manager.run_llm_loop(
                             gen_batch=gen_batch,
                             env=self.env,
@@ -341,7 +343,7 @@ class RayAgentTrainer(object):
                     # Create action mask
                     batch, metrics = create_action_mask(batch, metrics)
                     
-                    with timing_context("reward", timing_raw):
+                    with _timer("reward", timing_raw):
                         # Compute reward for the batch
                         try:
                             reward_result = self.reward_fn(batch, return_dict=True)
@@ -353,7 +355,7 @@ class RayAgentTrainer(object):
                             reward_extra_infos_dict = {}
 
                     # recompute old_log_probs
-                    with timing_context("old_log_prob", timing_raw):
+                    with _timer("old_log_prob", timing_raw):
                         old_log_prob = self.actor_rollout_wg.compute_log_prob(batch)
                         entropys = old_log_prob.batch["entropys"]
                         action_masks = batch.batch["action_mask"]
@@ -370,17 +372,17 @@ class RayAgentTrainer(object):
 
                     if self.use_reference_policy:
                         # compute reference log_prob
-                        with timing_context("ref", timing_raw):
+                        with _timer("ref", timing_raw):
                             ref_log_prob = self.ref_policy_wg.compute_ref_log_prob(batch)
                             batch = batch.union(ref_log_prob)
 
                     # compute values
                     if self.use_critic:
-                        with timing_context("values", timing_raw):
+                        with _timer("values", timing_raw):
                             values = self.critic_wg.compute_values(batch)
                             batch = batch.union(values)
 
-                    with timing_context("adv", timing_raw):
+                    with _timer("adv", timing_raw):
                         # we combine with rule-based rm
                         reward_extra_infos_dict: dict[str, list]
                         batch.batch["token_level_scores"] = reward_tensor
@@ -409,7 +411,7 @@ class RayAgentTrainer(object):
 
                     # update critic
                     if self.use_critic:
-                        with timing_context("update_critic", timing_raw):
+                        with _timer("update_critic", timing_raw):
                             critic_output = self.critic_wg.update_critic(batch)
                         critic_output_metrics = reduce_metrics(critic_output.meta_info["metrics"])
                         metrics.update(critic_output_metrics)
@@ -417,7 +419,7 @@ class RayAgentTrainer(object):
                     # implement critic warmup
                     if self.config.trainer.critic_warmup <= self.global_steps:
                         # update actor
-                        with timing_context("update_actor", timing_raw):
+                        with _timer("update_actor", timing_raw):
                             batch.meta_info["multi_turn"] = self.config.actor_rollout_ref.rollout.multi_turn.enable
                             actor_output = self.actor_rollout_wg.update_actor(batch)
                         actor_output_metrics = reduce_metrics(actor_output.meta_info["metrics"])
@@ -426,7 +428,7 @@ class RayAgentTrainer(object):
                     # Log rollout generations if enabled
                     rollout_data_dir = self.config.trainer.get("rollout_data_dir", None)
                     if rollout_data_dir:
-                        with timing_context("dump_rollout_generations", timing_raw):
+                        with _timer("dump_rollout_generations", timing_raw):
                             print(batch.batch.keys())
                             inputs = self.tokenizer.batch_decode(batch.batch["prompts"], skip_special_tokens=True)
                             outputs = self.tokenizer.batch_decode(batch.batch["responses"], skip_special_tokens=True)
@@ -442,7 +444,7 @@ class RayAgentTrainer(object):
 
                     # validate
                     if self.val_reward_fn is not None and self.config.trainer.test_freq > 0 and (is_last_step or self.global_steps % self.config.trainer.test_freq == 0):
-                        with timing_context("testing", timing_raw):
+                        with _timer("testing", timing_raw):
                             val_metrics: dict = self.validator.run(
                                 actor_rollout_wg=self.actor_rollout_wg,
                                 global_steps=self.global_steps,
@@ -452,7 +454,7 @@ class RayAgentTrainer(object):
                         metrics.update(val_metrics)
 
                     if self.config.trainer.save_freq > 0 and (is_last_step or self.global_steps % self.config.trainer.save_freq == 0):
-                        with timing_context("save_checkpoint", timing_raw):
+                        with _timer("save_checkpoint", timing_raw):
                             # Save checkpoint
                             dataloader_state = self.train_dataloader.state_dict()
                             self.checkpoint_manager.save_checkpoint(
