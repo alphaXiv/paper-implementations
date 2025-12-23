@@ -109,6 +109,8 @@ This script will:
 ### 2. Non-Docker Setup ("Speedrun No Docker")
 If you prefer to run everything directly on your machine (e.g., you are already in a configured environment like Lambda Labs GPU Base image), use the no-docker version.
 
+We used GPU Base Image 22.4 on Lambda Labs with 4XH100s GPUs (80GB SXM) and the batch sizes has been configured accordingly.
+
 ```bash
 # Run PPO (default)
 ./speedrun-nodocker.sh

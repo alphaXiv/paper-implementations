@@ -38,81 +38,81 @@ fi
 #!/usr/bin/env bash
 set -euo pipefail
 
-# echo "=========================================="
-# echo "Agent-R1 / VERL – Libraries Only Installer"
-# echo "=========================================="
+echo "=========================================="
+echo "Agent-R1 / VERL – Libraries Only Installer"
+echo "=========================================="
 
-# echo "=== System update & base tools ==="
-# sudo apt-get update
-# sudo apt-get install -y \
-#     build-essential \
-#     cmake \
-#     git \
-#     curl \
-#     wget \
-#     unzip \
-#     python3.10 \
-#     python3.10-venv \
-#     python3.10-dev
+echo "=== System update & base tools ==="
+sudo apt-get update
+sudo apt-get install -y \
+    build-essential \
+    cmake \
+    git \
+    curl \
+    wget \
+    unzip \
+    python3.10 \
+    python3.10-venv \
+    python3.10-dev
 
-# echo "=== Create Python 3.10 virtual environment ==="
-# `rm -rf` ~/verl_env
-# python3.10 -m venv ~/verl_env
+echo "=== Create Python 3.10 virtual environment ==="
+rm -rf ~/verl_env
+python3.10 -m venv ~/verl_env
 source ~/verl_env/bin/activate
 
-# echo "=== Upgrade pip tooling ==="
-# pip install --upgrade pip setuptools wheel
+echo "=== Upgrade pip tooling ==="
+pip install --upgrade pip setuptools wheel
 
-# echo "=== Remove conflicting NVIDIA PyTorch forks (if any) ==="
-# pip uninstall -y \
-#     torch torchvision torchaudio \
-#     pytorch-quantization pytorch-triton torch-tensorrt \
-#     xgboost transformer_engine flash_attn apex megatron-core grpcio \
-#     || true
+echo "=== Remove conflicting NVIDIA PyTorch forks (if any) ==="
+pip uninstall -y \
+    torch torchvision torchaudio \
+    pytorch-quantization pytorch-triton torch-tensorrt \
+    xgboost transformer_engine flash_attn apex megatron-core grpcio \
+    || true
 
-# # Installing required libraries for indexing
+# Installing required libraries for indexing
 
-# pip3 install -e . || {
-#     echo "Failed to install required libraries for indexing."
-#     exit 1
-# }
+pip3 install -e . || {
+    echo "Failed to install required libraries for indexing."
+    exit 1
+}
 
-# echo "=== Install PyTorch 2.6.0 + CUDA 12.4 ==="
-# pip install \
-#     torch==2.6.0+cu124 \
-#     torchvision==0.21.0+cu124 \
-#     torchaudio==2.6.0 \
-#     tensordict==0.6.2 \
-#     torchdata \
-#     --extra-index-url https://download.pytorch.org/whl/cu124
+echo "=== Install PyTorch 2.6.0 + CUDA 12.4 ==="
+pip install \
+    torch==2.6.0+cu124 \
+    torchvision==0.21.0+cu124 \
+    torchaudio==2.6.0 \
+    tensordict==0.6.2 \
+    torchdata \
+    --extra-index-url https://download.pytorch.org/whl/cu124
 
-# echo "=== Install vLLM 0.8.3 ==="
-# pip install vllm==0.8.3
+echo "=== Install vLLM 0.8.3 ==="
+pip install vllm==0.8.3
 
-# echo "=== Install flash-attn 2.7.4.post1 (cxx11abi=False) ==="
-# pip install flash_attn==2.7.4.post1 --no-build-isolation
+echo "=== Install flash-attn 2.7.4.post1 (cxx11abi=False) ==="
+pip install flash_attn==2.7.4.post1 --no-build-isolation
 
-# echo "=== Install flashinfer 0.2.2.post1 (vLLM-compatible) ==="
-# pip install flashinfer_python==0.2.2.post1
+echo "=== Install flashinfer 0.2.2.post1 (vLLM-compatible) ==="
+pip install flashinfer_python==0.2.2.post1
 
-# echo "=== Install ML / RL / infra libraries ==="
-# pip install \
-#     "transformers[hf_xet]>=4.51.0" \
-#     accelerate datasets peft hf-transfer \
-#     "numpy<2.0.0" "pyarrow>=15.0.0" pandas \
-#     ray[default] \
-#     codetiming hydra-core pylatexenc qwen-vl-utils wandb \
-#     dill pybind11 liger-kernel mathruler \
-#     pytest py-spy pyext pre-commit ruff
+echo "=== Install ML / RL / infra libraries ==="
+pip install \
+    "transformers[hf_xet]>=4.51.0" \
+    accelerate datasets peft hf-transfer \
+    "numpy<2.0.0" "pyarrow>=15.0.0" pandas \
+    ray[default] \
+    codetiming hydra-core pylatexenc qwen-vl-utils wandb \
+    dill pybind11 liger-kernel mathruler \
+    pytest py-spy pyext pre-commit ruff
 
-# echo "=== Fix known incompatibilities ==="
-# pip uninstall -y pynvml nvidia-ml-py || true
-# pip install --upgrade \
-#     "nvidia-ml-py>=12.560.30" \
-#     "fastapi[standard]>=0.115.0" \
-#     "optree>=0.13.0" \
-#     "pydantic>=2.9" \
-#     "grpcio>=1.62.1"
+echo "=== Fix known incompatibilities ==="
+pip uninstall -y pynvml nvidia-ml-py || true
+pip install --upgrade \
+    "nvidia-ml-py>=12.560.30" \
+    "fastapi[standard]>=0.115.0" \
+    "optree>=0.13.0" \
+    "pydantic>=2.9" \
+    "grpcio>=1.62.1"
 
 echo "=== Install VERL with vLLM support ==="
 
@@ -127,24 +127,21 @@ fi || {
     exit 1
 }
 
-
-
+ 
 # Install VERL
 echo "Installing VERL..."
 
-cd src/verl && pip3 install -e . || {
+pip3 install -e src/verl || {
     echo "Failed to install VERL."
     
     exit 1
 }
 
-cd ../../
+
 
 echo "=========================================="
 echo " Libraries installation complete!"
 echo "=========================================="
-echo "Python venv: ~/verl_env"
-echo "Activate with: source ~/verl_env/bin/activate"
 
 
 
@@ -161,6 +158,7 @@ else
     echo 'Data directory already exists, skipping creation.'
 
 fi
+
 
 python src/examples/data_preprocess/hotpotqa.py --local_dir "$DATA_DIR/hotpotqa" || {
     echo "Failed to download and preprocess HotpotQA dataset."
@@ -208,6 +206,8 @@ if [ ! -d "outputs" ]; then
 fi
 
 sudo chmod -R 777 outputs
+
+pwd
 
 # Run training based on selected algorithm
 case "$ALGORITHM" in
