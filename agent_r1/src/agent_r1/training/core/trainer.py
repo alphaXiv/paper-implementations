@@ -112,7 +112,6 @@ class RayAgentTrainer(object):
         self.validation_generations_logger = ValidationGenerationsLogger()
 
         self.use_critic = self.config.algorithm.adv_estimator == AdvantageEstimator.GAE
-        self._validate_config()
         
         # Create dataloaders
         self.train_dataset, self.val_dataset = train_dataset, val_dataset
@@ -172,108 +171,6 @@ class RayAgentTrainer(object):
             validation_generations_logger=self.validation_generations_logger,
         )
 
-    def _validate_config(self):
-        config = self.config
-        # number of GPUs total
-        n_gpus = config.trainer.n_gpus_per_node * config.trainer.nnodes
-
-        # 1. Check total batch size for data correctness
-        real_train_batch_size = config.data.train_batch_size * config.actor_rollout_ref.rollout.n
-        assert real_train_batch_size % n_gpus == 0, f"real_train_batch_size ({real_train_batch_size}) must be divisible by total n_gpus ({n_gpus})."
-
-        # A helper function to check "micro_batch_size" vs "micro_batch_size_per_gpu"
-        # We throw an error if the user sets both. The new convention is "..._micro_batch_size_per_gpu".
-        def check_mutually_exclusive(mbs, mbs_per_gpu, name: str):
-            settings = {
-                "actor_rollout_ref.actor": "micro_batch_size",
-                "critic": "micro_batch_size",
-                "reward_model": "micro_batch_size",
-                "actor_rollout_ref.ref": "log_prob_micro_batch_size",
-                "actor_rollout_ref.rollout": "log_prob_micro_batch_size",
-            }
-
-            if name in settings:
-                param = settings[name]
-                param_per_gpu = f"{param}_per_gpu"
-
-                if mbs is None and mbs_per_gpu is None:
-                    raise ValueError(f"[{name}] Please set at least one of '{name}.{param}' or '{name}.{param_per_gpu}'.")
-
-                if mbs is not None and mbs_per_gpu is not None:
-                    raise ValueError(f"[{name}] You have set both '{name}.{param}' AND '{name}.{param_per_gpu}'. Please remove '{name}.{param}' because only '*_{param_per_gpu}'" + "is supported (the former is deprecated).")
-
-        if not config.actor_rollout_ref.actor.use_dynamic_bsz:
-            # actor: ppo_micro_batch_size vs. ppo_micro_batch_size_per_gpu
-            check_mutually_exclusive(
-                config.actor_rollout_ref.actor.ppo_micro_batch_size,
-                config.actor_rollout_ref.actor.ppo_micro_batch_size_per_gpu,
-                "actor_rollout_ref.actor",
-            )
-
-            if self.use_reference_policy:
-                # reference: log_prob_micro_batch_size vs. log_prob_micro_batch_size_per_gpu
-                check_mutually_exclusive(
-                    config.actor_rollout_ref.ref.log_prob_micro_batch_size,
-                    config.actor_rollout_ref.ref.log_prob_micro_batch_size_per_gpu,
-                    "actor_rollout_ref.ref",
-                )
-
-            #  The rollout section also has log_prob_micro_batch_size vs. log_prob_micro_batch_size_per_gpu
-            check_mutually_exclusive(
-                config.actor_rollout_ref.rollout.log_prob_micro_batch_size,
-                config.actor_rollout_ref.rollout.log_prob_micro_batch_size_per_gpu,
-                "actor_rollout_ref.rollout",
-            )
-
-        if self.use_critic and not config.critic.use_dynamic_bsz:
-            # Check for critic micro-batch size conflicts
-            check_mutually_exclusive(config.critic.ppo_micro_batch_size, config.critic.ppo_micro_batch_size_per_gpu, "critic")
-
-        # Actor
-        # check if train_batch_size is larger than ppo_mini_batch_size
-        # if NOT dynamic_bsz, we must ensure:
-        #    ppo_mini_batch_size is divisible by ppo_micro_batch_size
-        #    ppo_micro_batch_size * sequence_parallel_size >= n_gpus
-        if not config.actor_rollout_ref.actor.use_dynamic_bsz:
-            assert config.data.train_batch_size >= config.actor_rollout_ref.actor.ppo_mini_batch_size
-            sp_size = config.actor_rollout_ref.actor.get("ulysses_sequence_parallel_size", 1)
-            if config.actor_rollout_ref.actor.ppo_micro_batch_size is not None:
-                assert config.actor_rollout_ref.actor.ppo_mini_batch_size % config.actor_rollout_ref.actor.ppo_micro_batch_size == 0
-                assert config.actor_rollout_ref.actor.ppo_micro_batch_size * sp_size >= n_gpus
-
-        assert config.actor_rollout_ref.actor.loss_agg_mode in [
-            "token-mean",
-            "seq-mean-token-sum",
-            "seq-mean-token-mean",
-            "seq-mean-token-sum-norm",
-        ], f"Invalid loss_agg_mode: {config.actor_rollout_ref.actor.loss_agg_mode}"
-
-        # critic
-        if self.use_critic and not config.critic.use_dynamic_bsz:
-            assert config.data.train_batch_size >= config.critic.ppo_mini_batch_size
-            sp_size = config.critic.get("ulysses_sequence_parallel_size", 1)
-            if config.critic.ppo_micro_batch_size is not None:
-                assert config.critic.ppo_mini_batch_size % config.critic.ppo_micro_batch_size == 0
-                assert config.critic.ppo_micro_batch_size * sp_size >= n_gpus
-
-        # Check if use_remove_padding is enabled when using sequence parallelism for fsdp
-        if config.actor_rollout_ref.actor.strategy == "fsdp" and (config.actor_rollout_ref.actor.get("ulysses_sequence_parallel_size", 1) > 1 or config.actor_rollout_ref.ref.get("ulysses_sequence_parallel_size", 1) > 1):
-            assert config.actor_rollout_ref.model.use_remove_padding, "When using sequence parallelism for actor/ref policy, you must enable `use_remove_padding`."
-
-        if config.data.get("val_batch_size", None) is not None:
-            print("WARNING: val_batch_size is deprecated." + " Validation datasets are sent to inference engines as a whole batch," + " which will schedule the memory themselves.")
-
-        # check eval config
-        if config.actor_rollout_ref.rollout.val_kwargs.do_sample:
-            assert config.actor_rollout_ref.rollout.temperature > 0, "validation gen temperature should be greater than 0 when enabling do_sample"
-
-        # check multi_turn with tool config
-        if config.actor_rollout_ref.rollout.multi_turn.enable:
-            assert config.actor_rollout_ref.rollout.multi_turn.tool_config_path is not None, "tool_config_path must be set when enabling multi_turn with tool, due to no role-playing support"
-            assert config.algorithm.adv_estimator in [AdvantageEstimator.GRPO], "only GRPO is tested for multi-turn with tool"
-
-        print("[validate_config] All configuration checks passed successfully!")
-
     def init_workers(self):
         """Init resource pool and worker group"""
         self.resource_pool_manager.create_resource_pool()
@@ -329,77 +226,6 @@ class RayAgentTrainer(object):
         # we should create rollout at the end so that vllm can have a better estimation of kv cache memory
         self.actor_rollout_wg = all_wg["actor_rollout"]
         self.actor_rollout_wg.init_model()
-
-    def token_norm(self, token_level_scores):
-        """
-        Apply normalization to token level scores.
-        This helps stabilize training by considering cumulative effects and scaling rewards.
-        
-        Args:
-            token_level_scores: Tensor of token level scores
-            
-        Returns:
-            Normalized token level scores
-        """
-        reverse_cumsum = torch.cumsum(token_level_scores.flip(dims=[1]), dim=-1).flip(dims=[1])
-        token_level_scores = token_level_scores / (reverse_cumsum.abs().max() + 1e-6)
-        return token_level_scores
-
-    def _compute_process_rewards(self, batch, envs, reward_tensor) -> torch.Tensor:
-        """
-        Compute process rewards for tool calls.
-        
-        Args:
-            batch: The batch data containing responses and attention masks
-            envs: List of tool environments containing reward history
-            reward_tensor: Tensor with same shape as responses for storing rewards
-            
-        Returns:
-            process_rewards: Tensor containing rewards for each tool call
-        """
-        process_rewards = torch.zeros_like(reward_tensor)
-        
-        if not self.config.algorithm.get("use_process_rewards", False):
-            return process_rewards
-        
-        responses = [self.tokenizer.decode(resp, skip_special_tokens=False) for resp in batch.batch["responses"]]
-        
-        for i, (response, env) in enumerate(zip(responses, envs)):
-            # Get valid response length
-            prompt_ids = batch.batch["prompts"][i]
-            prompt_length = prompt_ids.shape[-1]
-            valid_response_length = batch.batch["attention_mask"][i, prompt_length:].sum().item()
-            
-            # Get rewards from env
-            env_rewards = env.rewards
-            
-            # Find all tool call end positions
-            tool_call_ends = []
-            pos = 0
-            while True:
-                pos = response.find(self.config.tool.tool_call_end, pos)
-                if pos == -1:
-                    break
-                tool_call_ends.append(pos)
-                pos += 1
-            
-            # Convert character positions to token positions
-            for tool_idx, end_pos in enumerate(tool_call_ends):
-                if tool_idx >= len(env_rewards):  # Safety check
-                    break
-                    
-                # Get token position for the end of tool call
-                prefix = response[:end_pos + len(self.config.tool.tool_call_end)]
-                token_pos = len(self.tokenizer.encode(prefix, add_special_tokens=False)) - 1
-                
-                # Only assign reward if token position is within valid response length
-                if token_pos < valid_response_length:
-                    process_rewards[i, token_pos] = env_rewards[tool_idx]
-        
-        # Apply normalization to process rewards
-        process_rewards = self.token_norm(process_rewards)
-        
-        return process_rewards
 
     def fit(self):
         """
@@ -557,17 +383,6 @@ class RayAgentTrainer(object):
                     with timing_context("adv", timing_raw):
                         # we combine with rule-based rm
                         reward_extra_infos_dict: dict[str, list]
-                        if self.config.reward_model.launch_reward_fn_async:
-                            reward_tensor, reward_extra_infos_dict = ray.get(future_reward)
-
-                        # Add process rewards from tool calls
-                        # process_rewards = self._compute_process_rewards(batch, envs, reward_tensor)
-                        # batch.batch["process_rewards"] = process_rewards  # Store process rewards for logging
-                        
-                        # Combine final reward with process rewards if enabled
-                        # if self.config.algorithm.get("use_process_rewards", False):
-                        #     reward_tensor = reward_tensor + process_rewards
-                        
                         batch.batch["token_level_scores"] = reward_tensor
 
                         print(f"{list(reward_extra_infos_dict.keys())=}")
@@ -581,10 +396,7 @@ class RayAgentTrainer(object):
                         else:
                             batch.batch["token_level_rewards"] = batch.batch["token_level_scores"]
 
-                        # compute advantages, executed on the driver process
-
                         norm_adv_by_std_in_grpo = self.config.algorithm.get("norm_adv_by_std_in_grpo", True)  # GRPO adv normalization factor
-
                         batch = compute_advantage(
                             batch,
                             adv_estimator=self.config.algorithm.adv_estimator,
