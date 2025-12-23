@@ -30,8 +30,8 @@ from agent_r1.tool.agent_loop import ToolGenerationManager, ToolGenerationConfig
 from agent_r1.training.utils.metric_utils import (
     dump_generations,
     log_val_generations,
-    process_validation_metrics,
 )
+from verl.trainer.ppo.metric_utils import process_validation_metrics
 from agent_r1.tool.base import BaseToolEnv
 
 

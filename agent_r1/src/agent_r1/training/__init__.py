@@ -16,7 +16,7 @@
 from .core import ToolRLDataset, RayAgentTrainer, AgentValidator
 
 # Rollout backends
-from .workers import vLLMRollout, vLLMAsyncRollout
+from .workers import vLLMRollout
 
 __all__ = [
     # Core
@@ -25,5 +25,4 @@ __all__ = [
     "AgentValidator",
     # Rollout
     "vLLMRollout",
-    "vLLMAsyncRollout",
 ]

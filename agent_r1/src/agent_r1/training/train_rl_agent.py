@@ -14,8 +14,7 @@
 """
 Note that we don't combine the main with ray_trainer as ray_trainer is used by other main.
 """
-from .trainer import RayAgentTrainer
-
+from agent_r1.training.core.trainer import RayAgentTrainer
 from agent_r1.tool.envs import _default_env
 from agent_r1.tool.tools import _default_tool
 
@@ -23,8 +22,6 @@ import os
 
 import hydra
 import ray
-
-from .reward import load_reward_manager
 
 @hydra.main(config_path="config", config_name="agent_trainer", version_base=None)
 def main(config):

@@ -14,11 +14,10 @@
 
 from .actor_rollout_ref_worker import ActorRolloutRefWorker
 from .critic_worker import CriticWorker
-from .vllm_rollout_spmd import vLLMRollout, vLLMAsyncRollout
+from .vllm_rollout_spmd import vLLMRollout
 
 __all__ = [
     "ActorRolloutRefWorker",
     "CriticWorker",
     "vLLMRollout",
-    "vLLMAsyncRollout",
 ]

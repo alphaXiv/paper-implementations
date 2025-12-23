@@ -61,32 +61,34 @@ sudo docker pull hiyouga/verl:ngc-th2.6.0-cu126-vllm0.8.3-flashinfer0.2.2-cxx11a
 
 
 # Start Docker container
-echo "Starting Docker container..."
+echo "Checking for existing Docker container..."
 
-echo "Checking for existing docker containers named 'verl-agent-r1'..."
-if [ "$(sudo docker ps -aq -f name=verl-agent-r1)" ]; then
-    echo "Container 'verl-agent-r1' already exists. Removing existing container..."
-    sudo docker rm -f verl-agent-r1 || {
-        echo "Failed to remove existing container. Please check Docker status."
+# Check if container is already running
+if [ "$(sudo docker ps -q -f name=verl-agent-r1)" ]; then
+    echo "Container 'verl-agent-r1' is already running. Reusing existing container."
+# Check if container exists but is stopped
+elif [ "$(sudo docker ps -aq -f name=verl-agent-r1)" ]; then
+    echo "Container 'verl-agent-r1' exists but is stopped. Starting existing container..."
+    sudo docker start verl-agent-r1 || {
+        echo "Failed to start existing container. Please check Docker status."
         exit 1
     }
-    echo "Existing container removed."
+    echo "Container started."
+else
+    echo "Starting new Docker container..."
+    sudo docker run -d --gpus all --name verl-agent-r1 \
+        --ipc=host \
+        --ulimit memlock=-1 \
+        --ulimit stack=67108864 \
+        -v $(pwd)/..:/workspace \
+        hiyouga/verl:ngc-th2.6.0-cu126-vllm0.8.3-flashinfer0.2.2-cxx11abi0 \
+        sleep infinity || {
+        echo "Failed to start Docker container. Please check GPU availability and Docker setup."
+        exit 1
+    }
+    echo "Waiting for container to start..."
+    sleep 10
 fi
-
-sudo docker run -d --gpus all --name verl-agent-r1 \
-    --ipc=host \
-    --ulimit memlock=-1 \
-    --ulimit stack=67108864 \
-    -v $(pwd)/..:/workspace \
-    hiyouga/verl:ngc-th2.6.0-cu126-vllm0.8.3-flashinfer0.2.2-cxx11abi0 \
-    sleep infinity || {
-    echo "Failed to start Docker container. Please check GPU availability and Docker setup."
-    exit 1
-}
-
-# Wait for container to be ready
-echo "Waiting for container to start..."
-sleep 10
 
 # Install agent_r1 dependencies
 echo "Installing agent_r1 dependencies..."

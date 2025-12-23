@@ -19,14 +19,6 @@ from agent_r1.training.utils.metric_utils import (
     log_val_generations,
     compute_data_metrics,
 )
-from verl.trainer.ppo.metric_utils import (
-    reduce_metrics,
-    compute_timing_metrics,
-    compute_throughout_metrics,
-    bootstrap_metric,
-    calc_maj_val,
-    process_validation_metrics,
-)
 
 __all__ = [
     "CheckpointManager",
@@ -35,11 +27,5 @@ __all__ = [
     "AdvantageEstimator",
     "dump_generations",
     "log_val_generations",
-    "reduce_metrics",
     "compute_data_metrics",
-    "compute_timing_metrics",
-    "compute_throughout_metrics",
-    "bootstrap_metric",
-    "calc_maj_val",
-    "process_validation_metrics",
 ]
