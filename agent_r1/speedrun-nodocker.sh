@@ -116,28 +116,13 @@ pip install --upgrade \
 
 echo "=== Install VERL with vLLM support ==="
 
-# Clone VERL from official repo
-echo "Cloning VERL from official repo..."
-if [ ! -d 'src/verl' ]; then
-    git config --global --add safe.directory '*' && cd src && git clone https://github.com/volcengine/verl.git && cd verl && git checkout a43ead6
-else
-    echo 'VERL already exists, skipping clone.'
-fi || {
-    echo "Failed to clone VERL from official repo."
-    exit 1
-}      
-
-# Install VERL
-echo "Installing VERL..."
-
-pip3 install -e . || {
-    echo "Failed to install VERL."
-    
-    exit 1
-}
-
+# Clone and install a clean verl from official repo
+rm -rf src/verl
+echo "Cloning VERL from official repo and installing verl..."
+git config --global --add safe.directory '*' && cd src && git clone https://github.com/volcengine/verl.git && cd verl && git checkout a43ead6
+pip3 install -e .
 cd ../../
-
+ 
 
 echo "=========================================="
 echo " Libraries installation complete!"
@@ -147,8 +132,9 @@ echo "=========================================="
 
 # Download and preprocess HotpotQA dataset
 echo "Downloading and preprocessing HotpotQA dataset..."
+
 # Use data directory
-DATA_DIR="data"
+DATA_DIR="./data"
 
 
 if [ ! -d "$DATA_DIR" ]; then
@@ -169,14 +155,21 @@ python src/examples/data_preprocess/hotpotqa.py --local_dir "$DATA_DIR/hotpotqa"
 
 # Build HotpotQA search index
 echo "Building HotpotQA search index..."
+
+
 if [ ! -f "$DATA_DIR/corpus/hotpotqa/hpqa_corpus.jsonl" ]; then
-    mkdir -p "$DATA_DIR/corpus/hotpotqa" && wget -q https://huggingface.co/datasets/BeIR/hotpotqa/resolve/main/corpus.jsonl.gz -O "$DATA_DIR/corpus/hotpotqa/corpus.jsonl.gz" && gunzip -c "$DATA_DIR/corpus/hotpotqa/corpus.jsonl.gz" > "$DATA_DIR/corpus/hotpotqa/hpqa_corpus.jsonl"
+    mkdir -p "$DATA_DIR/corpus/hotpotqa" \
+    && wget -q https://huggingface.co/datasets/BeIR/hotpotqa/resolve/main/corpus.jsonl.gz \
+        -O "$DATA_DIR/corpus/hotpotqa/corpus.jsonl.gz" \
+    && gunzip -c "$DATA_DIR/corpus/hotpotqa/corpus.jsonl.gz" \
+        > "$DATA_DIR/corpus/hotpotqa/hpqa_corpus.jsonl" \
+    || {
+        echo "Failed to download corpus data."
+        exit 1
+    }
 else
     echo 'HotpotQA corpus already exists, skipping download.'
-fi || {
-    echo "Failed to download corpus data."
-    exit 1
-}
+fi
 
 # Build FAISS search index if it doesn't exist
 if [ ! -f "$DATA_DIR/corpus/hotpotqa/index.bin" ]; then
@@ -206,10 +199,6 @@ fi
 if [ ! -d "outputs" ]; then
     mkdir -p outputs
 fi
-
-sudo chmod -R 777 outputs
-
-pwd
 
 # Run training based on selected algorithm
 case "$ALGORITHM" in
