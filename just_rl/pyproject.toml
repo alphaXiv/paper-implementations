@@ -1,15 +1,15 @@
 [project]
-name = "justrl"
+name = "just_rl"
 version = "0.1.0"
 description = "JustRL Reproduction: Scaling a 1.5B LLM with a Simple RL Recipe"
-requires-python = ">=3.10"
+requires-python = "==3.10.*"
 dependencies = [
     "verl",
-    "vllm>=0.6.3",
-    "torch>=2.1.2",
-    "transformers>=4.46.0",
-    "accelerate>=0.26.0",
-    "flash-attn>=2.5.0",
+    "vllm",
+    "torch==2.5.*",
+    "transformers",
+    "accelerate",
+    "flash-attn",
     "hydra-core",
     "numpy",
     "datasets",
@@ -17,6 +17,15 @@ dependencies = [
 ]
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.uv.extra-build-dependencies]
+flash-attn = ["torch==2.5.*"]
 
