@@ -78,6 +78,7 @@ sudo docker run -d --gpus all --name verl-agent-r1 \
     --ulimit memlock=-1 \
     --ulimit stack=67108864 \
     -v $(pwd)/..:/workspace \
+    -v /home/ubuntu/agent_r1_data:/home/ubuntu/agent_r1_data \
     hiyouga/verl:ngc-th2.6.0-cu126-vllm0.8.3-flashinfer0.2.2-cxx11abi0 \
     sleep infinity || {
     echo "Failed to start Docker container. Please check GPU availability and Docker setup."
