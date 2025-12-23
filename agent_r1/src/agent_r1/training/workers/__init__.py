@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .actor_rollout_ref_worker import ActorRolloutRefWorker
-from .critic_worker import CriticWorker
+from .actor_rollout_ref_worker import ActorRolloutRefWorkerR1
+from .critic_worker import CriticWorkerR1
 from .vllm_rollout_spmd import vLLMRollout
 
 __all__ = [
-    "ActorRolloutRefWorker",
-    "CriticWorker",
+    "ActorRolloutRefWorkerR1",
+    "CriticWorkerR1",
     "vLLMRollout",
 ]

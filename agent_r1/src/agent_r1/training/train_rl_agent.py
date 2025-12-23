@@ -48,13 +48,13 @@ class TrainingOrchestrator:
         from verl.utils.fs import copy_to_local
         from verl.utils import hf_tokenizer
 
-        from .workers import ActorRolloutRefWorker, CriticWorker
+        from agent_r1.training.workers import ActorRolloutRefWorkerR1, CriticWorkerR1
         from verl.single_controller.ray import RayWorkerGroup
         from agent_r1.training.utils.resource_pool import ResourcePoolManager, Role
 
-        from .rewards.reward_scorer import RewardScorer
+        from agent_r1.training.rewards.reward_scorer import RewardScorer
         from verl.utils.dataset.rl_dataset import collate_fn
-        from .dataset import ToolRLDataset
+        from agent_r1.training.core.dataset import ToolRLDataset
 
         import torch
         from torch.utils.data import RandomSampler, SequentialSampler
@@ -68,9 +68,9 @@ class TrainingOrchestrator:
         tokenizer = hf_tokenizer(local_path, trust_remote_code=trust_remote_code)
 
         role_worker_mapping = {
-            Role.ActorRollout: ray.remote(ActorRolloutRefWorker),
-            Role.Critic: ray.remote(CriticWorker),
-            Role.RefPolicy: ray.remote(ActorRolloutRefWorker),
+            Role.ActorRollout: ray.remote(ActorRolloutRefWorkerR1),
+            Role.Critic: ray.remote(CriticWorkerR1),
+            Role.RefPolicy: ray.remote(ActorRolloutRefWorkerR1),
         }
 
         global_pool_id = "global_pool"
@@ -86,13 +86,13 @@ class TrainingOrchestrator:
 
         reward_fn = RewardScorer(
             tokenizer=tokenizer,
-            num_examine=num_examine,
+            num_examine=0,
             reward_fn_key=config.data.reward_fn_key,
         )
 
         val_reward_fn = RewardScorer(
             tokenizer=tokenizer,
-            num_examine=num_examine,
+            num_examine=0,
             reward_fn_key=config.data.reward_fn_key,
         )
 
@@ -129,7 +129,7 @@ class TrainingOrchestrator:
             collate_fn=collate_fn,
             train_sampler=train_sampler,
             env=env,
-            val_env=val_env,
+            val_env=env,
         )
         trainer.init_workers()
         trainer.fit()

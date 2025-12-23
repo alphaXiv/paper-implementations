@@ -73,6 +73,8 @@ from agent_r1.training.utils.resource_pool import AdvantageEstimator, ResourcePo
 from agent_r1.training.core.validator import AgentValidator
 from agent_r1.tool.base import BaseToolEnv
 
+from omegaconf import OmegaConf
+
 WorkerType = Type[Worker]
 
 
@@ -236,8 +238,6 @@ class RayAgentTrainer(object):
         to construct the PPO dataflow.
         The light-weight advantage computation is done on the driver process.
         """
-        from omegaconf import OmegaConf
-
         from verl.utils.tracking import Tracking
 
         logger = Tracking(

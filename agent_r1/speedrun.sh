@@ -139,6 +139,13 @@ if [ ! -z "$WANDB_API_KEY" ]; then
     }
 fi
 
+# Set up environment variables for Docker exec
+DOCKER_ENV=""
+if [ ! -z "$HYDRA_FULL_ERROR" ]; then
+    echo "HYDRA_FULL_ERROR is set, enabling full error traces..."
+    DOCKER_ENV="export HYDRA_FULL_ERROR=1 && "
+fi
+
 # Run training based on selected algorithm
 case "$ALGORITHM" in
     ppo)
@@ -147,7 +154,7 @@ case "$ALGORITHM" in
         echo "This will take approximately 12 hours on 4xA100 80GB GPUs"
         echo "=========================================="
 
-        sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && cp src/examples/trainer/run_ppo_hotpotqa.sh ./ && bash run_ppo_hotpotqa.sh" || {
+        sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && ${DOCKER_ENV}cp src/examples/trainer/run_ppo_hotpotqa.sh ./ && bash run_ppo_hotpotqa.sh" || {
             echo "Training failed."
             exit 1
         }
@@ -158,7 +165,7 @@ case "$ALGORITHM" in
         echo "This will take approximately 18-24 hours on 4xA100 80GB GPUs"
         echo "=========================================="
 
-        sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && cp src/examples/trainer/run_grpo_hotpotqa.sh ./ && bash run_grpo_hotpotqa.sh" || {
+        sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && ${DOCKER_ENV}cp src/examples/trainer/run_grpo_hotpotqa.sh ./ && bash run_grpo_hotpotqa.sh" || {
             echo "Training failed."
             exit 1
         }

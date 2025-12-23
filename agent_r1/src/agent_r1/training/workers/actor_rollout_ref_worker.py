@@ -83,7 +83,7 @@ class ActorRolloutRefWorkerR1(ActorRolloutRefWorker):
                 )
             elif vllm_mode == "spmd":
                 # R1-specific: Use local vLLM rollout implementation
-                from .vllm_rollout_spmd import vLLMRollout
+                from agent_r1.training.workers.vllm_rollout_spmd import vLLMRollout
                 from verl.workers.rollout.vllm_rollout import vLLMAsyncRollout
                 
                 vllm_rollout_cls = vLLMRollout if self.config.rollout.mode == "sync" else vLLMAsyncRollout
