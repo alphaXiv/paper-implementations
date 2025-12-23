@@ -36,7 +36,7 @@ python3 -m src.agent_r1.training.main_agent \
     trainer.experiment_name=$EXPERIMENT_NAME \
     trainer.n_gpus_per_node=4 \
     trainer.nnodes=1 \
-    trainer.save_freq=-1 \
+    trainer.save_freq=1 \
     trainer.test_freq=10 \
     trainer.total_epochs=1 \
     trainer.val_before_train=True \

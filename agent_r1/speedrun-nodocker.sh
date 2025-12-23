@@ -56,9 +56,9 @@ set -euo pipefail
 #     python3.10-dev
 
 # echo "=== Create Python 3.10 virtual environment ==="
-# rm -rf ~/verl_env
+# `rm -rf` ~/verl_env
 # python3.10 -m venv ~/verl_env
-# source ~/verl_env/bin/activate
+source ~/verl_env/bin/activate
 
 # echo "=== Upgrade pip tooling ==="
 # pip install --upgrade pip setuptools wheel
@@ -70,9 +70,8 @@ set -euo pipefail
 #     xgboost transformer_engine flash_attn apex megatron-core grpcio \
 #     || true
 
-#Installing required libraries for indexing
+# # Installing required libraries for indexing
 
-# pwd
 # pip3 install -e . || {
 #     echo "Failed to install required libraries for indexing."
 #     exit 1
@@ -115,87 +114,80 @@ set -euo pipefail
 #     "pydantic>=2.9" \
 #     "grpcio>=1.62.1"
 
-# echo "=== Install VERL with vLLM support ==="
+echo "=== Install VERL with vLLM support ==="
+
+# Clone VERL from official repo
+echo "Cloning VERL from official repo..."
+if [ ! -d 'src/verl' ]; then
+    git config --global --add safe.directory '*' && cd src && git clone https://github.com/volcengine/verl.git && cd verl && git checkout a43ead6
+else
+    echo 'VERL already exists, skipping clone.'
+fi || {
+    echo "Failed to clone VERL from official repo."
+    exit 1
+}
 
 
-# # Clone VERL from official repo
-# echo "Cloning VERL from official repo..."
-# if [ ! -d 'src/verl' ]; then
-#     git config --global --add safe.directory '*' && cd src && git clone https://github.com/volcengine/verl.git && cd verl && git checkout a43ead6
-# else
-#     echo 'VERL already exists, skipping clone.'
-# fi || {
-#     echo "Failed to clone VERL from official repo."
-#     exit 1
-# }
 
-# # Install VERL
-# echo "Installing VERL..."
+# Install VERL
+echo "Installing VERL..."
 
-# pwd
-
-# pip3 install -e . || {
-#     echo "Failed to install VERL."
+cd src/verl && pip3 install -e . || {
+    echo "Failed to install VERL."
     
-#     exit 1
-# }
+    exit 1
+}
 
-# echo "=========================================="
-# echo " Libraries installation complete!"
-# echo "=========================================="
-# echo "Python venv: ~/verl_env"
-# echo "Activate with: source ~/verl_env/bin/activate"
+cd ../../
 
+echo "=========================================="
+echo " Libraries installation complete!"
+echo "=========================================="
+echo "Python venv: ~/verl_env"
+echo "Activate with: source ~/verl_env/bin/activate"
 
-# # Get library versions
-# echo "Generating library versions report..."
-# sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && bash get_versions.sh" > versions_report.txt || {
-#     echo "Failed to generate versions report."
-# }
-
-pwd
 
 
 # Download and preprocess HotpotQA dataset
-# echo "Downloading and preprocessing HotpotQA dataset..."
-# # Use data directory
-# DATA_DIR="data"
+echo "Downloading and preprocessing HotpotQA dataset..."
+# Use data directory
+DATA_DIR="data"
 
 
-# if [ ! -d "$DATA_DIR" ]; then
-#     mkdir -p "$DATA_DIR/hotpotqa"
+if [ ! -d "$DATA_DIR" ]; then
+    mkdir -p "$DATA_DIR/hotpotqa"
 
-# else
-#     echo 'Data directory already exists, skipping creation.'
+else
+    echo 'Data directory already exists, skipping creation.'
 
-# fi
+fi
 
-# python src/examples/data_preprocess/hotpotqa.py --local_dir "$DATA_DIR/hotpotqa" || {
-#     echo "Failed to download and preprocess HotpotQA dataset."
-#     exit 1
-# }
+python src/examples/data_preprocess/hotpotqa.py --local_dir "$DATA_DIR/hotpotqa" || {
+    echo "Failed to download and preprocess HotpotQA dataset."
+    exit 1
+}
 
-# # Build HotpotQA search index
-# echo "Building HotpotQA search index..."
-# if [ ! -f "$DATA_DIR/corpus/hotpotqa/hpqa_corpus.jsonl" ]; then
-#     mkdir -p "$DATA_DIR/corpus/hotpotqa" && wget -q https://huggingface.co/datasets/BeIR/hotpotqa/resolve/main/corpus.jsonl.gz -O "$DATA_DIR/corpus/hotpotqa/corpus.jsonl.gz" && gunzip -c "$DATA_DIR/corpus/hotpotqa/corpus.jsonl.gz" > "$DATA_DIR/corpus/hotpotqa/hpqa_corpus.jsonl"
-# else
-#     echo 'HotpotQA corpus already exists, skipping download.'
-# fi || {
-#     echo "Failed to download corpus data."
-#     exit 1
-# }
+# Build HotpotQA search index
+echo "Building HotpotQA search index..."
+if [ ! -f "$DATA_DIR/corpus/hotpotqa/hpqa_corpus.jsonl" ]; then
+    mkdir -p "$DATA_DIR/corpus/hotpotqa" && wget -q https://huggingface.co/datasets/BeIR/hotpotqa/resolve/main/corpus.jsonl.gz -O "$DATA_DIR/corpus/hotpotqa/corpus.jsonl.gz" && gunzip -c "$DATA_DIR/corpus/hotpotqa/corpus.jsonl.gz" > "$DATA_DIR/corpus/hotpotqa/hpqa_corpus.jsonl"
+else
+    echo 'HotpotQA corpus already exists, skipping download.'
+fi || {
+    echo "Failed to download corpus data."
+    exit 1
+}
 
-# # Build FAISS search index if it doesn't exist
-# if [ ! -f "$DATA_DIR/corpus/hotpotqa/index.bin" ]; then
-#     echo 'Building FAISS search index...'
-#     cd src/scripts/hotpotqa_search && python process_hotpotqa.py && cd ../../.. || {
-#         echo "Failed to build search index."
-#         exit 1
-#     }
-# else
-#     echo 'FAISS index already exists, skipping search index processing.'
-# fi
+# Build FAISS search index if it doesn't exist
+if [ ! -f "$DATA_DIR/corpus/hotpotqa/index.bin" ]; then
+    echo 'Building FAISS search index...'
+    cd src/scripts/hotpotqa_search && python process_hotpotqa.py || {
+        echo "Failed to build search index."
+        exit 1
+    }
+else
+    echo 'FAISS index already exists, skipping search index processing.'
+fi
 
 # Configure Weights & Biases if API key is set
 if [ ! -z "$WANDB_API_KEY" ]; then
@@ -210,7 +202,7 @@ if [ ! -z "$WANDB_API_KEY" ]; then
 fi
 
 # Ensure outputs directory is writable
-pwd
+
 if [ ! -d "outputs" ]; then
     mkdir -p outputs
 fi
