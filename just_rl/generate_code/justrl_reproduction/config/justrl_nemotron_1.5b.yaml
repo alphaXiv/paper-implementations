@@ -1,0 +1,36 @@
+defaults:
+  - _self_
+
+data:
+  train_batch_size: 256
+  val_batch_size: 64
+  max_prompt_length: 1024
+  max_response_length: 15360
+  train_files: "data/processed/dapo_math_17k.parquet"
+  val_files: "data/processed/dapo_math_17k.parquet"
+
+model:
+  path: "nvidia/Nemotron-1.5B"  # Note: Verify exact HuggingFace ID for Nemotron 1.5B
+  enable_gradient_checkpointing: true
+  use_flash_attention: true
+
+algorithm:
+  gamma: 1.0
+  lam: 1.0
+  kl_coef: 0.0
+  entropy_coef: 0.0
+  clip_range_low: 0.2
+  clip_range_high: 0.28
+
+trainer:
+  total_epochs: 1
+  learning_rate: 1e-6
+  weight_decay: 0.0
+  warmup_steps: 0
+  ppo_micro_batch_size: 1
+  gradient_accumulation_steps: 32  # Assumes 8 GPUs. Adjust: 256 / (Num_GPUs * micro_bs)
+  n_rollouts: 8
+  seed: 42
+  log_interval: 1
+  save_interval: 500
+  output_dir: "checkpoints/nemotron_1.5b_grpo"

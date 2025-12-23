@@ -1,0 +1,52 @@
+# JustRL Configuration for DeepSeek-R1-Distill-Qwen-1.5B
+# Based on Table 2 of the paper "JustRL: Scaling a 1.5B LLM with a Simple RL Recipe"
+
+data:
+  train_batch_size: 256       # Global Batch Size
+  val_batch_size: 16          # Validation batch size
+  max_prompt_length: 1024
+  max_response_length: 15360  # Critical for reasoning
+  train_files: "data/dapo_17k.parquet"  # Path to processed data
+  val_files: "data/dapo_17k.parquet"    # Using same for validation split in this reproduction script logic
+  prompt_key: "prompt"
+  ground_truth_key: "answer"
+
+model:
+  path: "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+  enable_gradient_checkpointing: true
+  use_flash_attention: true
+
+algorithm:
+  name: "grpo"
+  gamma: 1.0
+  lam: 1.0
+  kl_coef: 0.0                # Strictly enforced
+  entropy_coef: 0.0           # Strictly enforced
+  # Asymmetric clipping: [1-0.2, 1+0.28] -> [0.8, 1.28]
+  clip_range_low: 0.2
+  clip_range_high: 0.28
+  
+trainer:
+  total_epochs: 1
+  project_name: "justrl-reproduction"
+  experiment_name: "deepseek-1.5b-grpo"
+  logger: ["wandb", "console"]
+  seed: 42
+  
+  # Optimization
+  lr: 1e-6                    # Constant schedule, NO decay
+  lr_scheduler: "constant"
+  weight_decay: 0.01          # Standard AdamW default
+  
+  # Batch sizes
+  ppo_mini_batch_size: 64
+  micro_batch_size: 1         # Per GPU
+  gradient_accumulation_steps: 32 # 256 / (8 GPUs * 1 micro_batch) = 32. Adjust based on actual GPU count.
+  
+  # Rollout settings
+  n_rollouts: 8               # Group Size (G)
+  temperature: 1.0
+  
+  # Resources
+  nnodes: 1
+  n_gpus_per_node: 8          # Assumes 8 GPU setup as per paper recommendation

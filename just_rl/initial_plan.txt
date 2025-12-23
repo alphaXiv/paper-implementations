@@ -1,0 +1,173 @@
+```yaml
+complete_reproduction_plan:
+  paper_info:
+    title: "JustRL: Scaling a 1.5B LLM with a Simple RL Recipe"
+    core_contribution: "Demonstrating that a simple, single-stage GRPO training loop with fixed hyperparameters and a basic rule-based verifier outperforms complex multi-stage RL pipelines for reasoning models."
+
+  # SECTION 1: File Structure Design
+  file_structure: |
+    justrl_reproduction/
+    ├── config/
+    │   ├── justrl_deepseek_1.5b.yaml    # The "Recipe": Exact hyperparameters from Table 2
+    │   └── justrl_nemotron_1.5b.yaml    # Config for the alternative base model
+    ├── data/
+    │   ├── __init__.py
+    │   ├── dapo_loader.py               # Prepares DAPO-Math-17k dataset
+    │   └── prompt_utils.py              # Handles the specific prompt suffix formatting
+    ├── verifiers/
+    │   ├── __init__.py
+    │   └── math_rule_verifier.py        # The strict regex-based binary reward function
+    ├── src/
+    │   ├── __init__.py
+    │   ├── grpo_trainer.py              # Custom Trainer class (overriding veRL if needed for specific logging/clipping)
+    │   └── utils.py                     # Gradient accumulation and logging helpers
+    ├── scripts/
+    │   ├── prepare_data.sh              # Shell script to download and format data
+    │   ├── train_grpo.py                # Main training entry point
+    │   └── evaluate.py                  # Evaluation script for AIME/MATH-500
+    ├── requirements.txt                 # Dependencies (veRL, vLLM, torch)
+    └── README.md                        # Instructions for reproduction
+
+  # SECTION 2: Implementation Components
+  implementation_components: |
+    # COMPONENT 1: The "Simple" Reward Function (Verifier)
+    # Location: verifiers/math_rule_verifier.py
+    # Purpose: Deterministic, binary feedback without partial credit or symbolic execution.
+    # Technical Details:
+    # - Input: Model generation string.
+    # - Logic:
+    #   1. Extract last occurrence of content within \boxed{...} using regex: r'\\boxed\{(.*?)\}'
+    #   2. Normalize: Strip whitespace, remove spaces.
+    #   3. Compare exact string match with ground truth.
+    #   4. Return 1.0 if match, 0.0 otherwise.
+    # - Constraints: NO SymPy, NO "robust" formatting tolerance (as per ablation results).
+
+    # COMPONENT 2: GRPO Algorithm Configuration
+    # Location: config/justrl_deepseek_1.5b.yaml & src/grpo_trainer.py
+    # Purpose: Group Relative Policy Optimization without Critic or KL penalty.
+    # Algorithm Specification:
+    # - Objective: J(θ) = E [ (1/G) * Σ min( ratio_i * A_i, clip(ratio_i, 1-ε_low, 1+ε_high) * A_i ) ]
+    # - Advantage (A_i): (r_i - mean(r_group)) / (std(r_group) + 1e-4)
+    # - Group Size (G): 8
+    # - Clipping: Asymmetric range [0.8, 1.28] (ε_low=0.2, ε_high=0.28).
+    # - KL Divergence Coefficient: 0.0 (Strictly enforced).
+    # - Entropy Coefficient: 0.0 (Strictly enforced).
+    # - Value Function: None (Actor-only architecture).
+
+    # COMPONENT 3: Data Pipeline & Prompting
+    # Location: data/dapo_loader.py
+    # Purpose: Format DAPO-Math-17k for the policy.
+    # Format:
+    #   Input: "{Question}\nPlease reason step by step, and put your final answer within \\boxed{}."
+    #   Output: Full reasoning chain + \boxed{answer}.
+    #   Note: No complex system prompts or few-shot examples.
+
+    # COMPONENT 4: Hyperparameter "Recipe" (Fixed)
+    # Location: config/justrl_deepseek_1.5b.yaml
+    # Technical Details (Table 2):
+    # - Model: deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B
+    # - Learning Rate: 1e-6 (Constant schedule, NO decay).
+    # - Global Batch Size: 256.
+    # - PPO Mini-Batch Size: 64.
+    # - Micro Batch Size: 1 (per GPU).
+    # - Gradient Accumulation: Calculated dynamically (256 / (Num_GPUs * 1)).
+    # - Epochs: 1 (approx 4380 steps for 17k dataset).
+    # - Max Prompt Length: 1024 tokens.
+    # - Max Response Length: 15360 tokens (Crucial for allowing long reasoning).
+    # - Temperature: 1.0.
+    # - Optimizer: AdamW (implied defaults).
+
+    # COMPONENT 5: Training Loop Logic
+    # Location: scripts/train_grpo.py
+    # Implementation:
+    # - Initialize veRL Trainer with HybridFlow (Actor + Rollout separation).
+    # - Load Pretrained Weights (SFT/Distilled base).
+    # - Loop:
+    #   1. Sample Batch B.
+    #   2. Generate G=8 rollouts per prompt (vLLM backend).
+    #   3. Compute Rewards (CPU regex).
+    #   4. Compute Group Advantages.
+    #   5. Update Policy via GRPO Loss.
+    # - Validation: Monitor response length (should naturally decay from ~8k to ~4k).
+
+  # SECTION 3: Validation & Evaluation
+  validation_approach: |
+    # 1. Training Dynamics Verification
+    # Purpose: Ensure the "Simple Recipe" is working as described in Figure 2.
+    # Metrics to Monitor:
+    # - Response Length: Must start high (~7k-8k tokens) and naturally converge to ~4k-5k tokens.
+    #   * Failure Mode: If length stays low or drops instantly, check for accidental length penalties.
+    # - Entropy: Should oscillate between 1.2 and 1.4.
+    #   * Failure Mode: Drop < 0.6 indicates collapse/overfitting.
+    # - Reward/Accuracy: Should monotonically increase from baseline to ~0.4-0.5 normalized score.
+    
+    # 2. Benchmark Evaluation
+    # Benchmarks: AIME 2024, MATH-500.
+    # Metric: Pass@1 (Average over N samples, usually 1 or 32 depending on compute, paper uses Pass@1).
+    # Expected Results (DeepSeek-1.5B Base):
+    # - AIME 2024: ~52.6% (vs Baseline ~28.9%).
+    # - MATH-500: ~91.6% (vs Baseline ~83.9%).
+    # Expected Results (Nemotron-1.5B Base):
+    # - AIME 2024: ~64.3%.
+    
+    # 3. Ablation Validation (Optional but Recommended)
+    # - Test "Robust Verifier": If implemented, performance should DROP.
+    # - Test "Length Penalty": If implemented, performance should DROP.
+    # - This confirms the "JustRL" hypothesis that constraints hurt reasoning.
+
+    # 4. Success Criteria
+    # - Reproduction is successful if the model achieves >50% on AIME 2024 using the fixed 1e-6 LR and single stage.
+    # - The training must be stable without any curriculum learning or dynamic parameter adjustment.
+
+  # SECTION 4: Environment & Dependencies
+  environment_setup: |
+    # Core Software Stack
+    # - Python: 3.10+
+    # - PyTorch: 2.1.2+ (with CUDA 12.1+)
+    # - veRL: Latest version (Volcano Engine RL library)
+    # - vLLM: 0.6.3+ (Required for efficient rollout generation)
+    # - Flash-Attention: 2.5.0+ (Critical for 16k context length)
+    # - Transformers: 4.46.0+
+    # - Accelerate: 0.26.0+
+    # - Hydra: For configuration management (standard in veRL)
+
+    # Hardware Requirements
+    # - GPU: Minimum 8x A100 (80GB) or H100 recommended for full reproduction.
+    #   * Reason: 15k generation length + 1.5B model parameters requires massive KV cache and activation memory.
+    #   * Alternative: 32x A800 (as per paper) or smaller clusters with aggressive gradient accumulation.
+    # - VRAM: High requirement due to long context (16k total).
+    
+    # Dataset Access
+    # - HuggingFace Access Token (for DeepSeek-R1-Distill-Qwen-1.5B and DAPO-Math-17k).
+
+  # SECTION 5: Implementation Strategy
+  implementation_strategy: |
+    # Phase 1: Foundation (Days 1-2)
+    # 1. Environment Setup: Install veRL and vLLM. Verify vLLM can serve the 1.5B model with 16k context.
+    # 2. Data Prep: Download DAPO-Math-17k. Implement `dapo_loader.py` to format prompts exactly as "{Q}\nPlease reason...".
+    # 3. Verifier: Implement `math_rule_verifier.py`. Test it against a small set of known (question, answer) pairs to ensure regex works on standard LaTeX formats.
+
+    # Phase 2: Configuration & Integration (Day 3)
+    # 1. Config Creation: Create `justrl_deepseek_1.5b.yaml`.
+    #    - CRITICAL: Set `kl_coef: 0.0`, `entropy_coef: 0.0`.
+    #    - CRITICAL: Set `clip_range` to `[0.8, 1.28]`.
+    #    - CRITICAL: Set `max_response_length: 15360`.
+    # 2. Trainer Setup: Subclass or configure veRL's GRPO trainer. Ensure the "Critic" is disabled to save memory and match the algorithm.
+
+    # Phase 3: Training (Days 4-5)
+    # 1. Launch Training: Run `scripts/train_grpo.py`.
+    #    - Use `torchrun` for distributed setup.
+    #    - Ensure Global Batch Size = 256 via Gradient Accumulation.
+    # 2. Monitoring: Watch the `response_length` metric closely. It should not explode; it should rise then fall.
+    # 3. Checkpointing: Save checkpoints every 500 steps.
+
+    # Phase 4: Evaluation (Day 6)
+    # 1. Load best checkpoint (or final).
+    # 2. Run `evaluate.py` on AIME 2024.
+    # 3. Compare with paper's 54.9% (DeepSeek) or 64.3% (Nemotron).
+
+    # Troubleshooting Guide
+    # - OOM Errors: Reduce `ppo_micro_batch_size` to 1. Enable gradient checkpointing. If still OOM, reduce `rollout_n` (G) but keep it >4 for variance reduction.
+    # - Model generates gibberish: Check if `temperature` is 1.0. Check if `kl_coef` is actually 0.
+    # - Training doesn't converge: Verify the Learning Rate is exactly 1e-6 (constant). Do not use warmup or decay.
+```
