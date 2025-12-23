@@ -30,13 +30,13 @@ from verl.utils.debug import log_gpu_memory_usage
 from verl.utils.fs import copy_to_local
 from verl.utils.fsdp_utils import fsdp_version, offload_fsdp_model_to_cpu, offload_fsdp_optimizer
 from verl.utils.import_utils import import_external_libs
-from verl.workers.fsdp_workers import ActorRolloutRefWorker as BaseActorRolloutRefWorker
+from verl.workers.fsdp_workers import ActorRolloutRefWorker
 
 logger = logging.getLogger(__file__)
 logger.setLevel(os.getenv("VERL_LOGGING_LEVEL", "WARN"))
 
 
-class ActorRolloutRefWorkerR1(BaseActorRolloutRefWorker):
+class ActorRolloutRefWorkerR1(ActorRolloutRefWorker):
     """
     Agent-R1-specific distributed worker for PPO/GRPO reinforcement learning training.
     
