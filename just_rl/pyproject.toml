@@ -1,0 +1,22 @@
+[project]
+name = "justrl"
+version = "0.1.0"
+description = "JustRL Reproduction: Scaling a 1.5B LLM with a Simple RL Recipe"
+requires-python = ">=3.10"
+dependencies = [
+    "verl",
+    "vllm>=0.6.3",
+    "torch>=2.1.2",
+    "transformers>=4.46.0",
+    "accelerate>=0.26.0",
+    "flash-attn>=2.5.0",
+    "hydra-core",
+    "numpy",
+    "datasets",
+    "wandb",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+

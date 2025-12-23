@@ -23,7 +23,8 @@ justrl_reproduction/
 │   └── utils.py             # Advantage calculation helpers
 ├── verifiers/               # Reward functions
 │   └── math_rule_verifier.py # Strict regex-based binary verifier
-└── requirements.txt         # Project dependencies
+├── pyproject.toml           # Project dependencies and configuration
+└── uv.lock                  # Locked dependency versions
 ```
 
 ## 🛠️ Installation
@@ -35,13 +36,17 @@ justrl_reproduction/
 
 ### Setup
 1. Clone the repository (if applicable) or navigate to the root directory.
-2. Install dependencies:
+2. Install [uv](https://github.com/astral-sh/uv) if you haven't already:
+   ```bash
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   ```
+3. Install dependencies:
 
 ```bash
-pip install -r requirements.txt
+uv sync
 ```
 
-*Note: This installs `vllm`, `verl`, `flash-attn`, and other core libraries required for efficient rollout generation and training.*
+*Note: This installs `vllm`, `verl`, `flash-attn`, and other core libraries required for efficient rollout generation and training. The project uses `uv` for fast, reliable dependency management.*
 
 ## 📊 Data Preparation
 
