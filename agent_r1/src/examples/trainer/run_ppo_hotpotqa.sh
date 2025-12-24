@@ -36,7 +36,7 @@ python3 -m src.agent_r1.training.train_rl_agent \
     algorithm.kl_ctrl.kl_coef=0.001 \
     algorithm.use_kl_in_reward=True \
     trainer.critic_warmup=5 \
-    trainer.logger=['console','wandb'] \
+    trainer.logger=['wandb'] \
     trainer.project_name=$PROJECT_NAME \
     trainer.experiment_name=$EXPERIMENT_NAME \
     trainer.n_gpus_per_node=4 \
