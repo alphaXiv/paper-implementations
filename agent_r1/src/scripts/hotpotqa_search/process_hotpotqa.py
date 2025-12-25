@@ -33,4 +33,4 @@ if __name__ == "__main__":
     
     index = faiss.index_factory(dim, 'Flat', faiss.METRIC_INNER_PRODUCT)
     index.add(corpus_numpy)
-    faiss.write_index(index, '/home/ubuntu/texas-sandbox/paper-implementations/agent_r1/odata/corpus/hotpotqa/index.bin')
+    faiss.write_index(index, '/home/ubuntu/texas-sandbox/paper-implementations/agent_r1/data/corpus/hotpotqa/index.bin')
