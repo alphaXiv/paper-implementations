@@ -5,6 +5,7 @@
 
 set -e  # Exit on any error
 
+
 # Parse command line arguments
 ALGORITHM=""
 while [[ $# -gt 0 ]]; do

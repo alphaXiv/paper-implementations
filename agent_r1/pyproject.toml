@@ -16,4 +16,5 @@ authors = [
 dependencies = [
     "FlagEmbedding",
     "faiss-cpu",
+    "openai"
 ]

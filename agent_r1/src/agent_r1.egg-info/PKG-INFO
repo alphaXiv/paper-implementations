@@ -1,3 +1,17 @@
+Metadata-Version: 2.4
+Name: agent-r1
+Version: 0.1.0
+Summary: Recursive reasoning with tiny neural networks for solving ARC-AGI and other puzzles
+Author: alphaXiv
+License: MIT
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: FlagEmbedding
+Requires-Dist: faiss-cpu
+Requires-Dist: openai
+Dynamic: license-file
+
 # Agent-R1: A Tutorial-Style Guide to Training LLM Agents with RL
 
 <p align="center">
