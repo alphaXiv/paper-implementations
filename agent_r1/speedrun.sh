@@ -152,7 +152,7 @@ case "$ALGORITHM" in
     ppo)
         echo "=========================================="
         echo "Starting PPO Training on HotpotQA"
-        echo "This will take approximately 12 hours on 4xA100 80GB GPUs"
+        echo "This will take approximately 22 hours on 4xH100 80GB GPUs"
         echo "=========================================="
 
         sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && ${DOCKER_ENV}cp src/examples/trainer/run_ppo_hotpotqa.sh ./ && bash run_ppo_hotpotqa.sh" || {
@@ -163,7 +163,7 @@ case "$ALGORITHM" in
     grpo)
         echo "=========================================="
         echo "Starting GRPO Training on HotpotQA"
-        echo "This will take approximately 18-24 hours on 4xA100 80GB GPUs"
+        echo "This will take approximately 20-22 hours on 4xH100 80GB GPUs"
         echo "=========================================="
 
         sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && ${DOCKER_ENV}cp src/examples/trainer/run_grpo_hotpotqa.sh ./ && bash run_grpo_hotpotqa.sh" || {
