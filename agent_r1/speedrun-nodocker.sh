@@ -87,6 +87,10 @@ pip3 install -e . || {
     exit 1
 }
 
+# Ensure the package installation is properly registered
+hash -r
+sleep 2
+
 echo "=== Install PyTorch 2.6.0 + CUDA 12.4 ==="
 pip install \
     torch==2.6.0+cu124 \
@@ -137,6 +141,8 @@ else
     echo "verl exists!"
 fi
  
+hash -r
+sleep 10
 
 echo "=========================================="
 echo " Libraries installation complete!"
