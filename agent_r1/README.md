@@ -113,10 +113,10 @@ We used GPU Base Image 22.4 on Lambda Labs with 4XH100s GPUs (80GB SXM) and the 
 
 ```bash
 # Run PPO (default)
-sudo bash speedrun-nodocker.sh
+bash speedrun-nodocker.sh
 
 # Or specify the algorithm
-sudo bash speedrun-nodocker.sh grpo
+bash speedrun-nodocker.sh grpo
 ```
 
 This script will:
@@ -130,7 +130,7 @@ Once training is complete, you can interact with your trained agent using the in
 
 ```bash
 # Run inference (interactive chat)
-sudo bash inference.sh
+bash inference.sh
 ```
 
 This script will:
@@ -140,7 +140,7 @@ This script will:
 
 You can also customize the paths if your checkpoints are in a different location:
 ```bash
-./inference.sh --checkpoint-dir /path/to/checkpoints
+bash inference.sh --checkpoint-dir /path/to/checkpoints
 ```
 
 ## Where to Look in the Code
