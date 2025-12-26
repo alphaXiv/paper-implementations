@@ -89,7 +89,17 @@ Inspired by projects like `Nanochat`, we aim for code readability and ease of un
 
 We provide three main scripts to help you get started, depending on your environment and needs.
 
-### 1. Dockerized Setup (Recommended)
+### 1. Ruuning our trained checkpoints!
+
+Use the below script to run inference with our provided trained checkpoints.
+Available at [Agent-R1 Trained Checkpoints](https://huggingface.co/collections/alphaXiv/agent-r1)
+
+```bash
+# Run inference (interactive chat)
+bash inference.sh --use-hf-model --hf-model-path alphaXiv/Qwen-2.5-1.5b-instruct-grpo
+```
+
+### 2. Dockerized Setup (Recommended)
 If you want a completely isolated environment with all dependencies handled for you, use the standard speedrun script. This requires Docker with GPU support.
 
 ```bash
@@ -106,7 +116,7 @@ This script will:
 - Install dependencies and download data.
 - Launch the training job inside the container.
 
-### 2. Non-Docker Setup ("Speedrun No Docker")
+### 3. Non-Docker Setup ("Speedrun No Docker")
 If you prefer to run everything directly on your machine (e.g., you are already in a configured environment like Lambda Labs GPU Base image), use the no-docker version.
 
 We used GPU Base Image 22.4 on Lambda Labs with 4XH100s GPUs (80GB SXM) and the batch sizes has been configured accordingly.
@@ -125,7 +135,7 @@ This script will:
 - Download data and build indices.
 - Launch the training job directly.
 
-### 3. Inference
+### 4. Inference
 Once training is complete, you can interact with your trained agent using the inference script. For more detailed information, please refer to [docs/inference/inference.md](docs/inference/inference.md).
 
 ```bash

@@ -6,6 +6,8 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 
+
+
 # Parse command line arguments
 ALGORITHM=""
 while [[ $# -gt 0 ]]; do
@@ -80,6 +82,8 @@ pip uninstall -y \
     xgboost transformer_engine flash_attn apex megatron-core grpcio \
     || true
 
+
+
 # Installing required libraries for indexing
 
 pip3 install -e . || {
@@ -149,6 +153,16 @@ echo " Libraries installation complete!"
 echo "=========================================="
 
 
+if [ ! -z "$WANDB_API_KEY" ]; then
+    echo "Configuring Weights & Biases..."
+    # Set wandb to use local directory
+    export WANDB_DIR="./wandb"
+    mkdir -p "$WANDB_DIR"
+    wandb login $WANDB_API_KEY || {
+        echo "Failed to login to Weights & Biases."
+        exit 1
+    }
+fi
 
 # Download and preprocess HotpotQA dataset
 echo "Downloading and preprocessing HotpotQA dataset..."
@@ -202,23 +216,13 @@ else
     echo 'FAISS index already exists, skipping search index processing.'
 fi
 
-# Configure Weights & Biases if API key is set
-if [ ! -z "$WANDB_API_KEY" ]; then
-    echo "Configuring Weights & Biases..."
-    # Set wandb to use local directory
-    export WANDB_DIR="./wandb"
-    mkdir -p "$WANDB_DIR"
-    wandb login $WANDB_API_KEY || {
-        echo "Failed to login to Weights & Biases."
-        exit 1
-    }
-fi
 
 # Ensure outputs directory is writable
 
 if [ ! -d "outputs" ]; then
     mkdir -p outputs
 fi
+
 
 # Run training based on selected algorithm
 case "$ALGORITHM" in

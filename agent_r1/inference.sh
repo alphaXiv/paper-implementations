@@ -112,6 +112,7 @@ CHECKPOINT_DIR="checkpoints/hotpotqa/ppo-qwen2.5-1.5b-instruct/global_step_102/a
 HF_MODEL_PATH="Qwen/Qwen2.5-1.5B-Instruct"
 TARGET_DIR="./converted_model"
 BACKEND="fsdp"
+USE_HF_MODEL=false
 
 # Parse command-line arguments
 while [[ $# -gt 0 ]]; do
@@ -132,14 +133,19 @@ while [[ $# -gt 0 ]]; do
             BACKEND="$2"
             shift 2
             ;;
+        --use-hf-model)
+            USE_HF_MODEL=true
+            shift
+            ;;
         -h|--help)
-            echo "Usage: $0 [--checkpoint-dir <dir>] [--hf-model-path <path>] [--target-dir <dir>] [--backend <backend>]"
+            echo "Usage: $0 [--checkpoint-dir <dir>] [--hf-model-path <path>] [--target-dir <dir>] [--backend <backend>] [--use-hf-model]"
             echo ""
             echo "Options:"
             echo "  --checkpoint-dir    Path to the checkpoint directory (default: ./checkpoints/step1/actor)"
             echo "  --hf-model-path     Hugging Face model path (default: Qwen/Qwen2.5-3B-Instruct)"
             echo "  --target-dir        Target directory for converted model (default: ./converted_model)"
             echo "  --backend           Backend type (default: fsdp)"
+            echo "  --use-hf-model      Use Hugging Face model directly without conversion (default: false)"
             exit 0
             ;;
         *)
@@ -154,36 +160,43 @@ echo "=========================================="
 echo "Starting Agent-R1 Inference Process"
 echo "=========================================="
 
-MODEL_NAME="${TARGET_DIR}"
-
-# Check if checkpoint directory exists
-if [ ! -d "$CHECKPOINT_DIR" ]; then
-    echo "Error: Checkpoint directory '$CHECKPOINT_DIR' does not exist."
-    exit 1
+if [ "$USE_HF_MODEL" = true ]; then
+    MODEL_NAME="${HF_MODEL_PATH}"
+    echo "Using Hugging Face model directly: ${MODEL_NAME}"
 else
-    echo "Checkpoint directory '$CHECKPOINT_DIR' found."
+    MODEL_NAME="${TARGET_DIR}"
+    # Check if checkpoint directory exists
+    if [ ! -d "$CHECKPOINT_DIR" ]; then
+        echo "Error: Checkpoint directory '$CHECKPOINT_DIR' does not exist."
+        exit 1
+    else
+        echo "Checkpoint directory '$CHECKPOINT_DIR' found."
+    fi
 fi
 
 echo "Using checkpoint dir: ${CHECKPOINT_DIR}"
 echo "HF model path: ${HF_MODEL_PATH}"
 echo "Target dir: ${TARGET_DIR}"
 echo "Backend: ${BACKEND}"
+echo "Use HF model: ${USE_HF_MODEL}"
 echo ""
 
-# Step 1: Convert Training Checkpoints to HF Format
-echo "Step 1: Converting checkpoints to HF format..."
+if [ "$USE_HF_MODEL" = false ]; then
+    # Step 1: Convert Training Checkpoints to HF Format
+    echo "Step 1: Converting checkpoints to HF format..."
 
-# Run the conversion
-python3 src/verl/scripts/model_merger.py --backend $BACKEND --hf_model_path $HF_MODEL_PATH --local_dir $CHECKPOINT_DIR --target_dir $TARGET_DIR
+    # Run the conversion
+    python3 src/verl/scripts/model_merger.py --backend $BACKEND --hf_model_path $HF_MODEL_PATH --local_dir $CHECKPOINT_DIR --target_dir $TARGET_DIR
 
-if [ $? -eq 0 ]; then
-    echo "Checkpoint conversion completed successfully."
-else
-    echo "Error: Checkpoint conversion failed."
-    exit 1
+    if [ $? -eq 0 ]; then
+        echo "Checkpoint conversion completed successfully."
+    else
+        echo "Error: Checkpoint conversion failed."
+        exit 1
+    fi
+
+    echo ""
 fi
-
-echo ""
 
 # Step 2: Deploy the vLLM Service
 echo "Step 2: Deploying vLLM service..."
