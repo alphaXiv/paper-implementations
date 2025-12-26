@@ -108,7 +108,7 @@ fi
 
 
 # Default values
-CHECKPOINT_DIR="checkpoints/hotpotqa/ppo-qwen2.5-1.5b-instruct/global_step_1/actor"
+CHECKPOINT_DIR="checkpoints/hotpotqa/ppo-qwen2.5-1.5b-instruct/global_step_102/actor"
 HF_MODEL_PATH="Qwen/Qwen2.5-1.5B-Instruct"
 TARGET_DIR="./converted_model"
 BACKEND="fsdp"

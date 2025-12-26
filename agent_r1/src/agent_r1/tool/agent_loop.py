@@ -254,6 +254,13 @@ class ToolGenerationManager:
                     meta_info=meta_info
                 )
 
+            # Clamp token IDs to max vocab size (151655) by replacing with pad_token_id
+            rollings_active.batch['input_ids'] = torch.where(
+                rollings_active.batch['input_ids'] >= 151655,
+                self.tokenizer.pad_token_id,
+                rollings_active.batch['input_ids']
+            )
+
             rollings_active, pad_size = pad_dataproto_to_divisor(rollings_active, self.actor_rollout_wg.world_size)
             gen_output = self.actor_rollout_wg.generate_sequences(rollings_active)
             gen_output = unpad_dataproto(gen_output, pad_size=pad_size)
