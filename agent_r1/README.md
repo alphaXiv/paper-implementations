@@ -79,6 +79,196 @@ Agent-R1 implements sophisticated **masking**:
 - **Loss Mask**: Ensures we only calculate loss on the tokens the model generated.
 - **Advantage Mask**: Ensures that the "credit" for a good outcome is properly attributed to the specific actions the model took, skipping over the deterministic tool outputs.
 
+## 3. Multi-GPU Hybrid RL Training Architecture
+
+Agent-R1's training infrastructure is designed for efficient multi-GPU distributed training, combining **multiple parallelism strategies** and **heterogeneous compute patterns**. This hybrid approach is necessary because agentic RL training has fundamentally different compute requirements across different phases.
+
+### The Challenge: Why Hybrid?
+
+Training LLM agents with RL involves three computationally distinct phases that don't share the same optimal parallelization strategy:
+
+1. **Rollout (Inference)**: Generate agent trajectories with tool calls
+   - Requires high throughput and low latency
+   - Benefits from tensor parallelism (TP) for large batch inference
+   - Memory-bound (KV cache dominates)
+
+2. **Training (Backward)**: Update model parameters via PPO/GRPO
+   - Requires gradient computation across long sequences  
+   - Benefits from data parallelism (DP) and FSDP
+   - Compute-bound (gradient accumulation, optimizer updates)
+
+3. **Reference Policy**: Compute reference log probabilities
+   - Similar to rollout but read-only
+   - Can be offloaded to CPU or share GPUs strategically
+
+### Architecture Overview
+
+Agent-R1 uses a **Ray-based orchestration** system with three key components:
+
+#### Resource Pool Management
+The training process dynamically allocates GPUs to different roles through `ResourcePoolManager`:
+
+```python
+# Example: 4 GPUs per node, 1 node
+resource_pool_spec = {
+    "global_pool": [4]  # 4 GPUs available
+}
+
+# Map different computational roles to the pool
+mapping = {
+    Role.ActorRollout: "global_pool",   # Training + Inference
+    Role.Critic: "global_pool",          # Value function (PPO only)
+    Role.RefPolicy: "global_pool",       # Reference policy
+}
+```
+
+**Key insight**: All roles can share the same physical GPUs by time-multiplexing. The system transitions between:
+- **Training mode**: Model wrapped in FSDP for gradient computation
+- **Inference mode**: Model loaded into vLLM with tensor parallelism for fast generation
+
+#### Worker Architecture
+
+Three specialized workers handle different computational phases:
+
+1. **ActorRolloutRefWorkerR1** (Actor + Rollout)
+   - **Training**: Uses FSDP to shard model parameters across GPUs
+   - **Inference**: Dynamically loads weights into vLLM engine with TP
+   - **Transition**: `FSDPVLLMShardingManager` synchronizes weights between FSDP ↔ vLLM
+   - Handles both actor updates and trajectory rollouts
+
+2. **CriticWorkerR1** (PPO only, optional for GRPO)
+   - Learns value function $V(s)$ for GAE advantage estimation
+   - Wrapped in FSDP for training
+   - Can be CPU-offloaded when memory is tight
+
+3. **RefPolicy Worker** (Reference policy)
+   - Frozen copy of the policy for KL divergence computation
+   - Shares architecture with ActorRollout but no gradient updates
+   - Can be CPU-offloaded to save GPU memory
+
+#### The Hybrid Engine: FSDP ↔ vLLM
+
+The most intricate part is the **hybrid engine** that switches between training and inference modes:
+
+**Training Mode (FSDP)**:
+- Model sharded across GPUs using PyTorch FSDP
+- Each GPU holds a fraction of parameters
+- Supports gradient checkpointing to reduce memory
+- Configuration: `actor.fsdp_config.param_offload`, `optimizer_offload`
+
+**Inference Mode (vLLM)**:
+- Model loaded with Tensor Parallelism for fast generation
+- KV cache managed by vLLM for batched inference  
+- Configuration: `rollout.tensor_model_parallel_size`
+
+**Synchronization**:
+```python
+# Managed by FSDPVLLMShardingManager
+# 1. Before rollout: FSDP state_dict → vLLM weights
+rollout_sharding_manager.sync_weights_to_inference()
+
+# 2. After actor update: vLLM stays dormant
+# FSDP handles all gradient updates
+
+# 3. Repeat for next iteration
+```
+
+### Training Loop Workflow
+
+Here's how a single training step flows across the distributed system:
+
+```
+1. Rollout (vLLM): Generate trajectories with tool calls
+   ├─ Actor in inference mode (TP=2, for example)
+   ├─ Tool environment executes actions  
+   └─ Create action_mask (1=model tokens, 0=tool outputs)
+
+2. Compute Rewards: Evaluate trajectory quality
+   └─ Reward function runs on driver process
+
+3. Reference Policy: Compute KL penalty
+   └─ RefPolicy worker (vLLM mode)
+
+4. Critic (PPO only): Estimate values
+   └─ Critic worker (FSDP mode)
+
+5. Advantage Estimation: Compute GAE or GRPO advantages
+   ├─ Uses action_mask to only credit model actions
+   └─ Driver process (lightweight computation)
+
+6. Actor Update: Train policy via PPO
+   ├─ Switch to FSDP training mode
+   ├─ Mini-batch iteration with gradient accumulation
+   ├─ Clip gradients and update parameters
+   └─ Sync weights back to vLLM for next rollout
+```
+
+### Parallelism Strategy Details
+
+**Data Parallelism (DP)**: Implicit through FSDP's sharding across GPUs. Each GPU processes different micro-batches.
+
+**Tensor Parallelism (TP)**: Used in vLLM rollout. Model layers split across GPUs.
+- Example: With TP=2, each attention head subset runs on different GPUs
+- Configured via: `rollout.tensor_model_parallel_size=2`
+
+**Fully Sharded Data Parallel (FSDP)**: PyTorch's native sharding for training.
+- Parameters sharded across GPUs
+- Gradients computed locally, then all-gathered
+- Supports CPU offloading: `fsdp_config.param_offload=True`
+
+**Sequence Parallelism**: Optional, via Ulysses SP in FSDP for very long sequences.
+
+### Memory Optimization Techniques
+
+Agent-R1 employs several strategies to fit large models in limited GPU memory:
+
+1. **Gradient Checkpointing**: Recompute activations during backward pass
+   ```python
+   actor_rollout_ref.model.enable_gradient_checkpointing=True
+   ```
+
+2. **CPU Offloading**: Move parameters/optimizer states to CPU when not needed
+   ```python
+   actor.fsdp_config.param_offload=True
+   actor.fsdp_config.optimizer_offload=True
+   ```
+
+3. **Dynamic Batch Sizing**: Automatically adjust batch size based on sequence length
+   ```python
+   actor.use_dynamic_bsz=True
+   actor.ppo_max_token_len_per_gpu=8192
+   ```
+
+4. **Response Length Truncation**: Limit agent responses to prevent memory explosion
+   ```python
+   data.max_response_length=8192
+   data.max_response_length_single_turn=1024
+   ```
+
+5. **Prefix Caching**: vLLM caches common prompt prefixes (enabled by default)
+
+
+**Breakdown**:
+- 4 GPUs share all three roles (Actor+Rollout, Ref, Critic)
+- Rollout uses TP=2 → 2 GPUs for vLLM inference
+- Training uses all 4 GPUs via FSDP
+- Gradient accumulation: 64 mini-batch / 2 per GPU = 32 steps
+- Reference policy offloaded to CPU to reduce memory pressure
+
+### Why This Complexity?
+
+This hybrid architecture might seem over-engineered, but it solves real problems:
+
+- **Agent trajectories are long**: Multi-turn tool usage creates 4-8K+ token sequences
+- **Inference must be fast**: Agents generate iteratively; slow rollouts bottleneck training  
+- **Training needs gradients**: Can't use vLLM's inference-optimized graph for backprop
+- **Memory is scarce**: 7B models with long contexts barely fit on consumer GPUs
+
+The hybrid FSDP+vLLM approach gives you:
+- **Fast rollouts** via vLLM's optimized inference
+- **Efficient training** via FSDP's gradient computation
+- **Flexible resource sharing** via Ray's orchestration
+
 ## Simplicity First
 
 Inspired by projects like `Nanochat`, we aim for code readability and ease of understanding.
