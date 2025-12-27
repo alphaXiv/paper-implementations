@@ -326,7 +326,7 @@ This script will:
 - Launch the training job directly.
 
 ### 4. Inference
-Once training is complete, you can interact with your trained agent using the inference script. For more detailed information, please refer to [docs/inference/inference.md](docs/inference/inference.md).
+Once training is complete, you can interact with your trained agent using the inference script. 
 
 ```bash
 # Run inference (interactive chat)
@@ -358,7 +358,7 @@ Agent-R1 provides a flexible architecture for creating custom tools and tool env
 - **BaseToolEnv**: Tool environments that define the state transition function.
 
 For detailed guidance:
-- [Infrernce](docs/inference/inference.md)
+- [Infrerence](docs/inference/inference.md)
 - [Customizing Tools for Multi-hop QA](docs/tutorial/multihopqa.md)
 - [Customizing Tool Environment for ReTool](docs/tutorial/retool.md)
 
