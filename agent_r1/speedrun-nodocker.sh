@@ -164,6 +164,8 @@ if [ ! -z "$WANDB_API_KEY" ]; then
     }
 fi
 
+
+
 # Download and preprocess HotpotQA dataset
 echo "Downloading and preprocessing HotpotQA dataset..."
 
@@ -179,7 +181,7 @@ else
 
 fi
 
-wait
+
 
 # Download and preprocess HotpotQA dataset
 python "$SCRIPT_DIR/src/examples/data_preprocess/hotpotqa.py" --local_dir "$DATA_DIR/hotpotqa" || {
@@ -214,7 +216,7 @@ fi
 # Build FAISS search index if it doesn't exist
 if [ ! -f "$DATA_DIR/corpus/hotpotqa/index.bin" ]; then
     echo 'Building FAISS search index...'
-    python "$SCRIPT_DIR/src/scripts/hotpotqa_search/process_hotpotqa.py" || {
+    (cd "$SCRIPT_DIR/src/scripts/hotpotqa_search" && python process_hotpotqa.py) || {
         echo "Failed to build search index."
         exit 1
     }
