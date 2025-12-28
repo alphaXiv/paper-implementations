@@ -112,9 +112,11 @@ sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1/src/verl && pip3 
     exit 1
 }
 
+wait 
+
 # Download and preprocess HotpotQA dataset
 echo "Downloading and preprocessing HotpotQA dataset..."
-sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && mkdir -p data/hotpotqa && python src/examples/data_preprocess/hotpotqa.py --local_dir ./data/hotpotqa" || {
+sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && mkdir -p data/hotpotqa && python src/examples/data_preprocess/hotpotqa.py --local_dir data/hotpotqa" || {
     echo "Failed to download and preprocess HotpotQA dataset."
     exit 1
 }
@@ -126,7 +128,7 @@ sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && if [ ! -f 'dat
     exit 1
 }
 
-sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && if [ -f 'data/corpus/hotpotqa/index.bin' ]; then echo 'HotpotQA search index already exists, skipping index build.'; else echo 'Building FAISS search index (this may take some time)...'; cd src/scripts/hotpotqa_search && python process_hotpotqa.py; fi" || {
+sudo docker exec verl-agent-r1 bash -c "cd /workspace/agent_r1 && if [ -f 'data/corpus/hotpotqa/index.bin' ]; then echo 'HotpotQA search index already exists, skipping index build.'; else echo 'Building FAISS search index (this may take some time)...'; python src/scripts/hotpotqa_search/process_hotpotqa.py; fi" || {
     echo "Failed to build search index."
     exit 1
 }

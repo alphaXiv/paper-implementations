@@ -190,6 +190,12 @@ python "$SCRIPT_DIR/src/examples/data_preprocess/hotpotqa.py" --local_dir "$DATA
 # Build HotpotQA search index
 echo "Building HotpotQA search index..."
 
+if [ ! -d "$DATA_DIR/corpus/hotpotqa" ]; then
+    mkdir -p "$DATA_DIR/corpus/hotpotqa"
+
+else
+    echo 'HotpotQA corpus directory already exists, skipping creation.'
+fi
 
 if [ ! -f "$DATA_DIR/corpus/hotpotqa/hpqa_corpus.jsonl" ]; then
     mkdir -p "$DATA_DIR/corpus/hotpotqa" \
