@@ -7,6 +7,7 @@ import os
 
 if __name__ == "__main__":
 
+    os.makedirs("../../../data/corpus/hotpotqa/", exist_ok=True)
  
     corpus = []
     with open("../../../data/corpus/hotpotqa/hpqa_corpus.jsonl") as f:
