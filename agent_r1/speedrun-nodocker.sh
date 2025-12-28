@@ -231,7 +231,6 @@ if [ ! -d "outputs" ]; then
     mkdir -p outputs
 fi
 
-
 # Run training based on selected algorithm
 case "$ALGORITHM" in
     ppo)
