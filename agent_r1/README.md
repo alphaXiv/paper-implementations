@@ -1,14 +1,8 @@
-# Agent-R1: A Tutorial-Style Guide to Training LLM Agents with RL
+# Agent-R1: Training LLM Agents with RL
 
-<p align="center">
-  <a href="https://arxiv.org/abs/2511.14460">
-  <img src="https://img.shields.io/badge/Paper-Arxiv-b31b1b?logo=arxiv&logoColor=white" alt="Paper Arxiv">
-</a>
-</p>
+Welcome to **Agent-R1**! This repository is an easy-to-follow implementation of the [Agent-R1](https://alphaxiv.org/abs/2511.14460) paper which provides a framework for training LLMs with RL. The original implementation can be found [here](https://github.com/0russwest0/Agent-R1/tree/main/agent_r1) and is built on top of [VERL](https://github.com/volcengine/verl).
 
-Welcome to **Agent-R1**! This repository is designed not just as a tool, but as a guide to understanding how to train Large Language Model (LLM) agents using Reinforcement Learning (RL).
-
-If you've ever wondered how to move beyond simple prompting and supervised fine-tuning to agents that can *learn* from their interactions with tools and environments, you're in the right place.
+This repo provides a straightforward guide to training your own deep research agent with the Agent-R1 framework. Rather than being a framework or library, we structure the codebase as an annotated guide to easily follow the different components required to train an agent with RL.
 
 ## What are we trying to solve?
 
@@ -18,26 +12,45 @@ Training agents is hard. Unlike standard chatbots that just generate text, agent
 3.  **Observe** the results of those actions.
 4.  **Iterate** until the task is solved.
 
-Standard RLHF (Reinforcement Learning from Human Feedback) pipelines are typically designed for single-turn interactions:
-`Prompt -> Response -> Reward`
+Standard RLHF (Reinforcement Learning from Human Feedback) pipelines are typically designed for what are called "single-turn" interactions:
 
-But agents operate in a **multi-turn** loop. We need a framework that treats the entire interaction trajectory as a training episode.
+**Single-turn example:**
+```
+User: "Write a poem about the ocean"
+Model: [generates poem]
+Reward: Quality score based on poem
+```
+
+On the other hand, agents operate in a **multi-turn** fashion:
+
+**Multi-turn example:**
+```
+User: "Which magazine was started first, Arthur's Magazine or First for Women?"
+Model: [searches for "Arthur's Magazine"]
+Environment: [returns Wikipedia article with founding date 1844]
+Model: [searches for "First for Women"]
+Environment: [returns Wikipedia article with founding date 1989]
+Model: "Arthur's Magazine was started first (1844)"
+Reward: Correctness of final answer
+```
+
+We need a framework that treats the entire interaction trajectory as a training episode.
 
 ## Built on VERL
 
-Agent-R1 is built on top of **VERL** (VolcEngine Reinforcement Learning). VERL provides the robust, scalable infrastructure needed for distributed RL training (handling the "heavy lifting" of PPO/GRPO across GPUs).
+Agent-R1 is built on top of **VERL** (VolcEngine Reinforcement Learning). VERL provides the infrastructure needed for distributed RL training (handling the "heavy lifting" of PPO/GRPO across GPUs). RL training has a lot of moving components: training the critic, training the agent, sampling the agent on the environment, sampling the reference agent, etc. A framework like VERL helps juggle these different moving parts while trying to maximize GPU utilization. More on this later.
 
-**Agent-R1** adds the "Agent" logic on top of this infrastructure. Think of VERL as the engine, and Agent-R1 as the car designed for a specific type of race (agentic tasks).
+**Agent-R1** adds the "Agent" logic on top of this infrastructure.
 
-## Key Concepts & Contributions
+## Agentic RL Concepts
 
 To make RL work for agents, Agent-R1 introduces two critical concepts that you'll see annotated throughout the codebase:
 
-### 1. Algorithm: Agent vs. LLM RL
+### 1. Formulation: Agent vs. LLM RL
 
-Reinforcement learning for Agents differs significantly from LLM (Chatbots, Reasoners). The key distinction lies in the fact that: **a complete Agent trajectory typically involves multi-turn interaction**, requiring **multiple tool calls** to solve user queries. Below, we formalize this distinction using the Markov Decision Process (MDP) framework.
+The key distinction in RL training for agents as opposed to a traditional LLM task like chatbots or reasoners is the multi-turn interaction. An agent is required to make several tool calls to interact with the environment and solve user queries. This distinction can be formalized using the Markov Decision Process (MDP) framework:
 
-**In the context of LLM:**
+**In the context of an LLM:**
 - **State**: Simply the sequence of the input prompt and all generated text so far.
 - **Action**: Selecting the next token from the vocabulary to add to the sequence.
 - **Transitions**: Straightforward addition of the selected token to the existing sequence.
@@ -55,33 +68,34 @@ Reinforcement learning for Agents differs significantly from LLM (Chatbots, Reas
 
 **Formal Definition:**
 
-To better understand the difference, we can define the probability of a trajectory:
+The probability of a trajectory can now be written out as:
 
 $$ P(\tau) = P(X) \prod_{j=1}^{m} \left( P(C_j | X, a_{1:t_{j-1}}, C_{1:j-1}) \prod_{i=1}^{t_j} \pi_\theta(a_i | X, a_{1:i-1}, C_{1:j}) \right) $$
 
 where:
 - $X$ is the sequence of the current prompt
-- $C_j$ is the result of the $j$-th tool call and $m$ is the number of tool calls
+- $C_j$ is the result of the $j$-th tool call
+- $m$ is the number of tool calls
 - $a_t$ is the token selected from the vocabulary
-- $t_j$ is the number of token responses between the $j-1$th and $j$-th tool calls, $0<t_1+t_2+...+t_m<t$
+- $t_j$ is the number of token responses between the $j-1$-th and $j$-th tool calls, $0<t_1+t_2+...+t_m<t$
 
 This richer reinforcement learning framework allows Agent-R1 to train LLMs that learn effective strategies for when and how to use tools across multi-turn interactions. By optimizing over entire trajectories rather than single responses, we can apply algorithms like PPO and GRPO to develop agents that reason effectively before taking actions.
 
 ### 2. Advantage & Loss Masks
-This is the technical "secret sauce". In a multi-turn trajectory, the context window contains a mix of:
+This is one of the main contributions of the Agent-R1 work. In a multi-turn trajectory, the context window contains a mix of:
 - User instructions (Input)
 - Model generations (Thoughts/Actions)
 - Tool outputs (Environment Observations)
 
 We **only** want to update the model based on its own actions. We don't want to calculate gradients for the tool outputs (the model didn't generate them, the environment did).
 
-Agent-R1 implements sophisticated **masking**:
+Agent-R1 implements straightforward **masking** to handle this:
 - **Loss Mask**: Ensures we only calculate loss on the tokens the model generated.
 - **Advantage Mask**: Ensures that the "credit" for a good outcome is properly attributed to the specific actions the model took, skipping over the deterministic tool outputs.
 
 ## 3. Multi-GPU Hybrid RL Training Architecture
 
-Agent-R1's training infrastructure is designed for efficient multi-GPU distributed training, combining **multiple parallelism strategies** and **heterogeneous compute patterns**. This hybrid approach is necessary because agentic RL training has fundamentally different compute requirements across different phases.
+A good chunk of the Agent-R1 codebase, or for that matter any RL LLM framework, is infrastructure for efficiently training in a multi-GPU setting. Unlike traditional supervised finetuning where we can use libraries like Torch FSDP or Megatron-LM out of the box, there's a little bit more wrestling we have to do to get things to work. A lot of this is handled by libraries like VERL, but we figured it would be useful to walk you through how and why RL training is different from SFT.
 
 ### The Challenge: Why Hybrid?
 
@@ -103,7 +117,7 @@ Training LLM agents with RL involves three computationally distinct phases that 
 
 ### Architecture Overview
 
-Agent-R1 uses a **Ray-based orchestration** system with three key components:
+To coordinate across these different phases, Agent-R1 uses [Ray](https://github.com/ray-project/ray) for orchestration. Ray lets us spawn different workers (actor, critic, reference policy) that can dynamically share the same physical GPUs by switching between training and inference modes. The architecture has three key components:
 
 #### Resource Pool Management
 The training process dynamically allocates GPUs to different roles through `ResourcePoolManager`:
@@ -122,7 +136,7 @@ mapping = {
 }
 ```
 
-**Key insight**: All roles can share the same physical GPUs by time-multiplexing. The system transitions between:
+**Key insight**: All roles can share the same physical GPUs by "time-multiplexing" (running different phases sequentially). The system transitions between:
 - **Training mode**: Model wrapped in FSDP for gradient computation
 - **Inference mode**: Model loaded into vLLM with tensor parallelism for fast generation
 
@@ -136,7 +150,7 @@ Three specialized workers handle different computational phases:
    - **Transition**: `FSDPVLLMShardingManager` synchronizes weights between FSDP ↔ vLLM
    - Handles both actor updates and trajectory rollouts
 
-2. **CriticWorkerR1** (PPO only, optional for GRPO)
+2. **CriticWorkerR1** (PPO only)
    - Learns value function $V(s)$ for GAE advantage estimation
    - Wrapped in FSDP for training
    - Can be CPU-offloaded when memory is tight
@@ -273,13 +287,14 @@ The hybrid FSDP+vLLM approach gives you:
 
 Inspired by projects like `Nanochat`, we aim for code readability and ease of understanding.
 - **Focused Algorithms**: We strictly support **PPO** (Proximal Policy Optimization) and **GRPO** (Group Relative Policy Optimization). We've removed support for older or less stable algorithms (like REINFORCE, ReMax) to keep the codebase clean.
+- **Readable code**: A lot of the original Agent-R1 codebase can inherit classes within the VERL library. This reduces line count and makes code easier to follow.
 - **Tutorial Style**: The code is heavily commented to explain *why* we are doing things, not just *what* is happening.
 
-## Running the Code
+## Training your own Deep Research Agent
 
-We provide three main scripts to help you get started, depending on your environment and needs.
+With the Agent-R1 framework we can now train a Qwen-2.5 model on HotpotQA, a multi-hop Q&A dataset. To answer questions like "Which magazine was started first Arthur's Magazine or First for Women?", the agent has access to a tool that can search a Wikipedia-style corpus. The answers to these questions also require the agent to make several search calls, thus requiring "multi-turn" interactions with the environment. We provide three main scripts to help you get started. For training, we used 4 H100 (80GB SXM) GPUs on [Lambda Labs](https://lambda.ai/), with training taking just under 6 hours.
 
-### 1. Ruuning our trained checkpoints!
+### 1. Running our trained checkpoints!
 
 Use the below script to run inference with our provided trained checkpoints.
 Available at [Agent-R1 Trained Checkpoints](https://huggingface.co/collections/alphaXiv/agent-r1)
