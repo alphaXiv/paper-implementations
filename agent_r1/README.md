@@ -292,8 +292,11 @@ Inspired by projects like `Nanochat`, we aim for code readability and ease of un
 
 ## Training your own Deep Research Agent
 
-With the Agent-R1 framework we can now train a Qwen-2.5 model on HotpotQA, a multi-hop Q&A dataset. To answer questions like "Which magazine was started first Arthur's Magazine or First for Women?", the agent has access to a tool that can search a Wikipedia-style corpus. The answers to these questions also require the agent to make several search calls, thus requiring "multi-turn" interactions with the environment. We provide three main scripts to help you get started. For training, we used 4 H100 (80GB SXM) GPUs on [Lambda Labs](https://lambda.ai/), with training taking just under 6 hours.
+With the Agent-R1 framework we can now train a Qwen-2.5 model on HotpotQA, a multi-hop Q&A dataset. To answer questions like "Which magazine was started first Arthur's Magazine or First for Women?", the agent has access to a tool that can search a Wikipedia-style corpus. The answers to these questions also require the agent to make several search calls, thus requiring "multi-turn" interactions with the environment. We provide three main scripts to help you get started. For training, we used 4 H100 (80GB SXM) GPUs on [Lambda Labs](https://lambda.ai/), with training time as follows w(we used GPU Base Image 22.04 for the training) - 
 
+- **PPO**: Takes around 12 hours
+- **GRPO**: Takes around 20 hours
+- 
 ### 1. Running our trained checkpoints!
 
 Use the below script to run inference with our provided trained checkpoints.
@@ -322,7 +325,7 @@ This script will:
 - Launch the training job inside the container.
 
 ### 3. Non-Docker Setup ("Speedrun No Docker")
-If you prefer to run everything directly on your machine (e.g., you are already in a configured environment like Lambda Labs GPU Base image), use the no-docker version.
+If you prefer to run everything directly on your machine (e.g., you are already in a configured environment like Lambda Labs GPU Base image 22.04), use the no-docker version.
 
 We used GPU Base Image 22.4 on Lambda Labs with 4XH100s GPUs (80GB SXM) and the batch sizes has been configured accordingly.
 
@@ -344,7 +347,7 @@ This script will:
 Once training is complete, you can interact with your trained agent using the inference script. 
 
 ```bash
-# Run inference (interactive chat)
+# Run inference (interactive chat and by default its going to look for saved checkpoints in ./checkpoints folder under src/agent_r1)
 bash inference.sh
 ```
 
