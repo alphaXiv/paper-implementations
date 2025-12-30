@@ -6,24 +6,15 @@
 
 </div>
 
-
 ## Setup
 
+To set up the environment using venv:
+
 ```sh
-# Our codebase is based on TTRL (https://github.com/PRIME-RL/TTRL).
-git clone git@github.com:ruixin31/Spurious_Rewards
-cd code
-
-conda create -n spurious-rewards python=3.10 
-conda activate spurious-rewards
-
-pip install -r requirements.txt
-pip install flash_attn==2.7.0.post2
+python -m venv spurious-rewards-env
+source spurious-rewards-env/bin/activate
+pip install -e .
 ```
-
-
-
-## Configurations
 
 ### Data
 We include filtered and majority-labeled data in the paper. You may find a complete list in the `code/data` directory. For example, the ground truth data is termed `DeepScaleR`, and Llama 3.2 3B instruct labeled data, filtered to keep only the incorrect labels, is in the `DeepScaleR_mv_labeled_llama3.2_3b_instruct_incorrect` folder. You may change the data source by changing the variable `TASK` in `code/scripts/rlvr_deepscaler_grpo_qwen_ground_truth.sh`. 
@@ -53,67 +44,3 @@ python eval_checkpoint.py --model_path {your-exported-model-checkpoint-folder-he
 ```
 
 Note: To exactly reproduce `temperature = 0` results, both the GPU type and `--shards` parameter must match the original evaluation setup. This is because the batch size passed into VLLM can cause generation fluctuations.
-
-
-## Fine Tuning models (RLVR)
-
-```sh
-git clone https://github.com/alphaXiv/RLVR-Fine-Tuning-Spurious-Rewards.git
-cd code
-
-conda create -n spurious-rewards python=3.10 
-conda activate spurious-rewards
-
-pip install -e .
-pip uninstall vllm
-pip install vllm==0.7.2
-pip install flash_attn==2.7.0.post2 --no-build-isolation
-
-```
-
-```sh
-
-open setup.py
-
-#change the section
-
- extras_require={
-        "vllm": ["vllm"],
-        "vllm_latest": ["vllm>0.6.4.post1"],
-    },
-
-to
-
- extras_require={
-        "vllm": ["vllm==0.7.2"],
-        "vllm_latest": ["vllm>0.6.4.post1"],
-    },
-pip install flash_attn==2.7.0.post2 --no-build-isolation
-pip install -e .
-
-
-bash scripts/rlvr_deepscaler_grpo_qwen_ground_truth.sh
-
-```
-
-## Paper
-
-Here's [the link](http://arxiv.org/abs/2506.10947) to our paper.
-
-## Citation
-
-```bibtex
-@misc{shao2025spuriousrewardsrethinkingtraining,
-      title={Spurious Rewards: Rethinking Training Signals in RLVR}, 
-      author={Rulin Shao and Shuyue Stella Li and Rui Xin and Scott Geng and Yiping Wang and Sewoong Oh and Simon Shaolei Du and Nathan Lambert and Sewon Min and Ranjay Krishna and Yulia Tsvetkov and Hannaneh Hajishirzi and Pang Wei Koh and Luke Zettlemoyer},
-      year={2025},
-      eprint={2506.10947},
-      archivePrefix={arXiv},
-      primaryClass={cs.AI},
-      url={https://arxiv.org/abs/2506.10947}, 
-}
-```
-
-
-## Acknowledgments
-This repository is built based on [TTRL](https://github.com/PRIME-RL/TTRL), which is built on top of [OpenRLHF](https://github.com/OpenRLHF/OpenRLHF). We added asynchronous evaluation among other custom features to the codebase. 

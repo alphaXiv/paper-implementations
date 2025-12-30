@@ -2,6 +2,8 @@
 
 # Spurious Rewards Training and Evaluation Speedrun Script
 
+set -e
+
 # Check if HF_TOKEN is set
 if [ -z "$HF_TOKEN" ]; then
     echo "WARNING: HF_TOKEN environment variable is not set."
@@ -44,8 +46,6 @@ if [ -z "$WANDB_API_KEY" ]; then
     exit 1
 fi
 
-# Set WANDB login
-wandb login "$WANDB_API_KEY"
 
 # Navigate to code directory
 cd src/spurious_rewards/code
@@ -55,6 +55,9 @@ echo "Installing PyTorch and dependencies..."
 pip install -r requirements.txt
 pip uninstall vllm -y
 pip install vllm==0.7.2
+
+# Set WANDB login
+wandb login "$WANDB_API_KEY"
 
 
 # Modify setup.py to pin vllm version for CUDA 12.8 compatibility
