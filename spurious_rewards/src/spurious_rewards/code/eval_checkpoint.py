@@ -1,3 +1,12 @@
+"""
+Evaluation script for mathematical reasoning models.
+
+This script evaluates trained language models on mathematical reasoning benchmarks
+including MATH-500, AIME-2024, AIME-2025, and AMC. It supports both base models
+and fine-tuned checkpoints, with configurable temperature settings for different
+evaluation modes (single rollout vs. multiple rollouts for pass@k metrics).
+"""
+
 import argparse
 import json
 import os

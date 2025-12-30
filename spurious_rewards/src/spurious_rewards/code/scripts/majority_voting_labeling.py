@@ -1,3 +1,12 @@
+"""
+Majority voting data labeling script.
+
+This script generates labels for training data using majority voting from
+multiple model predictions. It's used to create more reliable training
+labels for the spurious rewards experiments by having models vote on
+correct answers.
+"""
+
 import os
 import json
 from collections import Counter

@@ -1,3 +1,11 @@
+"""
+Worker results merging utility for distributed evaluation.
+
+This script combines results from multiple parallel evaluation workers,
+aggregating predictions, rewards, and metrics across different GPU workers
+or evaluation shards for comprehensive analysis.
+"""
+
 import os
 import json
 import argparse

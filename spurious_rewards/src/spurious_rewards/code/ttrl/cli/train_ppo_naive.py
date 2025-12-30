@@ -4,7 +4,6 @@ from datetime import datetime
 from ttrl.helper.utils import get_strategy
 
 from ttrl.controller.naive_controller import NaiveController
-from ttrl.controller.ttt_controller import TTTController
 
 import os
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -34,10 +33,7 @@ def train(args):
     strategy = get_strategy(args)
 
     # start controller
-    if args.verify_task == "ttt":
-        controller = TTTController(strategy=strategy)
-    else:
-        controller = NaiveController(strategy=strategy)
+    controller = NaiveController(strategy=strategy)
     controller.build_env()
     controller.run()
 

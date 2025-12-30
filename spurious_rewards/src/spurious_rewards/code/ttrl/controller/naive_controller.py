@@ -26,7 +26,6 @@ from ttrl.helper.utils import blending_datasets, get_tokenizer
 from ttrl.helper.distributed_sampler import DistributedSampler, ResumableRandomSampler
 
 from ttrl.env.naive_samples_maker import NaiveSamplesMaker
-from ttrl.env.ttt_samples_maker import TTTSamplesMaker
 
 @dataclass
 class Agent:
@@ -108,12 +107,8 @@ class NaiveController(ABC):
         # prepare agent includes many workers
         self.agent = self._init_agent()
 
-        samples_maker_class = NaiveSamplesMaker
-        if self.args.verify_task == "ttt":
-            samples_maker_class = TTTSamplesMaker
-
         # create samples maker
-        self.samples_maker = samples_maker_class(
+        self.samples_maker = NaiveSamplesMaker(
             strategy=self.strategy, tokenizer=self.tokenizer, vllm_engines=self.agent.vllm_engines)
 
     def _init_agent(self):

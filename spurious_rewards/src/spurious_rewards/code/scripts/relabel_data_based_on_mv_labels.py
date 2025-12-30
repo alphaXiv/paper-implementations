@@ -1,3 +1,12 @@
+"""
+Data relabeling script based on majority voting labels.
+
+This script processes training data and relabels it based on majority voting
+results from model predictions. It filters data to keep only examples where
+models agree on the correct answer, creating higher-quality training datasets
+for the spurious rewards experiments.
+"""
+
 import os
 import random
 import json

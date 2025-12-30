@@ -1,3 +1,10 @@
+"""
+Checkpoint export utility for DeepSpeed to HuggingFace format conversion.
+
+This script converts trained DeepSpeed checkpoints (saved during RL training)
+into standard HuggingFace model format for inference and evaluation.
+"""
+
 import argparse
 import shutil
 from pathlib import Path

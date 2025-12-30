@@ -44,7 +44,7 @@ python -m ttrl.cli.train_ppo_naive \
    --actor_scheduler "constant" \
    --lr_warmup_ratio 0 \
    --save_steps 50 \
-   --eval_steps 1 \
+   --eval_steps 10 \
    --logging_steps 1 \
    --max_samples 400000 \
    --micro_rollout_batch_size 4 \
