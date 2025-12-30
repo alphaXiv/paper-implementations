@@ -8,3 +8,5 @@ rlvr_eval_outputs
 src/spurious_rewards/code/data
 src/spurious_rewards/code/wand
 .venv
+
+**/__pycache__/**

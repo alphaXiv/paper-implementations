@@ -104,7 +104,7 @@ echo "Setup Complete! Starting Training..."
 echo "=========================================="
 
 # Run the main training script
-bash scripts/rlvr_deepscaler_grpo_qwen_ground_truth.sh
+bash scripts/rlvr_deepscaler_grpo_qwen_1.5b_ground_truth.sh
 
 echo "=========================================="
 echo "Training Complete! Starting Evaluation..."
