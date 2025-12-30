@@ -1,46 +1,216 @@
 <div align="center">
 
 # 💭 Spurious Rewards: Rethinking Training Signals in RLVR
-  
-[![Paper](https://img.shields.io/badge/Paper-000000.svg?style=for-the-badge&logo=arxiv&logoColor=white)](http://arxiv.org/abs/2506.10947) 
+
+[![Paper](https://img.shields.io/badge/Paper-000000.svg?style=for-the-badge&logo=arxiv&logoColor=white)](http://arxiv.org/abs/2506.10947)
 
 </div>
 
-## Setup
+Welcome to **Spurious Rewards**! This repository provides an implementation of the [Spurious Rewards](http://arxiv.org/abs/2506.10947) paper, which investigates how different reward functions in Reinforcement Learning from Verifier Rewards (RLVR) can lead to spurious correlations that improve performance without truly understanding the task. The implementation is built on top of [TTRL](https://github.com/PRIME-RL/TTRL), a framework for efficient RL training of large language models.
 
-To set up the environment using venv:
+This repo serves as a practical guide to reproducing the experiments from the paper, exploring how reward design impacts learning in mathematical reasoning tasks. Rather than just providing code, we structure it as an annotated walkthrough to understand the effects of different reward signals.
 
-```sh
-python -m venv spurious-rewards-env
-source spurious-rewards-env/bin/activate
-pip install -e .
-```
+## What are we trying to solve?
 
-### Data
-We include filtered and majority-labeled data in the paper. You may find a complete list in the `code/data` directory. For example, the ground truth data is termed `DeepScaleR`, and Llama 3.2 3B instruct labeled data, filtered to keep only the incorrect labels, is in the `DeepScaleR_mv_labeled_llama3.2_3b_instruct_incorrect` folder. You may change the data source by changing the variable `TASK` in `code/scripts/rlvr_deepscaler_grpo_qwen_ground_truth.sh`. 
+Training language models for complex reasoning tasks like mathematics is challenging. Traditional supervised fine-tuning can achieve high accuracy on training data, but often fails to generalize to harder problems or different formats. Reinforcement Learning from Human Feedback (RLHF) has shown promise, but the choice of reward function critically affects what the model actually learns.
 
-### Rewards
-We include a list of rewards used in the paper below. Furthermore, note that for models without a chat template, be sure to add `_r1_only` as the suffix. You may change the reward function by changing the variable `REWARD` in `code/scripts/rlvr_deepscaler_grpo_qwen_ground_truth.sh`. 
+The key insight of this work is that **reward functions can create spurious correlations** - patterns that help the model score well on the reward without truly solving the underlying task. For example:
 
-- `math`: Mathematical equivalence reward, which is the default
-- `box_only_format`: Box-only formatting reward
-- `contain_python_wo_backticks`: Mentioning of Python reward
-- `random0.5`: Random reward with 50% returning 1
+- A reward that gives points for using Python code might encourage models to mention Python even when it's unnecessary
+- Format-based rewards might prioritize box notation over correct mathematics
+- Random rewards can still improve performance through unintended correlations
 
+We need to understand:
+1. **How different rewards affect learning trajectories**
+2. **Which rewards lead to genuine improvement vs. spurious gains**
+3. **How to design reward functions that promote true mathematical understanding**
 
-## Evaluations
-To reproduce our evaluation results, use the following commands:
+## Built on TTRL
 
-```sh
-cd code
+Like Agent-R1, this implementation uses **TTRL** (Transformers for RL from PRIME INTELLECT) for the heavy lifting of distributed RL training. TTRL handles the complex orchestration of PPO/GRPO algorithms across multiple GPUs, managing the interplay between:
+- Policy training (the main model)
+- Value function training (for advantage estimation)
+- Reference policy sampling
+- Rollout generation
 
-# For MATH-500 evaluation (requires NVIDIA A100 80GB PCIe for exact reproduction)
+**Spurious Rewards** adds the experimental framework on top of this infrastructure to systematically compare different reward functions.
+
+## Key Concepts: Spurious Correlations in RLVR
+
+The paper introduces several critical concepts for understanding reward design in mathematical reasoning:
+
+### 1. RLVR Framework
+
+Reinforcement Learning from Verifier Rewards (RLVR) treats mathematical problem-solving as a reinforcement learning problem where:
+- **State**: The problem statement and current solution attempt
+- **Action**: Generating the next token in the solution
+- **Reward**: Provided by a verifier function that checks correctness
+- **Environment**: The mathematical domain (algebra, geometry, etc.)
+
+### 2. Reward Function Types
+
+The paper examines different reward designs:
+
+- **`math`**: Full mathematical equivalence checking (default)
+- **`box_only_format`**: Rewards only for proper boxed answer format
+- **`contain_python_wo_backticks`**: Rewards for mentioning Python code
+- **`random0.5`**: Random reward with 50% probability
+
+### 3. Spurious Correlations
+
+The key finding is that suboptimal rewards can still improve performance through spurious correlations. For example:
+- Models trained with Python-mentioning rewards learn to include Python even for simple problems
+- Format rewards teach box notation but may not improve actual math skills
+- Even random rewards can create beneficial patterns through trial-and-error
+
+## Experimental Setup
+
+The experiments use:
+- **Base Model**: Qwen2.5-Math-7B
+- **Dataset**: DeepScaleR (filtered mathematical problems)
+- **Training**: GRPO/PPO algorithms
+- **Evaluation**: MATH-500, AIME-2024/2025, AMC benchmarks
+
+## Architecture Overview
+
+The codebase follows a similar hybrid architecture to Agent-R1:
+
+### Training Scripts
+Located in `src/spurious_rewards/code/scripts/`:
+- `rlvr_deepscaler_grpo_qwen_ground_truth.sh`: Main GRPO training script
+- `rlvr_deepscaler_grpo_qwen_majority_vote.sh`: Uses majority voting labels
+- `rlvr_deepscaler_grpo_qwen_random.sh`: Random reward experiments
+
+### Data Processing
+- `data/`: Contains processed datasets
+- `scripts/`: Data preparation and labeling scripts
+- Supports different data sources via the `TASK` variable
+
+### Evaluation Framework
+- `eval_checkpoint.py`: Benchmark evaluation script
+- `export_checkpoint.py`: Convert DeepSpeed checkpoints to HF format
+- Supports multiple datasets with configurable temperature/shards
+
+## Simplicity First
+
+Following the philosophy of readable RL code:
+- **Focused on GRPO/PPO**: Clean implementations without legacy algorithms
+- **Well-commented scripts**: Explain hyperparameters and their effects
+- **Modular reward functions**: Easy to add new reward types
+- **Tutorial-style code**: Heavily annotated for learning
+
+## Reproducing the Experiments
+
+### 1. Quick Evaluation of Pre-trained Models
+
+Test the base Qwen2.5-Math-7B model on benchmarks:
+
+```bash
+cd src/spurious_rewards/code
 python eval_checkpoint.py --model_path Qwen/Qwen2.5-Math-7B --datasets MATH-500,AIME-2024,AIME-2025,AMC
-
-# For MATH-500 evaluation matching our reported scores in wandb using checkpoints (requires NVIDIA H200 for exact reproduction)
-
-python export_checkpoint.py
-python eval_checkpoint.py --model_path {your-exported-model-checkpoint-folder-here} --datasets MATH-500,AIME-2024,AIME-2025,AMC --shards 2
 ```
 
-Note: To exactly reproduce `temperature = 0` results, both the GPU type and `--shards` parameter must match the original evaluation setup. This is because the batch size passed into VLLM can cause generation fluctuations.
+### 2. Dockerized Training (Recommended)
+
+For isolated environment with all dependencies:
+
+```bash
+# Run GRPO training with ground truth rewards
+./speedrun.sh
+```
+
+
+This will:
+- Set up the training environment
+- Download/configure the dataset
+- Launch distributed training across GPUs
+- Save checkpoints every 50 steps
+
+### 4. Custom Reward Experiments
+
+To test different reward functions:
+
+```bash
+# Edit the script to change REWARD variable
+REWARD="box_only_format"  # or "contain_python_wo_backticks", "random0.5"
+
+```
+
+### 5. Evaluation of Trained Models
+
+After training, evaluate your checkpoints:
+
+```bash
+./inference.sh -c /path/to/checkpoint/dir -s 50
+```
+
+## Evaluation Results: @k Scores Summary
+
+This document summarizes the evaluation results from the `eval_outputs` and `rlvr_eval_outputs` directories, specifically focusing on the @k score metrics.
+
+## Model Comparison: Base vs RLVR
+
+### Performance Comparison Table
+
+| Dataset | Model | avg@8 | pass@8 | avg@1 | pass@1 | Improvement |
+|---------|-------|-------|--------|-------|--------|-------------|
+| AIME-2024 | Qwen2.5-Math-7B (Base) | 0.121 | 0.333 | - | - | - |
+| AIME-2024 | Qwen2.5-Math-7B (RLVR) | 0.233 | 0.467 | - | - | **+92.6% avg@8, +40.2% pass@8** |
+| AIME-2025 | Qwen2.5-Math-7B (Base) | 0.054 | 0.200 | - | - | - |
+| AIME-2025 | Qwen2.5-Math-7B (RLVR) | 0.167 | 0.300 | - | - | **+209.3% avg@8, +50.0% pass@8** |
+| AMC | Qwen2.5-Math-7B (Base) | 0.330 | 0.735 | - | - | - |
+| AMC | Qwen2.5-Math-7B (RLVR) | 0.572 | 0.747 | - | - | **+73.3% avg@8, +1.6% pass@8** |
+| MATH-500 | Qwen2.5-Math-7B (Base) | - | - | 0.494 | 0.494 | - |
+| MATH-500 | Qwen2.5-Math-7B (RLVR) | - | - | 0.788 | 0.788 | **+59.5% avg@1, +59.5% pass@1** |
+
+### Configuration Details
+
+| Dataset | Temperature | Rollouts | GPU Type |
+|---------|-------------|----------|-----------|
+| AIME-2024, AIME-2025, AMC | 0.6 | 8 | NVIDIA A100-SXM4-40GB |
+| MATH-500 | 0.0 | 1 | NVIDIA A100-SXM4-40GB |
+
+
+### Model Architecture
+- **Base Model**: Qwen2.5-Math-7B (standard mathematical reasoning model)
+- **RLVR Model**: Qwen2.5-Math-7B enhanced with Reinforcement Learning from Verifier Rewards
+- **Hardware**: All evaluations used NVIDIA A100-SXM4-40GB GPUs (Base: 4 shards, RLVR: 2 shards)
+
+## Score Interpretation
+
+The @k scores represent:
+- **avg@k**: Average success rate across k attempts/rollouts
+- **pass@k**: Probability of at least one success in k attempts
+
+The difference between avg@k and pass@k scores indicates the value of multiple attempts, with larger gaps suggesting the model benefits significantly from additional rollouts.
+
+## Conclusion
+These results validate the effectiveness of applying RLVR to the Qwen2.5-Math-7B base model, demonstrating enhanced mathematical reasoning capabilities across diverse problem types and difficulty levels.
+
+## Where to Look in the Code
+
+- **`src/spurious_rewards/code/scripts/`**: Training scripts for different reward experiments
+- **`src/spurious_rewards/code/data/`**: Processed datasets and data loading
+- **`src/spurious_rewards/code/eval_checkpoint.py`**: Evaluation logic
+- **`src/ttrl/`**: Underlying RL infrastructure (submodule)
+
+## Extending the Framework
+
+To add new reward functions:
+
+1. Define the reward in the training script's `--verify_task` parameter
+2. Implement the reward logic in the verifier
+3. Update the `REWARD` variable in scripts
+
+For custom datasets:
+1. Process data into the expected format
+2. Update the `TASK` variable
+3. Ensure proper train/validation splits
+
+## Hardware Requirements
+
+- **Training**: 4x H100/A100 GPUs (80GB) recommended
+- **Evaluation**: Single H100/A100 for base model, 2+ for trained checkpoints
+- **Memory**: 80GB+ GPU memory for large models and long sequences
+
+Happy experimenting!
