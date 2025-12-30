@@ -292,7 +292,7 @@ Inspired by projects like `Nanochat`, we aim for code readability and ease of un
 
 ## Training your own Deep Research Agent
 
-With the Agent-R1 framework we can now train a Qwen-2.5 model on HotpotQA, a multi-hop Q&A dataset. To answer questions like "Which magazine was started first Arthur's Magazine or First for Women?", the agent has access to a tool that can search a Wikipedia-style corpus. The answers to these questions also require the agent to make several search calls, thus requiring "multi-turn" interactions with the environment. We provide three main scripts to help you get started. For training, we used 4 H100 (80GB SXM) GPUs on [Lambda Labs](https://lambda.ai/), with training time as follows w(we used GPU Base Image 22.04 for the training) - 
+With the Agent-R1 framework we can now train a Qwen-2.5 model on HotpotQA, a multi-hop Q&A dataset. To answer questions like "Which magazine was started first Arthur's Magazine or First for Women?", the agent has access to a tool that can search a Wikipedia-style corpus. The answers to these questions also require the agent to make several search calls, thus requiring "multi-turn" interactions with the environment. We provide three main scripts to help you get started. For training, we used 4 H100 (80GB SXM) GPUs on [Lambda Labs](https://lambda.ai/), with training time as follows (we used GPU Base Image 22.04 for the training) - 
 
 - **PPO**: Takes around 12 hours
 - **GRPO**: Takes around 20 hours
