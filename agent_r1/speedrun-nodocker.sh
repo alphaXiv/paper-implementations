@@ -248,7 +248,7 @@ case "$ALGORITHM" in
     grpo)
         echo "=========================================="
         echo "Starting GRPO Training on HotpotQA"
-        echo "This will take approximately 18-24 hours on 4xH100 80GB GPUs"
+        echo "This will take approximately 20 hours on 4xH100 80GB GPUs"
         echo "=========================================="
 
         rm -f run_grpo_hotpotqa.sh
