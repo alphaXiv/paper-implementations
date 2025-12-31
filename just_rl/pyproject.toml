@@ -12,7 +12,7 @@ dependencies = [
     "flash-attn",
     "hydra-core",
     "numpy",
-    "datasets",
+    "datasets>=4.0.0",  # Requires >=4.0.0 for compatibility with pyarrow>=15.0.0
     "wandb",
 ]
 

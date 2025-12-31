@@ -4,13 +4,13 @@ import pandas as pd
 from datasets import load_dataset
 import sys
 
-# Ensure we can import from the package
+# Import from the same package
+# When run as a script, PYTHONPATH should include the project root
 try:
-    from justrl_reproduction.data.prompt_utils import apply_chat_template
+    from data.prompt_utils import apply_chat_template
 except ImportError:
-    # Fallback for running script directly
-    sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-    from justrl_reproduction.data.prompt_utils import apply_chat_template
+    # Fallback: try relative import (when run as module)
+    from .prompt_utils import apply_chat_template
 
 def process_dapo_dataset(dataset_name, output_dir):
     """
@@ -37,24 +37,51 @@ def process_dapo_dataset(dataset_name, output_dir):
     print(f"Processing {len(dataset)} examples...")
 
     for i, example in enumerate(dataset):
-        # Attempt to find question and answer fields
-        # DAPO-Math-17k likely uses 'question' and 'answer'
-        question = example.get('question') or example.get('problem') or example.get('input')
-        ground_truth = example.get('answer') or example.get('solution') or example.get('output')
-
-        if not question or not ground_truth:
-            # Skip malformed examples
+        # Extract data according to DAPO dataset schema:
+        # - prompt: list[dict] with "content" key -> prompt[0]["content"]
+        # - reward_model: dict with "ground_truth" and "style" keys
+        # - extra_info: dict with "index" key for unique ID
+        
+        # Extract prompt content (it's a list with a dict containing "content")
+        prompt_data = example.get('prompt', [])
+        if not prompt_data or not isinstance(prompt_data, list) or len(prompt_data) == 0:
+            print(f"Warning: Skipping example {i} - missing or invalid prompt field")
             continue
-
-        # Apply the specific prompt suffix defined in the recipe
-        prompt = apply_chat_template(question)
+        
+        prompt_content = prompt_data[0].get('content', '')
+        if not prompt_content:
+            print(f"Warning: Skipping example {i} - empty prompt content")
+            continue
+        
+        # Extract ground truth from reward_model dict
+        reward_model = example.get('reward_model', {})
+        if not isinstance(reward_model, dict):
+            print(f"Warning: Skipping example {i} - invalid reward_model field")
+            continue
+        
+        ground_truth = reward_model.get('ground_truth', '')
+        if not ground_truth:
+            print(f"Warning: Skipping example {i} - missing ground_truth")
+            continue
+        
+        # Extract ID from extra_info if available, otherwise generate one
+        extra_info = example.get('extra_info', {})
+        if isinstance(extra_info, dict) and 'index' in extra_info:
+            example_id = extra_info['index']
+        else:
+            example_id = f"dapo_{i}"
+        
+        # The prompt_content may already contain instructions, but we'll apply our chat template
+        # to ensure consistency with the JustRL recipe format
+        # If the prompt already has the suffix, apply_chat_template will add it again (harmless duplication)
+        formatted_prompt = apply_chat_template(prompt_content)
 
         # Structure for the Trainer
         # We store 'prompt' for generation and 'ground_truth' for the verifier.
         data_list.append({
-            "prompt": prompt,
+            "prompt": formatted_prompt,
             "ground_truth": ground_truth,
-            "id": f"dapo_{i}"
+            "id": example_id
         })
 
     df = pd.DataFrame(data_list)
