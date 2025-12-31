@@ -72,7 +72,7 @@ python -m ttrl.cli.train_ppo_naive \
    --prompt_data "json@${ROOT_DIR}/data/${TASK}" \
    --input_key "prompt" \
    --label_key "answer" \
-   --max_ckpt_num 1 \
+   --max_ckpt_num 1000 \
    --apply_chat_template \
    --normalize_reward \
    --adam_offload \
