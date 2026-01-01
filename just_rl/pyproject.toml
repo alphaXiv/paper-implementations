@@ -5,15 +5,18 @@ description = "JustRL Reproduction: Scaling a 1.5B LLM with a Simple RL Recipe"
 requires-python = "==3.10.*"
 dependencies = [
     "verl",
-    "vllm",
-    "torch==2.5.*",
-    "transformers",
+    "vllm==0.8.4",
+    "torch==2.6.0",
+    "transformers==4.51.3",
     "accelerate",
     "flash-attn",
     "hydra-core",
     "numpy",
     "datasets>=4.0.0",  # Requires >=4.0.0 for compatibility with pyarrow>=15.0.0
     "wandb",
+    "sympy==1.13.1",
+    "pylatexenc==2.10",
+    "setuptools",  # Required by triton (vLLM dependency) at runtime
 ]
 
 [build-system]
@@ -27,5 +30,5 @@ package-dir = {"" = "src"}
 where = ["src"]
 
 [tool.uv.extra-build-dependencies]
-flash-attn = ["torch==2.5.*"]
+flash-attn = ["torch==2.6.0"]
 

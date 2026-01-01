@@ -25,7 +25,6 @@ env/
 
 # Data files - processed/generated data should not be committed
 data/processed/
-*.parquet
 
 # Jupyter Notebook
 .ipynb_checkpoints
