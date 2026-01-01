@@ -106,6 +106,9 @@ fi
 
 # Default values
 BASE_MODEL="Qwen/Qwen2.5-Math-1.5B"
+HF_REPO="alphaXiv/spurious-rewards-rlvr-training-qwen-2.5-1.5b-math-ckpt"
+DOWNLOAD_FROM_HF=false
+HF_DEFAULT_CHECKPOINTS="50,200,400,1000"
 
 # Parse command line arguments
 while getopts "c:s:b:h" opt; do
@@ -113,9 +116,16 @@ while getopts "c:s:b:h" opt; do
     c) CHECKPOINT_DIR="$OPTARG" ;;
     s) STEPS="$OPTARG" ;;
     b) BASE_MODEL="$OPTARG" ;;
-    h) echo "Usage: $0 -c <checkpoint_dir> -s <steps> [-b <base_model>]"
+    h) echo "Usage: $0 [-hf] [-c <checkpoint_dir> -s <steps>] [-b <base_model>]"
+       echo ""
+       echo "Option 1: Download from Hugging Face Hub"
+       echo "  -hf: Download and evaluate default HF checkpoints (50, 200, 400, 1000)"
+       echo ""
+       echo "Option 2: Use local DeepSpeed checkpoint"
        echo "  -c: Path to the DeepSpeed checkpoint directory (required)"
        echo "  -s: Comma-separated list of checkpoint step numbers (required, e.g., 450,500,600,700)"
+       echo ""
+       echo "Optional:"
        echo "  -b: Base model name (default: Qwen/Qwen2.5-Math-1.5B)"
        exit 0 ;;
     *) echo "Invalid option: -$OPTARG" >&2
@@ -124,31 +134,81 @@ while getopts "c:s:b:h" opt; do
   esac
 done
 
-# Check required arguments
-if [ -z "$CHECKPOINT_DIR" ] || [ -z "$STEPS" ]; then
-  echo "Error: -c (checkpoint_dir) and -s (steps) are required arguments."
-  echo "Use -h for help."
-  exit 1
-fi
+# Check for HF flag in remaining arguments
+for arg in "$@"; do
+  if [ "$arg" = "-hf" ]; then
+    DOWNLOAD_FROM_HF=true
+  fi
+done
 
-# Convert checkpoint path to absolute before changing directories
-if [[ ! "$CHECKPOINT_DIR" = /* ]]; then
-    CHECKPOINT_DIR="$(pwd)/$CHECKPOINT_DIR"
+# Check required arguments
+if [ "$DOWNLOAD_FROM_HF" = true ]; then
+    HF_CHECKPOINT_NUMS="$HF_DEFAULT_CHECKPOINTS"
+else
+    if [ -z "$CHECKPOINT_DIR" ] || [ -z "$STEPS" ]; then
+        echo "Error: -c (checkpoint_dir) and -s (steps) are required arguments (when not using -hf)."
+        echo "Use -h for help."
+        exit 1
+    fi
+    
+    # Convert checkpoint path to absolute before changing directories
+    if [[ ! "$CHECKPOINT_DIR" = /* ]]; then
+        CHECKPOINT_DIR="$(pwd)/$CHECKPOINT_DIR"
+    fi
 fi
 
 # Navigate to code directory for evaluations
 cd src/spurious_rewards/code
 
-# Parse steps
-IFS=',' read -ra STEP_ARRAY <<< "$STEPS"
+# Setup based on download method
+if [ "$DOWNLOAD_FROM_HF" = true ]; then
+    echo "Setting up for HF Hub downloads..."
+    
+    # Parse HF checkpoint numbers
+    IFS=',' read -ra CHECKPOINT_NUMS <<< "$HF_CHECKPOINT_NUMS"
+    STEP_ARRAY=()
+    
+    # Create models directory
+    mkdir -p hf_models
+    
+    # Download each checkpoint from HF Hub
+    echo "=========================================="
+    echo "Downloading models from Hugging Face Hub"
+    echo "=========================================="
+    
+    for ckpt_num in "${CHECKPOINT_NUMS[@]}"; do
+        ckpt_num=$(echo "$ckpt_num" | xargs)  # Trim whitespace
+        HF_REPO_WITH_CKPT="${HF_REPO}-${ckpt_num}"
+        MODEL_DIR="hf_models/model-${ckpt_num}"
+        
+        echo ""
+        echo "Downloading from: $HF_REPO_WITH_CKPT"
+        echo "To: $MODEL_DIR"
+        
+        # Use huggingface-cli to download the model
+        huggingface-cli download "$HF_REPO_WITH_CKPT" --repo-type model --local-dir "$MODEL_DIR" --local-dir-use-symlinks False
+        
+        # Extract step number from checkpoint number for consistency
+        STEP_ARRAY+=("$ckpt_num")
+    done
+else
+    # Parse steps from local checkpoint
+    IFS=',' read -ra STEP_ARRAY <<< "$STEPS"
+fi
 
 START_TIME=$(date +%s)
 echo "=========================================="
 echo "Starting Inference and Evaluation Process..."
 echo "Start time: $(date '+%Y-%m-%d %H:%M:%S')"
 echo "=========================================="
-echo "Checkpoint Dir: $CHECKPOINT_DIR"
-echo "Steps: ${STEP_ARRAY[*]}"
+if [ "$DOWNLOAD_FROM_HF" = true ]; then
+    echo "Mode: Hugging Face Hub (default checkpoints)"
+    echo "Checkpoints: ${HF_CHECKPOINT_NUMS}"
+else
+    echo "Mode: Local DeepSpeed checkpoint"
+    echo "Checkpoint Dir: $CHECKPOINT_DIR"
+    echo "Steps: ${STEP_ARRAY[*]}"
+fi
 echo "Base Model: $BASE_MODEL"
 echo ""
 
@@ -158,17 +218,24 @@ echo ""
 # Create results directory
 mkdir -p results
 
-# Phase 1: Export all checkpoints
-echo "=========================================="
-echo "Phase 1: Exporting all checkpoints"
-echo "=========================================="
-for step in "${STEP_ARRAY[@]}"; do
-    OUTPUT_DIR="./export-for-eval-step${step}"
-    mkdir -p "$OUTPUT_DIR"
-    
-    echo "Exporting checkpoint for step $step..."
-    python scripts/export_checkpoint.py --checkpoint "$CHECKPOINT_DIR" --step "$step" --base-model "$BASE_MODEL" --output-dir "$OUTPUT_DIR"
-done
+# Phase 1: Export or prepare checkpoints
+if [ "$DOWNLOAD_FROM_HF" = true ]; then
+    echo "=========================================="
+    echo "Phase 1: HF models already downloaded"
+    echo "=========================================="
+    echo "Models are ready in hf_models/ directory"
+else
+    echo "=========================================="
+    echo "Phase 1: Exporting all checkpoints"
+    echo "=========================================="
+    for step in "${STEP_ARRAY[@]}"; do
+        OUTPUT_DIR="./export-for-eval-step${step}"
+        mkdir -p "$OUTPUT_DIR"
+        
+        echo "Exporting checkpoint for step $step..."
+        python scripts/export_checkpoint.py --checkpoint "$CHECKPOINT_DIR" --step "$step" --base-model "$BASE_MODEL" --output-dir "$OUTPUT_DIR"
+    done
+fi
 
 # Phase 2: Evaluate all exported checkpoints
 echo ""
@@ -178,14 +245,19 @@ echo "=========================================="
 for step in "${STEP_ARRAY[@]}"; do
     STEP_START_TIME=$(date +%s)
     echo ""
-    echo "Evaluating step $step..."
+    echo "Evaluating checkpoint: $step..."
     echo "Evaluation start time: $(date '+%Y-%m-%d %H:%M:%S')"
 
-    OUTPUT_DIR="./export-for-eval-step${step}"
+    if [ "$DOWNLOAD_FROM_HF" = true ]; then
+        MODEL_PATH="hf_models/model-${step}"
+    else
+        MODEL_PATH="./export-for-eval-step${step}"
+    fi
+    
     RESULTS_DIR="results/step${step}"
     mkdir -p "$RESULTS_DIR"
 
-    python eval_checkpoint.py --model_path "$OUTPUT_DIR" --datasets MATH-500,AIME-2024,AIME-2025,AMC --shards 2 --output_dir "$RESULTS_DIR"
+    python eval_checkpoint.py --model_path "$MODEL_PATH" --datasets MATH-500,AIME-2024,AIME-2025,AMC --shards 2 --output_dir "$RESULTS_DIR"
 
     STEP_END_TIME=$(date +%s)
     STEP_ELAPSED=$((STEP_END_TIME - STEP_START_TIME))
