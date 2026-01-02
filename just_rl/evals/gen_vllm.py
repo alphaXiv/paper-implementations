@@ -13,15 +13,15 @@ from vllm import LLM, SamplingParams
 # --------------------------------------------------------------------------- #
 DATA_DIR = "data"
 TASKS       = [
-    {"name": "AIME24", "path": f"{DATA_DIR}/AIME24/test.parquet", "N": 32},
+    # {"name": "AIME24", "path": f"{DATA_DIR}/AIME24/test.parquet", "N": 32},
     {"name": "AIME25", "path": f"{DATA_DIR}/AIME25/test.parquet", "N": 32},
-    {"name": "AMC23", "path": f"{DATA_DIR}/AMC23/test.parquet", "N": 32},
+    # {"name": "AMC23", "path": f"{DATA_DIR}/AMC23/test.parquet", "N": 32},
     {"name": "MATH-500", "path": f"{DATA_DIR}/MATH-500/test.parquet", "N": 4},
-    {"name": "Minerva", "path": f"{DATA_DIR}/Minerva/test.parquet", "N": 4},
+    # {"name": "Minerva", "path": f"{DATA_DIR}/Minerva/test.parquet", "N": 4},
     {"name": "Olympiad-Bench", "path": f"{DATA_DIR}/Olympiad-Bench/test.parquet", "N": 4},
-    {"name": "BRUMO25", "path": f"{DATA_DIR}/BRUMO25/test.parquet", "N": 32},
-    {"name": "CMIMC25", "path": f"{DATA_DIR}/CMIMC25/test.parquet", "N": 32},
-    {"name": "HMMT25", "path": f"{DATA_DIR}/HMMT25/test.parquet", "N": 32},
+    # {"name": "BRUMO25", "path": f"{DATA_DIR}/BRUMO25/test.parquet", "N": 32},
+    # {"name": "CMIMC25", "path": f"{DATA_DIR}/CMIMC25/test.parquet", "N": 32},
+    # {"name": "HMMT25", "path": f"{DATA_DIR}/HMMT25/test.parquet", "N": 32},
 ]
 PROMPT_TEMPLATE = """{problem} Please reason step by step, and put your final answer within \\boxed{{}}."""
 NAME        = "HuggingFaceTB/SmolLM-360M"

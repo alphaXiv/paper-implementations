@@ -1,5 +1,5 @@
 
-from utils import grade_answer_verl
+from eval_utils import grade_answer_verl
 from transformers import AutoTokenizer
 import json
 import pandas as pd
@@ -33,7 +33,7 @@ Here is your task. Simply reply with either CORRECT, INCORRECT, or INVALID. Don'
 Judging the correctness of the candidate's answer:
 """
 
-NAME     = "JustRL-Nemotron-1.5B" # "JustRL-Nemotron-1.5B"
+NAME     = "SmolLM-360M" # "JustRL-Nemotron-1.5B"
 EVAL_DIR = Path(f"justrl_eval_outputs/{NAME}")
 OUTPUT_FILE = EVAL_DIR / "grading_results.json"
 

@@ -1,0 +1,50 @@
+[
+    {
+        "hyperparameters": {
+            "temperature": "0.7",
+            "top_p": "0.9",
+            "n": "32",
+            "max_tokens": "31744",
+            "task_name": "aime25"
+        },
+        "mean_score": 0.0,
+        "distinct_4gram": 0.22843385246316006,
+        "best_score": 0.0,
+        "solve_none": 30,
+        "solve_all": 0,
+        "avg_output_length": 0.0,
+        "format_error_rollouts": 873
+    },
+    {
+        "hyperparameters": {
+            "temperature": "0.7",
+            "top_p": "0.9",
+            "n": "4",
+            "max_tokens": "31744",
+            "task_name": "math-500"
+        },
+        "mean_score": 0.011,
+        "distinct_4gram": 0.25425907429646666,
+        "best_score": 0.042,
+        "solve_none": 479,
+        "solve_all": 0,
+        "avg_output_length": 0.0,
+        "format_error_rollouts": 1798
+    },
+    {
+        "hyperparameters": {
+            "temperature": "0.7",
+            "top_p": "0.9",
+            "n": "4",
+            "max_tokens": "31744",
+            "task_name": "olympiad-bench"
+        },
+        "mean_score": 0.001112759643916914,
+        "distinct_4gram": 0.31126204524196205,
+        "best_score": 0.004451038575667656,
+        "solve_none": 671,
+        "solve_all": 0,
+        "avg_output_length": 0.0,
+        "format_error_rollouts": 2528
+    }
+]
