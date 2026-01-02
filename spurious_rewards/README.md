@@ -101,48 +101,92 @@ Following the philosophy of readable RL code:
 
 ## Reproducing the Experiments
 
-### 1. Quick Evaluation of Pre-trained Models
+### Prerequisites
 
-Test the base Qwen2.5-Math-7B model on benchmarks:
+Before starting, make sure you have:
+
+1. **Conda installed** (Miniconda or Anaconda)
+2. **HuggingFace token** set as environment variable:
+   ```bash
+   export HF_TOKEN='your_token_here'
+   ```
+   Get your token from: https://huggingface.co/settings/tokens
+
+3. **GPU requirements:**
+   - Training: 8x H100 GPUs (80GB) recommended
+   - Evaluation: 2+ GPUs with 40GB+ memory
+
+### Training
+
+#### Run GRPO Training
+
+The simplest way to start training is using the automated speedrun script:
 
 ```bash
-cd src/spurious_rewards/code
-python eval_checkpoint.py --model_path Qwen/Qwen2.5-Math-7B --datasets MATH-500,AIME-2024,AIME-2025,AMC
-```
-
-### 2. Dockerized Training (Recommended)
-
-For isolated environment with all dependencies:
-
-```bash
-# Run GRPO training with ground truth rewards
 ./speedrun.sh
 ```
 
+This will:
+- Create a conda environment with all dependencies
+- Download and prepare the DeepScaleR dataset
+- Launch GRPO training with ground truth rewards
+- Train the Qwen2.5-Math-1.5B model
+- Save checkpoints every 50 steps to `outputs/` directory
+
+
+### Inference & Evaluation
+
+#### Option 1: Evaluate Pre-trained Models from HuggingFace
+
+Download and evaluate our pre-trained checkpoints:
+
+```bash
+./inference.sh -hf
+```
 
 This will:
-- Set up the training environment
-- Download/configure the dataset
-- Launch distributed training across GPUs
-- Save checkpoints every 50 steps
+- Evaluate the base `Qwen2.5-Math-1.5B` model
+- Download checkpoints at steps 50, 200, 400, 1000 from HuggingFace Hub
+- Evaluate each checkpoint on MATH-500, AIME-2024, AIME-2025, AMC
+- Generate performance plots comparing all checkpoints vs. base model
 
-### 4. Custom Reward Experiments
+**Results will be saved to:**
+- `results/base/` - Base model evaluation
+- `results/step{N}/` - Checkpoint evaluations
+- `avg_performance.png` and `pass_performance.png` - Performance charts
 
-To test different reward functions:
+#### Performance Charts
+
+The evaluation generates visual comparisons of model performance across checkpoints:
+
+![Average Performance](images/avg_performance.png)
+*Average success rate (@k) across different datasets and training checkpoints*
+
+![Pass Rate Performance](images/pass_performance.png)
+*Pass rate (@k) across different datasets and training checkpoints*
+
+#### Option 2: Evaluate Your Local Checkpoints
+
+After training, evaluate your own checkpoints:
 
 ```bash
-# Edit the script to change REWARD variable
-REWARD="box_only_format"  # or "contain_python_wo_backticks", "random0.5"
-
+./inference.sh -c /path/to/checkpoint/dir -s 50,200,400,1000
 ```
 
-### 5. Evaluation of Trained Models
+**Arguments:**
+- `-c`: Path to DeepSpeed checkpoint directory (e.g., `outputs/2025-01-02/12-30-45/actor/`)
+- `-s`: Comma-separated list of checkpoint step numbers to evaluate
+- `-b`: (Optional) Base model to use (default: `Qwen/Qwen2.5-Math-1.5B`)
 
-After training, evaluate your checkpoints:
-
+**Example with custom base model:**
 ```bash
-./inference.sh -c /path/to/checkpoint/dir -s 50
+./inference.sh -c outputs/2025-01-02/12-30-45/actor/ -s 100,250,500 -b Qwen/Qwen2.5-Math-7B
 ```
+
+**Interpreting metrics:**
+- `avg@k`: Average success rate across k rollouts
+- `pass@k`: Probability of at least one success in k rollouts
+- Higher values indicate better performance
 
 ## Evaluation Results: @k Scores Summary
 
