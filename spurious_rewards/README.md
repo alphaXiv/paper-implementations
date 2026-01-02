@@ -150,18 +150,18 @@ This document summarizes the evaluation results from the `eval_outputs` and `rlv
 
 ## Model Comparison: Base vs RLVR
 
-### Performance Comparison Table
+### Performance Comparison Table (7B model)
 
-| Dataset | Model | avg@8 | pass@8 | avg@1 | pass@1 | Improvement |
-|---------|-------|-------|--------|-------|--------|-------------|
-| AIME-2024 | Qwen2.5-Math-7B (Base) | 0.121 | 0.333 | - | - | - |
-| AIME-2024 | Qwen2.5-Math-7B (RLVR) | 0.233 | 0.467 | - | - | **+92.6% avg@8, +40.2% pass@8** |
-| AIME-2025 | Qwen2.5-Math-7B (Base) | 0.054 | 0.200 | - | - | - |
-| AIME-2025 | Qwen2.5-Math-7B (RLVR) | 0.167 | 0.300 | - | - | **+209.3% avg@8, +50.0% pass@8** |
-| AMC | Qwen2.5-Math-7B (Base) | 0.330 | 0.735 | - | - | - |
-| AMC | Qwen2.5-Math-7B (RLVR) | 0.572 | 0.747 | - | - | **+73.3% avg@8, +1.6% pass@8** |
-| MATH-500 | Qwen2.5-Math-7B (Base) | - | - | 0.494 | 0.494 | - |
-| MATH-500 | Qwen2.5-Math-7B (RLVR) | - | - | 0.788 | 0.788 | **+59.5% avg@1, +59.5% pass@1** |
+| Dataset | Model | avg@8 | pass@8 | avg@1 | pass@1 |
+|---------|-------|-------|--------|-------|--------|
+| AIME-2024 | Qwen2.5-Math-7B (Base) | 0.121 | 0.333 | - | - |
+| AIME-2024 | Qwen2.5-Math-7B (RLVR) | 0.233 | 0.467 | - | - |
+| AIME-2025 | Qwen2.5-Math-7B (Base) | 0.054 | 0.200 | - | - |
+| AIME-2025 | Qwen2.5-Math-7B (RLVR) | 0.167 | 0.300 | - | - |
+| AMC | Qwen2.5-Math-7B (Base) | 0.330 | 0.735 | - | - |
+| AMC | Qwen2.5-Math-7B (RLVR) | 0.572 | 0.747 | - | - |
+| MATH-500 | Qwen2.5-Math-7B (Base) | - | - | 0.494 | 0.494 |
+| MATH-500 | Qwen2.5-Math-7B (RLVR) | - | - | 0.788 | 0.788 |
 
 ### Configuration Details
 
@@ -194,23 +194,11 @@ These results validate the effectiveness of applying RLVR to the Qwen2.5-Math-7B
 - **`src/spurious_rewards/code/eval_checkpoint.py`**: Evaluation logic
 - **`src/ttrl/`**: Underlying RL infrastructure (submodule)
 
-## Extending the Framework
-
-To add new reward functions:
-
-1. Define the reward in the training script's `--verify_task` parameter
-2. Implement the reward logic in the verifier
-3. Update the `REWARD` variable in scripts
-
-For custom datasets:
-1. Process data into the expected format
-2. Update the `TASK` variable
-3. Ensure proper train/validation splits
 
 ## Hardware Requirements
 
-- **Training**: 4x H100/A100 GPUs (80GB) recommended
-- **Evaluation**: Single H100/A100 for base model, 2+ for trained checkpoints
+- **Training**: 8x H100 GPUs (80GB-SX) recommended (Lambda Labs with GPU Base Image 22.04 was used by us)
+- **Evaluation**: Single H100 for base and trained checkpoints
 - **Memory**: 80GB+ GPU memory for large models and long sequences
 
 Happy experimenting!

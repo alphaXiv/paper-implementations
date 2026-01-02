@@ -218,6 +218,19 @@ echo ""
 # Create results directory
 mkdir -p results
 
+# Phase 0: Evaluate base model
+echo "=========================================="
+echo "Phase 0: Evaluating base model"
+echo "=========================================="
+echo "Evaluating base model: $BASE_MODEL"
+BASE_RESULTS_DIR="results/base"
+mkdir -p "$BASE_RESULTS_DIR"
+
+python eval_checkpoint.py --model_path "$BASE_MODEL" --datasets MATH-500,AIME-2024,AIME-2025,AMC --shards 2 --output_dir "$BASE_RESULTS_DIR"
+
+echo "Base model evaluation completed."
+echo ""
+
 # Phase 1: Export or prepare checkpoints
 if [ "$DOWNLOAD_FROM_HF" = true ]; then
     echo "=========================================="
@@ -272,8 +285,8 @@ echo "All evaluations completed. Generating plots..."
 STEPS_PYTHON=$(printf '%s ' "${STEP_ARRAY[@]}")
 STEPS_PYTHON=${STEPS_PYTHON% }
 
-# Generate plots
-python plot_performance.py $STEPS_PYTHON
+# Generate plots with base model included
+python plot_performance.py --base-model $STEPS_PYTHON
 
 END_TIME=$(date +%s)
 TOTAL_ELAPSED=$((END_TIME - START_TIME))

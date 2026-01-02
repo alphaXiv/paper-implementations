@@ -2,7 +2,7 @@
 """
 Plot performance metrics across checkpoints for different datasets.
 
-Usage: python plot_performance.py step1 step2 step3 ...
+Usage: python plot_performance.py [--base-model] step1 step2 step3 ...
 """
 
 import json
@@ -17,15 +17,46 @@ BENCHMARKS = {
     'AMC': {'rollouts': 8},
 }
 
-if len(sys.argv) < 2:
-    print("Usage: python plot_performance.py step1 step2 step3 ...")
+# Parse arguments
+args = sys.argv[1:]
+include_base = False
+
+if '--base-model' in args:
+    include_base = True
+    args.remove('--base-model')
+
+if len(args) < 1:
+    print("Usage: python plot_performance.py [--base-model] step1 step2 step3 ...")
     sys.exit(1)
 
-steps = [int(x) for x in sys.argv[1:]]
+steps = [int(x) for x in args]
 datasets = list(BENCHMARKS.keys())
 
 for metric_base in ['avg', 'pass']:
     plt.figure(figsize=(12, 7))
+    
+    # Store base model values for baseline plotting
+    base_values = {}
+    
+    # Load base model data if requested
+    if include_base:
+        for dataset in datasets:
+            rollouts = BENCHMARKS[dataset]['rollouts']
+            metric = f'{metric_base}@{rollouts}'
+            
+            # Try to load base model results
+            base_file = f'results/base/{dataset}.json'
+            if os.path.exists(base_file):
+                try:
+                    with open(base_file) as f:
+                        data = json.load(f)
+                        base_values[dataset] = data.get(metric, 0)
+                        print(f"Found base model {metric} for {dataset}: {base_values[dataset]}")
+                except Exception as e:
+                    print(f"Error reading base model file {base_file}: {e}")
+            else:
+                print(f"Base model file not found: {base_file}")
+    
     for dataset in datasets:
         rollouts = BENCHMARKS[dataset]['rollouts']
         metric = f'{metric_base}@{rollouts}'
@@ -51,6 +82,12 @@ for metric_base in ['avg', 'pass']:
         
         if valid_steps and values:
             plt.plot(valid_steps, values, marker='o', linewidth=2.5, markersize=8, label=f'{dataset} ({metric})')
+            
+        # Plot base model as horizontal line if available
+        if include_base and dataset in base_values and valid_steps:
+            plt.axhline(y=base_values[dataset], color=plt.gca().lines[-1].get_color(), 
+                       linestyle='--', linewidth=1.5, alpha=0.7,
+                       label=f'{dataset} Base Model')
     
     plt.xlabel('Checkpoint Step', fontsize=13, fontweight='bold')
     plt.ylabel(f'{metric_base}@k', fontsize=13, fontweight='bold')
