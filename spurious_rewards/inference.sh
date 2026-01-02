@@ -20,6 +20,12 @@ if ! command -v conda &> /dev/null; then
     exit 1
 fi
 
+# Accept conda TOS automatically
+echo "Accepting conda Terms of Service..."
+conda config --set auto_activate_base false 2>/dev/null || true
+conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main 2>/dev/null || true
+conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r 2>/dev/null || true
+
 # Create conda environment if it doesn't exist
 ENV_NAME="spurious-rewards-env"
 if ! conda env list | grep -q "^${ENV_NAME} "; then
@@ -111,49 +117,58 @@ DOWNLOAD_FROM_HF=false
 HF_DEFAULT_CHECKPOINTS="50,200,400,1000"
 
 # Parse command line arguments
-while getopts "c:s:b:h" opt; do
-  case $opt in
-    c) CHECKPOINT_DIR="$OPTARG" ;;
-    s) STEPS="$OPTARG" ;;
-    b) BASE_MODEL="$OPTARG" ;;
-    h) echo "Usage: $0 [-hf] [-c <checkpoint_dir> -s <steps>] [-b <base_model>]"
-       echo ""
-       echo "Option 1: Download from Hugging Face Hub"
-       echo "  -hf: Download and evaluate default HF checkpoints (50, 200, 400, 1000)"
-       echo ""
-       echo "Option 2: Use local DeepSpeed checkpoint"
-       echo "  -c: Path to the DeepSpeed checkpoint directory (required)"
-       echo "  -s: Comma-separated list of checkpoint step numbers (required, e.g., 450,500,600,700)"
-       echo ""
-       echo "Optional:"
-       echo "  -b: Base model name (default: Qwen/Qwen2.5-Math-1.5B)"
-       exit 0 ;;
-    *) echo "Invalid option: -$OPTARG" >&2
-       echo "Use -h for help"
-       exit 1 ;;
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -hf)
+      DOWNLOAD_FROM_HF=true
+      shift
+      ;;
+    -c)
+      CHECKPOINT_DIR="$2"
+      shift 2
+      ;;
+    -s)
+      STEPS="$2"
+      shift 2
+      ;;
+    -b)
+      BASE_MODEL="$2"
+      shift 2
+      ;;
+    -h|--help)
+      echo "Usage: $0 {-hf | -c <checkpoint_dir> -s <steps>} [-b <base_model>]"
+      echo ""
+      echo "Exactly one of the following options must be specified:"
+      echo ""
+      echo "  -hf                    Download and evaluate default HF checkpoints (50, 200, 400, 1000)"
+      echo "  -c <checkpoint_dir>    Path to the DeepSpeed checkpoint directory"
+      echo "  -s <steps>             Comma-separated list of checkpoint step numbers (e.g., 450,500,600,700)"
+      echo ""
+      echo "Optional:"
+      echo "  -b <base_model>        Base model name (default: Qwen/Qwen2.5-Math-1.5B)"
+      exit 0
+      ;;
+    *)
+      echo "Invalid option: $1" >&2
+      echo "Use -h for help"
+      exit 1
+      ;;
   esac
 done
 
-# Check for HF flag in remaining arguments
-for arg in "$@"; do
-  if [ "$arg" = "-hf" ]; then
-    DOWNLOAD_FROM_HF=true
-  fi
-done
-
+# Remove the old for loop for -hf
 # Check required arguments
 if [ "$DOWNLOAD_FROM_HF" = true ]; then
-    HF_CHECKPOINT_NUMS="$HF_DEFAULT_CHECKPOINTS"
-else
-    if [ -z "$CHECKPOINT_DIR" ] || [ -z "$STEPS" ]; then
-        echo "Error: -c (checkpoint_dir) and -s (steps) are required arguments (when not using -hf)."
+    if [ -n "$CHECKPOINT_DIR" ] || [ -n "$STEPS" ]; then
+        echo "Error: Cannot specify -c or -s when using -hf."
         echo "Use -h for help."
         exit 1
     fi
-    
-    # Convert checkpoint path to absolute before changing directories
-    if [[ ! "$CHECKPOINT_DIR" = /* ]]; then
-        CHECKPOINT_DIR="$(pwd)/$CHECKPOINT_DIR"
+else
+    if [ -z "$CHECKPOINT_DIR" ] || [ -z "$STEPS" ]; then
+        echo "Error: Must specify either -hf or both -c and -s."
+        echo "Use -h for help."
+        exit 1
     fi
 fi
 
@@ -165,7 +180,7 @@ if [ "$DOWNLOAD_FROM_HF" = true ]; then
     echo "Setting up for HF Hub downloads..."
     
     # Parse HF checkpoint numbers
-    IFS=',' read -ra CHECKPOINT_NUMS <<< "$HF_CHECKPOINT_NUMS"
+    IFS=',' read -ra CHECKPOINT_NUMS <<< "$HF_DEFAULT_CHECKPOINTS"
     STEP_ARRAY=()
     
     # Create models directory
@@ -203,7 +218,7 @@ echo "Start time: $(date '+%Y-%m-%d %H:%M:%S')"
 echo "=========================================="
 if [ "$DOWNLOAD_FROM_HF" = true ]; then
     echo "Mode: Hugging Face Hub (default checkpoints)"
-    echo "Checkpoints: ${HF_CHECKPOINT_NUMS}"
+    echo "Checkpoints: ${HF_DEFAULT_CHECKPOINTS}"
 else
     echo "Mode: Local DeepSpeed checkpoint"
     echo "Checkpoint Dir: $CHECKPOINT_DIR"

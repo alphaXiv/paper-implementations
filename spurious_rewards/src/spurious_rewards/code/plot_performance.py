@@ -44,18 +44,27 @@ for metric_base in ['avg', 'pass']:
             rollouts = BENCHMARKS[dataset]['rollouts']
             metric = f'{metric_base}@{rollouts}'
             
-            # Try to load base model results
-            base_file = f'results/base/{dataset}.json'
-            if os.path.exists(base_file):
-                try:
-                    with open(base_file) as f:
-                        data = json.load(f)
-                        base_values[dataset] = data.get(metric, 0)
-                        print(f"Found base model {metric} for {dataset}: {base_values[dataset]}")
-                except Exception as e:
-                    print(f"Error reading base model file {base_file}: {e}")
-            else:
-                print(f"Base model file not found: {base_file}")
+            # Try to load base model results - look for files with model name prefix
+            base_dir = 'results/base'
+            base_found = False
+            
+            if os.path.exists(base_dir):
+                # List all files in base directory and find matching dataset
+                for filename in os.listdir(base_dir):
+                    if dataset in filename and filename.endswith('.json'):
+                        base_file = os.path.join(base_dir, filename)
+                        try:
+                            with open(base_file) as f:
+                                data = json.load(f)
+                                base_values[dataset] = data.get(metric, 0)
+                                print(f"Found base model {metric} for {dataset}: {base_values[dataset]} from {filename}")
+                                base_found = True
+                                break
+                        except Exception as e:
+                            print(f"Error reading base model file {base_file}: {e}")
+            
+            if not base_found:
+                print(f"Base model file not found for dataset: {dataset}")
     
     for dataset in datasets:
         rollouts = BENCHMARKS[dataset]['rollouts']
