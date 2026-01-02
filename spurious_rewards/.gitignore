@@ -1,0 +1,12 @@
+src/spurious_rewards/code/export-for-eval
+src/spurious_rewards/code/outputs
+src/spurious_rewards/code/ttrl.egg-info
+src/spurious_rewards/code/wandb
+src/spurious_rewards/code/logs
+eval_outputs
+rlvr_eval_outputs
+src/spurious_rewards/code/data
+src/spurious_rewards/code/wand
+.venv
+
+**/__pycache__/**
