@@ -78,9 +78,8 @@ The codebase follows a similar hybrid architecture to Agent-R1:
 ### Training Scripts
 Located in `src/spurious_rewards/code/scripts/`:
 - `rlvr_deepscaler_grpo_qwen_ground_truth.sh`: Main GRPO training script
-- `rlvr_deepscaler_grpo_qwen_majority_vote.sh`: Uses majority voting labels
-- `rlvr_deepscaler_grpo_qwen_random.sh`: Random reward experiments
-
+- `rlvr_deepscaler_grpo_qwen_1.5b_ground_truth.sh`: Main GRPO training script
+- 
 ### Data Processing
 - `data/`: Contains processed datasets
 - `scripts/`: Data preparation and labeling scripts
@@ -90,14 +89,6 @@ Located in `src/spurious_rewards/code/scripts/`:
 - `eval_checkpoint.py`: Benchmark evaluation script
 - `export_checkpoint.py`: Convert DeepSpeed checkpoints to HF format
 - Supports multiple datasets with configurable temperature/shards
-
-## Simplicity First
-
-Following the philosophy of readable RL code:
-- **Focused on GRPO/PPO**: Clean implementations without legacy algorithms
-- **Well-commented scripts**: Explain hyperparameters and their effects
-- **Modular reward functions**: Easy to add new reward types
-- **Tutorial-style code**: Heavily annotated for learning
 
 ## Reproducing the Experiments
 
@@ -110,9 +101,15 @@ Before starting, make sure you have:
    ```bash
    export HF_TOKEN='your_token_here'
    ```
+   and wandb token for logging
+
+   ```bash
+   export WANDB_API_TOKEN=<your_api_token>
+   ```
+   
    Get your token from: https://huggingface.co/settings/tokens
 
-3. **GPU requirements:**
+4. **GPU requirements:**
    - Training: 8x H100 GPUs (80GB) recommended
    - Evaluation: 2+ GPUs with 40GB+ memory
 
@@ -218,9 +215,9 @@ This document summarizes the evaluation results from the `eval_outputs` and `rlv
 
 
 ### Model Architecture
-- **Base Model**: Qwen2.5-Math-7B (standard mathematical reasoning model)
-- **RLVR Model**: Qwen2.5-Math-7B enhanced with Reinforcement Learning from Verifier Rewards
-- **Hardware**: All evaluations used NVIDIA A100-SXM4-40GB GPUs (Base: 4 shards, RLVR: 2 shards)
+- **Base Model**: Qwen2.5-Math-7B/1.5B (standard mathematical reasoning model)
+- **RLVR Model**: Qwen2.5-Math-7B/1.5B enhanced with Reinforcement Learning from Verifier Rewards
+- **Hardware**: All trainings used NVIDIA 8xH100-SXM-80GB GPUs (Base: 4 shards, RLVR: 2 shards)
 
 ## Score Interpretation
 
@@ -229,9 +226,6 @@ The @k scores represent:
 - **pass@k**: Probability of at least one success in k attempts
 
 The difference between avg@k and pass@k scores indicates the value of multiple attempts, with larger gaps suggesting the model benefits significantly from additional rollouts.
-
-## Conclusion
-These results validate the effectiveness of applying RLVR to the Qwen2.5-Math-7B base model, demonstrating enhanced mathematical reasoning capabilities across diverse problem types and difficulty levels.
 
 ## Where to Look in the Code
 
