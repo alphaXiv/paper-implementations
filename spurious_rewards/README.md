@@ -144,6 +144,8 @@ Download and evaluate our pre-trained checkpoints:
 ./inference.sh -hf
 ```
 
+**All model checkpoints are available in the HuggingFace collection:** [alphaXiv/spurious-rewards](https://huggingface.co/collections/alphaXiv/spurious-rewards)
+
 This will:
 - Evaluate the base `Qwen2.5-Math-1.5B` model
 - Download checkpoints at steps 50, 200, 400, 1000 from HuggingFace Hub
