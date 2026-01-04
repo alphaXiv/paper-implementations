@@ -16,12 +16,17 @@ cmd = [
     "data.max_response_length=15360",
     "actor_rollout_ref.actor.ppo_mini_batch_size=64",
     "actor_rollout_ref.actor.ppo_micro_batch_size_per_gpu=1",
-    "actor_rollout_ref.actor.clip_range_low=0.2",
-    "actor_rollout_ref.actor.clip_range_high=0.28",
+    "++actor_rollout_ref.actor.clip_range_low=0.2",
+    "++actor_rollout_ref.actor.clip_range_high=0.28",
     "actor_rollout_ref.actor.optim.lr=1e-6",
     "actor_rollout_ref.rollout.temperature=1.0",
     "actor_rollout_ref.rollout.n=8",
     "reward_model.reward_manager=dapo",
+    "++trainer.seed=42",
+    "++trainer.save_steps=250",
+    "++trainer.max_checkpoints=5",
+    "++trainer.logger=wandb",
+    "++trainer.project_name=verl-grpo-dapo",
 ]
 
 env = os.environ.copy()
