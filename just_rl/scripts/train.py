@@ -28,12 +28,17 @@ cmd = [
     "++trainer.seed=42",
     "++trainer.save_steps=250",
     "++trainer.max_checkpoints=5",
-    "++trainer.logger=wandb",
+    "++trainer.logger=['wandb', 'console']",
     "++trainer.project_name=verl-grpo-dapo",
+    "++trainer.experiment_name=verl-justrl-grpo-1",
+    "++trainer.log_freq=1",
     f"++data.val_files={DATA_PATH / 'dapo_math_17k.parquet'}",
     f"++data.test_files={DATA_PATH / 'dapo_math_17k.parquet'}",
     # "++trainer.n_gpus_per_node=1",  # default is 8, change if you are using different number of GPUs 
-
+    "++actor_rollout_ref.model.torch_dtype=bfloat16",   # or float16
+    "++actor_rollout_ref.model.attn_implementation=flash_attention_2",
+    "++actor_rollout_ref.model.load_in_4bit=False",
+    "++actor_rollout_ref.model.load_in_8bit=False",
 ]
 
 env = os.environ.copy()
