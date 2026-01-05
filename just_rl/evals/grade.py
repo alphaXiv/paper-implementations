@@ -33,7 +33,7 @@ Here is your task. Simply reply with either CORRECT, INCORRECT, or INVALID. Don'
 Judging the correctness of the candidate's answer:
 """
 
-NAME     = "SmolLM-360M" # "JustRL-Nemotron-1.5B"
+NAME     = "Qwen/Qwen2.5-0.5B" # "JustRL-Nemotron-1.5B"
 EVAL_DIR = Path(f"justrl_eval_outputs/{NAME}")
 OUTPUT_FILE = EVAL_DIR / "grading_results.json"
 

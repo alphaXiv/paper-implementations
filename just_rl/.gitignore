@@ -26,6 +26,12 @@ env/
 # Data files - processed/generated data should not be committed
 data/processed/
 
+# Output files
+outputs/
+
+# W&B Logs
+wandb/
+
 # Jupyter Notebook
 .ipynb_checkpoints
 

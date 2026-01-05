@@ -24,7 +24,7 @@ TASKS       = [
     # {"name": "HMMT25", "path": f"{DATA_DIR}/HMMT25/test.parquet", "N": 32},
 ]
 PROMPT_TEMPLATE = """{problem} Please reason step by step, and put your final answer within \\boxed{{}}."""
-NAME        = "HuggingFaceTB/SmolLM-360M"
+NAME        = "Qwen/Qwen2.5-0.5B"
 MAX_TOKENS  = 31744
 TEMPERATURE = 0.7
 TOP_P       = 0.9

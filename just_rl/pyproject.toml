@@ -9,13 +9,14 @@ dependencies = [
     "torch==2.6.0",
     "transformers==4.51.3",
     "accelerate",
-    "flash-attn",
+    "flash-attn @ https://github.com/mjun0812/flash-attention-prebuild-wheels/releases/download/v0.5.4/flash_attn-2.8.3%2Bcu124torch2.6-cp310-cp310-linux_x86_64.whl",
     "hydra-core",
     "numpy",
     "datasets>=4.0.0",  # Requires >=4.0.0 for compatibility with pyarrow>=15.0.0
     "wandb",
     "sympy==1.13.1",
     "pylatexenc==2.10",
+    "peft==0.17.1",
     "setuptools",  # Required by triton (vLLM dependency) at runtime
 ]
 
