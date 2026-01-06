@@ -203,6 +203,9 @@ if [ "$DOWNLOAD_FROM_HF" = true ]; then
         # Use huggingface-cli to download the model
         huggingface-cli download "$HF_REPO_WITH_CKPT" --repo-type model --local-dir "$MODEL_DIR" --local-dir-use-symlinks False
         
+        # Create symlink for consistency
+        ln -s "../hf_models/model-${ckpt_num}" "export-for-eval-step${ckpt_num}"
+        
         # Extract step number from checkpoint number for consistency
         STEP_ARRAY+=("$ckpt_num")
     done
@@ -210,6 +213,21 @@ else
     # Parse steps from local checkpoint
     IFS=',' read -ra STEP_ARRAY <<< "$STEPS"
 fi
+
+# Add base model evaluation (step 0)
+echo "=========================================="
+echo "Setting up base model evaluation"
+echo "=========================================="
+BASE_MODEL_DIR="./export-for-eval-step0"
+mkdir -p "$BASE_MODEL_DIR"
+
+echo "Downloading base model: $BASE_MODEL"
+echo "To: $BASE_MODEL_DIR"
+
+huggingface-cli download "$BASE_MODEL" --repo-type model --local-dir "$BASE_MODEL_DIR" --local-dir-use-symlinks False
+
+# Add step 0 to the beginning of STEP_ARRAY
+STEP_ARRAY=("0" "${STEP_ARRAY[@]}")
 
 START_TIME=$(date +%s)
 echo "=========================================="
@@ -276,16 +294,15 @@ for step in "${STEP_ARRAY[@]}"; do
     echo "Evaluating checkpoint: $step..."
     echo "Evaluation start time: $(date '+%Y-%m-%d %H:%M:%S')"
 
-    if [ "$DOWNLOAD_FROM_HF" = true ]; then
-        MODEL_PATH="hf_models/model-${step}"
+    if [ "$step" = "0" ]; then
+        RESULTS_DIR="export for eval step0"
+        mkdir -p "$RESULTS_DIR"
+        python eval_checkpoint.py --model_path "$MODEL_PATH" --datasets MATH-500,AIME-2024,AIME-2025,AMC --shards 2 --output_dir "$RESULTS_DIR" --is_base_model
     else
-        MODEL_PATH="./export-for-eval-step${step}"
+        RESULTS_DIR="results/step${step}"
+        mkdir -p "$RESULTS_DIR"
+        python eval_checkpoint.py --model_path "$MODEL_PATH" --datasets MATH-500,AIME-2024,AIME-2025,AMC --shards 2 --output_dir "$RESULTS_DIR"
     fi
-    
-    RESULTS_DIR="results/step${step}"
-    mkdir -p "$RESULTS_DIR"
-
-    python eval_checkpoint.py --model_path "$MODEL_PATH" --datasets MATH-500,AIME-2024,AIME-2025,AMC --shards 2 --output_dir "$RESULTS_DIR"
 
     STEP_END_TIME=$(date +%s)
     STEP_ELAPSED=$((STEP_END_TIME - STEP_START_TIME))

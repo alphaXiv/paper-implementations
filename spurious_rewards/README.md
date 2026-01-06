@@ -206,6 +206,12 @@ This document summarizes the evaluation results from the `eval_outputs` and `rlv
 | MATH-500 | Qwen2.5-Math-7B (Base) | - | - | 0.494 | 0.494 |
 | MATH-500 | Qwen2.5-Math-7B (RLVR) | - | - | 0.788 | 0.788 |
 
+### Performance Plots
+
+![Average Performance](avg_performance.png)
+
+![Pass Performance](pass_performance.png)
+
 ### Configuration Details
 
 | Dataset | Temperature | Rollouts | GPU Type |
@@ -215,9 +221,9 @@ This document summarizes the evaluation results from the `eval_outputs` and `rlv
 
 
 ### Model Architecture
-- **Base Model**: Qwen2.5-Math-7B/1.5B (standard mathematical reasoning model)
-- **RLVR Model**: Qwen2.5-Math-7B/1.5B enhanced with Reinforcement Learning from Verifier Rewards
-- **Hardware**: All trainings used NVIDIA 8xH100-SXM-80GB GPUs (Base: 4 shards, RLVR: 2 shards)
+- **Base Model**: Qwen2.5-Math-7B (standard mathematical reasoning model)
+- **RLVR Model**: Qwen2.5-Math-7B enhanced with Reinforcement Learning from Verifier Rewards
+- **Hardware**: All evaluations used NVIDIA 8xH100-SXM4-80GB GPUs on Lambda Labs Base Image 22.04 (RLVR: 2 shards)
 
 ## Score Interpretation
 
@@ -226,6 +232,7 @@ The @k scores represent:
 - **pass@k**: Probability of at least one success in k attempts
 
 The difference between avg@k and pass@k scores indicates the value of multiple attempts, with larger gaps suggesting the model benefits significantly from additional rollouts.
+easoning capabilities across diverse problem types and difficulty levels.
 
 ## Where to Look in the Code
 
@@ -234,11 +241,9 @@ The difference between avg@k and pass@k scores indicates the value of multiple a
 - **`src/spurious_rewards/code/eval_checkpoint.py`**: Evaluation logic
 - **`src/ttrl/`**: Underlying RL infrastructure (submodule)
 
-
 ## Hardware Requirements
 
-- **Training**: 8x H100 GPUs (80GB-SX) recommended (Lambda Labs with GPU Base Image 22.04 was used by us)
-- **Evaluation**: Single H100 for base and trained checkpoints
-- **Memory**: 80GB+ GPU memory for large models and long sequences
+- **Training**: 8x H100 GPUs (80GB) recommended
+- **Evaluation**: Single H100 for all the ckpts including base model
 
 Happy experimenting!

@@ -74,7 +74,10 @@ for metric_base in ['avg', 'pass']:
         
         for step in steps:
             # Try multiple possible filenames
-            file_path = f'results/step{step}/export-for-eval-step{step}_{dataset}.json'
+            if step == 0:
+                file_path = f'export for eval step0/export-for-eval-step0_{dataset}.json'
+            else:
+                file_path = f'results/step{step}/export-for-eval-step{step}_{dataset}.json'
             
             if os.path.exists(file_path):
                 try:
