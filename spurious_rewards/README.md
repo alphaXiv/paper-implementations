@@ -212,11 +212,6 @@ This document summarizes the evaluation results from the `eval_outputs` and `rlv
 | MATH-500 | Qwen2.5-Math-7B (Base) | - | - | 0.494 | 0.494 |
 | MATH-500 | Qwen2.5-Math-7B (RLVR) | - | - | 0.788 | 0.788 |
 
-### Performance Plots
-
-![Average Performance](avg_performance.png)
-
-![Pass Performance](pass_performance.png)
 
 ### Configuration Details
 
