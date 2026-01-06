@@ -217,14 +217,14 @@ This document summarizes the evaluation results from the `eval_outputs` and `rlv
 
 | Dataset | Temperature | Rollouts | GPU Type |
 |---------|-------------|----------|-----------|
-| AIME-2024, AIME-2025, AMC | 0.6 | 8 | NVIDIA A100-SXM4-40GB |
-| MATH-500 | 0.0 | 1 | NVIDIA A100-SXM4-40GB |
+| AIME-2024, AIME-2025, AMC | 0.6 | 8 | NVIDIA H100-SXM5-80GB |
+| MATH-500 | 0.0 | 1 | NVIDIA H100-SXM5-80GB |
 
 
 ### Model Architecture
 - **Base Model**: Qwen2.5-Math-7B (standard mathematical reasoning model)
 - **RLVR Model**: Qwen2.5-Math-7B enhanced with Reinforcement Learning from Verifier Rewards
-- **Hardware**: All evaluations used NVIDIA 8xH100-SXM4-80GB GPUs on Lambda Labs Base Image 22.04 (RLVR: 2 shards)
+- **Hardware**: All evaluations used NVIDIA 8xH100-SXM5-80GB GPUs on Lambda Labs Base Image 22.04 (RLVR: 2 shards)
 
 ## Score Interpretation
 
@@ -278,40 +278,7 @@ Find the distance between the points $(1, -2)$ and $(4, 3).$  Enter an exact exp
 //$
 //$
 //$
-//$
-//$
-//$
-//$
-//$
-//$
-//$
-//$
-//$
-//$
-//$
-//$
-//$
-//$
-//$
-//$
-//$
-//$
-//$
-//$
-//$
-//$
-//$
-//$
-//$
-//$
-//$
-//$
-//$
-//$
-//$
-//$
-//$
-//$
+...goes on
 ... [this pattern continues for over 2000 more lines - completely unusable]
 ```
 
