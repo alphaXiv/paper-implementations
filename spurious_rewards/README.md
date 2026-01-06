@@ -245,6 +245,8 @@ To illustrate the impact of RLVR training, here's a concrete example comparing t
 
 **Correct Answer**: $\left( 3, \frac{\pi}{2} \right)$
 
+**Source**: `reasoning-traces/base/Qwen2.5-Math-1.5B_MATH-500.json` (index 0) and `reasoning-traces/step1000/export-for-eval-step1000_MATH-500.json` (index 0)
+
 #### BASE MODEL (Qwen2.5-Math-1.5B) - Before RLVR Training:
 
 The base model's output is completely degenerate - it just repeats random text instead of solving the problem:
