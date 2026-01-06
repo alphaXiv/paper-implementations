@@ -18,6 +18,7 @@ dependencies = [
     "pylatexenc==2.10",
     "peft==0.17.1",
     "setuptools",  # Required by triton (vLLM dependency) at runtime
+    "click==8.2.1",
 ]
 
 [build-system]

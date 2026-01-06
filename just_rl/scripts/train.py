@@ -2,10 +2,13 @@ import subprocess
 import os
 from pathlib import Path
 
-DATA_PATH = Path("data/processed/")
+# Use absolute path so Ray workers can find the data regardless of their working directory
+SCRIPT_DIR = Path(__file__).parent.resolve()
+PROJECT_ROOT = SCRIPT_DIR.parent
+DATA_PATH = (PROJECT_ROOT / "data" / "processed").resolve()
 
 cmd = [
-    "python", "-m", "verl.trainer.main_ppo",
+    "uv", "run", "--active", "python", "-m", "verl.trainer.main_ppo",
     f"data.train_files={DATA_PATH / 'dapo_math_17k.parquet'}", 
     "actor_rollout_ref.model.path=Qwen/Qwen2.5-0.5B",
     "algorithm.adv_estimator=grpo",
@@ -39,9 +42,25 @@ cmd = [
     "++actor_rollout_ref.model.attn_implementation=flash_attention_2",
     "++actor_rollout_ref.model.load_in_4bit=False",
     "++actor_rollout_ref.model.load_in_8bit=False",
+    "data.truncation=right",
 ]
 
 env = os.environ.copy()
 env["PYTHONUNBUFFERED"] = "1"
+
+# Configure Ray/uv to use the existing virtual environment
+# Set UV_PROJECT_ENVIRONMENT to match VIRTUAL_ENV so Ray recognizes it
+venv_path = Path(".venv").resolve()
+if venv_path.exists():
+    python_exe = venv_path / "bin" / "python"
+    if python_exe.exists():
+        python_path = str(python_exe.resolve())
+        venv_abs_path = str(venv_path)
+        # Set UV_PROJECT_ENVIRONMENT to tell uv where the project venv is
+        env["UV_PROJECT_ENVIRONMENT"] = venv_abs_path
+        # Set VIRTUAL_ENV to absolute path
+        env["VIRTUAL_ENV"] = venv_abs_path
+        # Set PYTHON so Ray workers use the same interpreter
+        env["PYTHON"] = python_path
 
 subprocess.run(cmd, env=env, check=True)
