@@ -2,6 +2,8 @@
 
 A single-script setup for using GPT 5.2 to post-train Qwen3-1.7B-Base on HumanEval.
 
+> **Note**: This work was inspired by the [PostTrainBench](https://posttrainbench.com) repository, which measures the ability of CLI agents to perform LLM post-training.
+
 ## Quick Start
 
 ```bash
