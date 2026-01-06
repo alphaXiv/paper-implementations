@@ -4,6 +4,8 @@ Welcome to **Agent-R1**! This repository is an easy-to-follow implementation of 
 
 This repo provides a straightforward guide to training your own deep research agent with the Agent-R1 framework. Rather than being a framework or library, we structure the codebase as an annotated guide to easily follow the different components required to train an agent with RL.
 
+If you're interested in just diving in to the training feel free to jump to the [Training your own Deep Research Agent](#training-your-own-deep-research-agent) section. Tldr: spin up a 4 x H100 [Lambda Labs](https://lambda.ai/) instance, clone this repo and run ./speedrun.sh, and you'll have a trained RL agent in under 12 hours!
+
 ## What are we trying to solve?
 
 Training agents is hard. Unlike standard chatbots that just generate text, agents need to:
@@ -376,7 +378,7 @@ Agent-R1 provides a flexible architecture for creating custom tools and tool env
 - **BaseToolEnv**: Tool environments that define the state transition function.
 
 For detailed guidance:
-- [Infrerence](docs/inference/inference.md)
+- [Inference](docs/inference/inference.md)
 - [Customizing Tools for Multi-hop QA](docs/tutorial/multihopqa.md)
 - [Customizing Tool Environment for ReTool](docs/tutorial/retool.md)
 
