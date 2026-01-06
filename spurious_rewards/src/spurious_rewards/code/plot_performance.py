@@ -99,7 +99,7 @@ for metric_base in ['avg', 'pass']:
         if include_base and dataset in base_values and valid_steps:
             plt.axhline(y=base_values[dataset], color=plt.gca().lines[-1].get_color(), 
                        linestyle='--', linewidth=1.5, alpha=0.7,
-                       label=f'{dataset} Base Model')
+                       label=f'{dataset} Base Model (ckpt 0)')
     
     plt.xlabel('Checkpoint Step', fontsize=13, fontweight='bold')
     plt.ylabel(f'{metric_base}@k', fontsize=13, fontweight='bold')

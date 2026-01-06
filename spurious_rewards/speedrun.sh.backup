@@ -13,54 +13,53 @@ if [ -z "$HF_TOKEN" ]; then
     exit 1
 fi
 
+
+
 # Check if conda is available
 if ! command -v conda &> /dev/null; then
-    # Check if conda exists in common locations
-    if [ -f "$HOME/miniconda3/bin/conda" ]; then
-        echo "Conda found in $HOME/miniconda3 but not in PATH. Initializing..."
-        eval "$($HOME/miniconda3/bin/conda shell.bash hook)"
-    elif [ -f "$HOME/anaconda3/bin/conda" ]; then
-        echo "Conda found in $HOME/anaconda3 but not in PATH. Initializing..."
-        eval "$($HOME/anaconda3/bin/conda shell.bash hook)"
-    else
-        echo "Conda not found. Installing Miniconda..."
-        
+    echo "Conda not found. Installing Miniconda..."
+    
+    # Check if miniconda3 directory already exists
+    if [ ! -d "$HOME/miniconda3" ]; then
+        echo "Miniconda directory exists. Updating existing installation..."
         # Download Miniconda installer
         wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
         
-        # Install Miniconda with automatic yes to all prompts
-        bash miniconda.sh -b -p $HOME/miniconda3
+        # Update existing installation
+        bash miniconda.sh -u -b -p $HOME/miniconda3
         
         # Remove installer
         rm miniconda.sh
-        
-        # Initialize conda for bash
-        eval "$($HOME/miniconda3/bin/conda shell.bash hook)"
-        $HOME/miniconda3/bin/conda init bash
-        
-        # Accept conda Terms of Service
-        $HOME/miniconda3/bin/conda config --set auto_activate_base false 2>/dev/null || true
-        $HOME/miniconda3/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main 2>/dev/null || true
-        $HOME/miniconda3/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r 2>/dev/null || true
-        
-        echo "Miniconda installed successfully!"
-    fi
+
+    
+    # Initialize conda for bash
+    eval "$($HOME/miniconda3/bin/conda shell.bash hook)"
+    $HOME/miniconda3/bin/conda init bash
+    
+    # Source bashrc to make conda available
+    source ~/.bashrc || true
+    
+    echo "Miniconda installed successfully!"
 else
     echo "Conda found on system."
 fi
 
-# Accept conda TOS if needed
-conda config --set auto_activate_base false 2>/dev/null || true
-conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main 2>/dev/null || true
-conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r 2>/dev/null || true
 
-# Create conda environment if it doesn't exist
-ENV_NAME="spurious-rewards-env"
-if ! conda env list | grep -q "^${ENV_NAME} "; then
-    echo "Creating conda environment: $ENV_NAME"
-    conda create -n $ENV_NAME python=3.10 -y
-fi
-
+# ENV_NAAccept conda Terms of Service
+    $HOME/miniconda3/bin/conda config --set auto_activate_base false 2>/dev/null || true
+    $HOME/miniconda3/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main 2>/dev/null || true
+    $HOME/miniconda3/bin/conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r 2>/dev/null || true
+    
+    # Source bashrc to make conda available
+    source ~/.bashrc || true
+    
+    echo "Miniconda installed successfully!"
+else
+    echo "Conda found on system."
+    # Accept conda TOS if needed
+    conda config --set auto_activate_base false 2>/dev/null || true
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main 2>/dev/null || true
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r 2>/dev/null || true
 # Activate conda environment
 echo "Activating conda environment: $ENV_NAME"
 eval "$(conda shell.bash hook)"
@@ -68,6 +67,7 @@ conda activate $ENV_NAME
 
 # # Install wheel for faster package installations
 # pip install wheel
+
 
 # Check if WANDB_API_KEY is set
 if [ -z "$WANDB_API_KEY" ]; then
@@ -77,6 +77,7 @@ if [ -z "$WANDB_API_KEY" ]; then
     echo "Get your API key from: https://wandb.ai/authorize"
     exit 1
 fi
+
 
 # Navigate to code directory
 cd src/spurious_rewards/code
@@ -89,6 +90,8 @@ pip install vllm==0.7.2
 
 # Set WANDB login
 wandb login "$WANDB_API_KEY"
+
+
 
 # Modify setup.py to pin vllm version for CUDA 12.8 compatibility
 # Change extras_require vllm from ["vllm"] to ["vllm==0.7.2"]
@@ -103,6 +106,7 @@ pip install -e .
 
 if [ -d "data" ]; then
     echo "Data directory already exists. Skipping data download."
+
 else
     echo "Data directory not found. Proceeding to download data..."
 
@@ -113,6 +117,7 @@ else
 
     echo "Data downloaded successfully"
 fi
+
 
 # Now we're back in src/spurious_rewards/code with data/ in place
 echo ""
@@ -146,3 +151,5 @@ echo "=========================================="
 echo ""
 echo "Check the logs directory for detailed results."
 echo "Model outputs saved in outputs/ directory."
+
+
