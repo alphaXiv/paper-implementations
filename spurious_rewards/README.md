@@ -235,6 +235,75 @@ The @k scores represent:
 The difference between avg@k and pass@k scores indicates the value of multiple attempts, with larger gaps suggesting the model benefits significantly from additional rollouts.
 easoning capabilities across diverse problem types and difficulty levels.
 
+## Example: Reasoning Trace Comparison
+
+To illustrate the impact of RLVR training, here's a concrete example comparing the base model with the trained model (step1000):
+
+### Problem: Converting Rectangular to Polar Coordinates
+
+**Question**: Convert the point $(0,3)$ in rectangular coordinates to polar coordinates. Enter your answer in the form $(r,\theta),$ where $r > 0$ and $0 \le \theta < 2 \pi.$
+
+**Correct Answer**: $\left( 3, \frac{\pi}{2} \right)$
+
+#### BASE MODEL (Qwen2.5-Math-1.5B) - Before RLVR Training:
+
+The base model's output is completely degenerate - it just repeats the question with random symbols:
+
+```
+Find the distance between the points $(1, -2)$ and $(4, 3).$  Enter an exact expression.$//$
+//$
+//$
+... [continues with repetitive junk for thousands of characters]
+```
+
+**Result**: ❌ **No valid answer** - complete failure
+
+---
+
+#### STEP1000 MODEL (After RLVR Training):
+
+The trained model provides clear, step-by-step reasoning:
+
+```
+To convert the point $(0,3)$ from rectangular coordinates to polar coordinates, 
+we need to find the values of $r$ and $\theta$.
+
+1. **Find $r$:**
+   The radius $r$ is the distance from the origin to the point $(0,3)$. 
+   It can be found using the formula:
+   $$r = \sqrt{x^2 + y^2}$$
+   Substituting $x = 0$ and $y = 3$, we get:
+   $$r = \sqrt{0^2 + 3^2} = \sqrt{9} = 3$$
+
+2. **Find $\theta$:**
+   The angle $\theta$ is the angle between the positive x-axis and the line segment 
+   from the origin to the point $(0,3)$. 
+   It can be found using the formula:
+   $$\theta = \tan^{-1}\left(\frac{y}{x}\right)$$
+   However, since $x = 0$ and $y = 3$, we know that the point $(0,3)$ lies on the 
+   positive y-axis. Therefore, $\theta = \frac{\pi}{2}$.
+
+So the polar coordinates of the point $(0,3)$ are $\left(3, \frac{\pi}{2}\right)$.
+
+The final answer is $\boxed{\left(3, \frac{\pi}{2}\right)}$.
+```
+
+**Result**: ✅ **Correct** - $\left(3, \frac{\pi}{2}\right)$
+
+---
+
+#### Key Differences:
+
+| Aspect | Base Model | RLVR-Trained Model (step1000) |
+|--------|-----------|-------------------------------|
+| **Reasoning Quality** | Complete failure - degenerate output | Clear step-by-step mathematical reasoning |
+| **Answer Correctness** | No valid answer produced | Correct answer: $\left(3, \frac{\pi}{2}\right)$ |
+| **Structure** | Random repetition/garbage | Proper mathematical formatting with numbered steps |
+| **Explanation** | None - just noise | Explains both $r$ and $\theta$ calculations |
+| **Format** | No LaTeX, just junk | Proper LaTeX formatting in boxed answer |
+
+The RLVR training dramatically improves the model's ability to produce coherent mathematical reasoning rather than degenerate repetitive output. The complete reasoning traces for all evaluated problems are available in the [alphaXiv/spurious-rewards-reasoning-traces](https://huggingface.co/alphaXiv/spurious-rewards-reasoning-traces) repository.
+
 ## Where to Look in the Code
 
 - **`src/spurious_rewards/code/scripts/`**: Training scripts for different reward experiments
