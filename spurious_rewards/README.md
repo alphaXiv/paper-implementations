@@ -247,16 +247,73 @@ To illustrate the impact of RLVR training, here's a concrete example comparing t
 
 #### BASE MODEL (Qwen2.5-Math-1.5B) - Before RLVR Training:
 
-The base model's output is completely degenerate - it just repeats the question with random symbols:
+The base model's output is completely degenerate - it just repeats random text instead of solving the problem:
 
 ```
 Find the distance between the points $(1, -2)$ and $(4, 3).$  Enter an exact expression.$//$
 //$
 //$
-... [continues with repetitive junk for thousands of characters]
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+//$
+... [this pattern continues for over 2000 more lines - completely unusable]
 ```
 
-**Result**: ❌ **No valid answer** - complete failure
+**Result**: ❌ **No valid answer** - complete failure with degenerate repetition
 
 ---
 
