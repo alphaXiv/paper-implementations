@@ -90,13 +90,19 @@ Located in `src/spurious_rewards/code/scripts/`:
 - `export_checkpoint.py`: Convert DeepSpeed checkpoints to HF format
 - Supports multiple datasets with configurable temperature/shards
 
+## Data and Results
+
+The training data used in experiments is available on Hugging Face: [alphaXiv/spurious-rewards-data](https://huggingface.co/datasets/alphaXiv/spurious-rewards-data)
+
+Evaluation results and reasoning traces from trained checkpoints are available at: [alphaXiv/spurious-rewards-reasoning-traces](https://huggingface.co/alphaXiv/spurious-rewards-reasoning-traces)
+
 ## Reproducing the Experiments
 
 ### Prerequisites
 
 Before starting, make sure you have:
 
-1. **Conda installed** (Miniconda or Anaconda)
+1. **Python 3.10 installed**
 2. **HuggingFace token** set as environment variable:
    ```bash
    export HF_TOKEN='your_token_here'
@@ -124,7 +130,7 @@ The simplest way to start training is using the automated speedrun script:
 ```
 
 This will:
-- Create a conda environment with all dependencies
+- Create a virtual environment with all dependencies
 - Download and prepare the DeepScaleR dataset
 - Launch GRPO training with ground truth rewards
 - Train the Qwen2.5-Math-1.5B model

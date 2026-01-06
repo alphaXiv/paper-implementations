@@ -15,24 +15,25 @@ fi
 
 
 
-# Check if conda is available
-if ! command -v conda &> /dev/null; then
-    echo "ERROR: conda not found. Please install Miniconda or Anaconda first."
-    echo "Visit: https://docs.conda.io/projects/miniconda/en/latest/"
+# Check if python3.10 venv is available
+if ! python3.10 -m venv --help &> /dev/null; then
+    echo "ERROR: python3.10 venv not available. Please ensure Python 3.10 is installed."
     exit 1
 fi
 
-# Create conda environment if it doesn't exist
+# Create venv environment if it doesn't exist
 ENV_NAME="spurious-rewards-env"
-if ! conda env list | grep -q "^${ENV_NAME} "; then
-    echo "Creating conda environment: $ENV_NAME"
-    conda create -n $ENV_NAME python=3.10 -y
+if [ ! -d "$ENV_NAME" ]; then
+    echo "Creating venv environment: $ENV_NAME"
+    python3.10 -m venv $ENV_NAME
 fi
 
-# Activate conda environment
-echo "Activating conda environment: $ENV_NAME"
-eval "$(conda shell.bash hook)"
-conda activate $ENV_NAME
+# Activate venv environment
+echo "Activating venv environment: $ENV_NAME"
+source $ENV_NAME/bin/activate
+
+# Install wheel for faster package installations
+pip install wheel
 
 
 
@@ -64,8 +65,9 @@ wandb login "$WANDB_API_KEY"
 # Change extras_require vllm from ["vllm"] to ["vllm==0.7.2"]
 sed -i 's/"vllm": \["vllm"\]/"vllm": ["vllm==0.7.2"]/g' setup.py
 
-# Install flash_attn with proper build isolation handling
-pip install flash_attn==2.7.0.post2 --no-build-isolation
+# Install flash_attn (pip will use pre-built wheels if available for your CUDA version)
+echo "Installing flash-attn..."
+pip install flash-attn==2.7.0.post2 --no-build-isolation 2>&1 | grep -v "Preparing metadata" || true
 
 # Install the package in editable mode
 pip install -e .
@@ -76,31 +78,12 @@ if [ -d "data" ]; then
 else
     echo "Data directory not found. Proceeding to download data..."
 
-    # Get the data from RLVR repository
-    echo "Cloning RLVR-Fine-Tuning-Spurious-Rewards for data..."
+    # Get the data from Hugging Face
+    echo "Downloading data from Hugging Face..."
 
-    # Remove any existing clone directory
-    if [ -d "RLVR-Fine-Tuning-Spurious-Rewards" ]; then
-        echo "Removing existing RLVR-Fine-Tuning-Spurious-Rewards directory..."
-        rm -rf RLVR-Fine-Tuning-Spurious-Rewards
-    fi
+    python -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='alphaXiv/spurious-rewards-data', repo_type='dataset', local_dir='data')"
 
-    # Clone the repository
-    git clone https://github.com/alphaXiv/RLVR-Fine-Tuning-Spurious-Rewards.git
-    cd RLVR-Fine-Tuning-Spurious-Rewards/code
-
-    # Move data folder to parent directory
-    echo "Moving data folder..."
-    if [ -d "data" ]; then
-        mv data ../../data
-        echo "Data folder moved successfully"
-    else
-        echo "ERROR: data folder not found in RLVR-Fine-Tuning-Spurious-Rewards/code"
-        exit 1
-    fi
-    # Go back to src/spurious_rewards/code and remove the cloned repo
-    cd ../../
-    rm -rf RLVR-Fine-Tuning-Spurious-Rewards
+    echo "Data downloaded successfully"
 fi
 
 

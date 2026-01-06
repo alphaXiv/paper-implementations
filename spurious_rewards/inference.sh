@@ -13,29 +13,24 @@ if [ -z "$HF_TOKEN" ]; then
     exit 1
 fi
 
-# Check if conda is available
-if ! command -v conda &> /dev/null; then
-    echo "ERROR: conda not found. Please install Miniconda or Anaconda first."
-    echo "Visit: https://docs.conda.io/projects/miniconda/en/latest/"
+# Check if python3.10 venv is available
+if ! python3.10 -m venv --help &> /dev/null; then
+    echo "ERROR: python3.10 venv not available. Please ensure Python 3.10 is installed."
     exit 1
 fi
 
-# Accept conda TOS automatically
-echo "Accepting conda Terms of Service..."
-conda config --set auto_activate_base false 2>/dev/null || true
-conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main 2>/dev/null || true
-conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r 2>/dev/null || true
-
-# Create conda environment if it doesn't exist
+# Create venv environment if it doesn't exist
 ENV_NAME="spurious-rewards-env"
-if ! conda env list | grep -q "^${ENV_NAME} "; then
-    echo "Creating conda environment: $ENV_NAME"
-    conda create -n $ENV_NAME python=3.10 -y
+if [ ! -d "$ENV_NAME" ]; then
+    echo "Creating venv environment: $ENV_NAME"
+    python3.10 -m venv $ENV_NAME
 
-    # Activate conda environment
-    echo "Activating conda environment: $ENV_NAME"
-    eval "$(conda shell.bash hook)"
-    conda activate $ENV_NAME
+    # Activate venv environment
+    echo "Activating venv environment: $ENV_NAME"
+    source $ENV_NAME/bin/activate
+
+    # Install wheel for faster package installations
+    pip install wheel
 
     # Navigate to code directory
     cd src/spurious_rewards/code
@@ -50,8 +45,9 @@ if ! conda env list | grep -q "^${ENV_NAME} "; then
     # Change extras_require vllm from ["vllm"] to ["vllm==0.7.2"]
     sed -i 's/"vllm": \["vllm"\]/"vllm": ["vllm==0.7.2"]/g' setup.py
 
-    # Install flash_attn with proper build isolation handling
-    pip install flash_attn==2.7.0.post2 --no-build-isolation
+    # Install flash_attn (pip will use pre-built wheels if available for your CUDA version)
+    echo "Installing flash-attn..."
+    pip install flash-attn==2.7.0.post2 --no-build-isolation 2>&1 | grep -v "Preparing metadata" || true
 
     # Install the package in editable mode
     pip install -e .
@@ -62,58 +58,42 @@ if ! conda env list | grep -q "^${ENV_NAME} "; then
     # Go back to the project root
     cd ../../../
 else
-    # Activate conda environment
-    echo "Activating existing conda environment: $ENV_NAME"
-    eval "$(conda shell.bash hook)"
-    conda activate $ENV_NAME
+    # Activate venv environment
+    echo "Activating existing venv environment: $ENV_NAME"
+    source $ENV_NAME/bin/activate
 fi
 
 # Check for data directory
 if [ -d "src/spurious_rewards/code/data" ]; then
     echo "Data directory already exists. Skipping data download."
+    cd src/spurious_rewards/code
+
 else
     echo "Data directory not found. Proceeding to download data..."
 
     # Navigate to code directory
     cd src/spurious_rewards/code
 
-    # Get the data from RLVR repository
-    echo "Cloning RLVR-Fine-Tuning-Spurious-Rewards for data..."
+    # Get the data from Hugging Face
+    echo "Downloading data from Hugging Face..."
 
-    # Remove any existing clone directory
-    if [ -d "RLVR-Fine-Tuning-Spurious-Rewards" ]; then
-        echo "Removing existing RLVR-Fine-Tuning-Spurious-Rewards directory..."
-        rm -rf RLVR-Fine-Tuning-Spurious-Rewards
-    fi
+    python -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='alphaXiv/spurious-rewards-data', repo_type='dataset', local_dir='./data')"
 
-    # Clone the repository
-    git clone https://github.com/alphaXiv/RLVR-Fine-Tuning-Spurious-Rewards.git
-    cd RLVR-Fine-Tuning-Spurious-Rewards/code
+    echo "Data downloaded successfully"
 
-    # Move data folder to parent directory
-    echo "Moving data folder..."
-    if [ -d "data" ]; then
-        mv data ../../data
-        echo "Data folder moved successfully"
-    else
-        echo "ERROR: data folder not found in RLVR-Fine-Tuning-Spurious-Rewards/code"
-        exit 1
-    fi
-    # Go back to project root and remove the cloned repo
-    cd ../../..
-    rm -rf src/spurious_rewards/code/RLVR-Fine-Tuning-Spurious-Rewards
+    
 
-    # Create symlink for data
-    if [ ! -L "data" ]; then
-        ln -s src/spurious_rewards/code/data data
-    fi
+    # # Create symlink for data
+    # if [ ! -L "data" ]; then
+    #     ln -s src/spurious_rewards/code/data data
+    # fi
 
 fi
 
 # Default values
 BASE_MODEL="Qwen/Qwen2.5-Math-1.5B"
 HF_REPO="alphaXiv/spurious-rewards-rlvr-training-qwen-2.5-1.5b-math-ckpt"
-DOWNLOAD_FROM_HF=false
+DOWNLOAD_FROM_HF=true  # Default to downloading from HF
 HF_DEFAULT_CHECKPOINTS="50,200,400,1000"
 
 # Parse command line arguments
@@ -125,6 +105,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     -c)
       CHECKPOINT_DIR="$2"
+      DOWNLOAD_FROM_HF=false  # Override default when using custom checkpoints
       shift 2
       ;;
     -s)
@@ -136,12 +117,13 @@ while [[ $# -gt 0 ]]; do
       shift 2
       ;;
     -h|--help)
-      echo "Usage: $0 {-hf | -c <checkpoint_dir> -s <steps>} [-b <base_model>]"
+      echo "Usage: $0 [-hf] [-c <checkpoint_dir> -s <steps>] [-b <base_model>]"
       echo ""
-      echo "Exactly one of the following options must be specified:"
+      echo "By default, downloads and evaluates default HF checkpoints (50, 200, 400, 1000)."
+      echo "Use the following options to customize:"
       echo ""
-      echo "  -hf                    Download and evaluate default HF checkpoints (50, 200, 400, 1000)"
-      echo "  -c <checkpoint_dir>    Path to the DeepSpeed checkpoint directory"
+      echo "  -hf                    Explicitly enable HF download mode (default)"
+      echo "  -c <checkpoint_dir>    Path to the DeepSpeed checkpoint directory (disables HF mode)"
       echo "  -s <steps>             Comma-separated list of checkpoint step numbers (e.g., 450,500,600,700)"
       echo ""
       echo "Optional:"
@@ -160,20 +142,18 @@ done
 # Check required arguments
 if [ "$DOWNLOAD_FROM_HF" = true ]; then
     if [ -n "$CHECKPOINT_DIR" ] || [ -n "$STEPS" ]; then
-        echo "Error: Cannot specify -c or -s when using -hf."
+        echo "Error: Cannot specify -c or -s when using default HF mode."
         echo "Use -h for help."
         exit 1
     fi
 else
     if [ -z "$CHECKPOINT_DIR" ] || [ -z "$STEPS" ]; then
-        echo "Error: Must specify either -hf or both -c and -s."
+        echo "Error: Must specify both -c and -s when using custom checkpoints."
         echo "Use -h for help."
         exit 1
     fi
 fi
 
-# Navigate to code directory for evaluations
-cd src/spurious_rewards/code
 
 # Setup based on download method
 if [ "$DOWNLOAD_FROM_HF" = true ]; then
@@ -203,8 +183,7 @@ if [ "$DOWNLOAD_FROM_HF" = true ]; then
         # Use huggingface-cli to download the model
         huggingface-cli download "$HF_REPO_WITH_CKPT" --repo-type model --local-dir "$MODEL_DIR" --local-dir-use-symlinks False
         
-        # Create symlink for consistency
-        ln -s "../hf_models/model-${ckpt_num}" "export-for-eval-step${ckpt_num}"
+
         
         # Extract step number from checkpoint number for consistency
         STEP_ARRAY+=("$ckpt_num")
@@ -294,11 +273,18 @@ for step in "${STEP_ARRAY[@]}"; do
     echo "Evaluating checkpoint: $step..."
     echo "Evaluation start time: $(date '+%Y-%m-%d %H:%M:%S')"
 
+    # Set MODEL_PATH based on step and download mode
     if [ "$step" = "0" ]; then
+        MODEL_PATH="$BASE_MODEL_DIR"
         RESULTS_DIR="export for eval step0"
         mkdir -p "$RESULTS_DIR"
         python eval_checkpoint.py --model_path "$MODEL_PATH" --datasets MATH-500,AIME-2024,AIME-2025,AMC --shards 2 --output_dir "$RESULTS_DIR" --is_base_model
     else
+        if [ "$DOWNLOAD_FROM_HF" = true ]; then
+            MODEL_PATH="hf_models/model-${step}"
+        else
+            MODEL_PATH="./export-for-eval-step${step}"
+        fi
         RESULTS_DIR="results/step${step}"
         mkdir -p "$RESULTS_DIR"
         python eval_checkpoint.py --model_path "$MODEL_PATH" --datasets MATH-500,AIME-2024,AIME-2025,AMC --shards 2 --output_dir "$RESULTS_DIR"
