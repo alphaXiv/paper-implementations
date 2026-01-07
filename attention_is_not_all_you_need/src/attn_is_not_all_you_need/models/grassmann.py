@@ -19,6 +19,12 @@ class PluckerEncoder(nn.Module):
     """
 
     def __init__(self, reduced_dim: int, eps: float = 1e-8):
+        """Initialize the Plucker coordinate encoder.
+
+        Args:
+            reduced_dim (int): Dimension of the reduced vectors (r in paper).
+            eps (float): Epsilon for L2 normalization.
+        """
         super().__init__()
         self.reduced_dim = reduced_dim
         self.eps = eps
@@ -77,6 +83,14 @@ class CausalGrassmannMixing(nn.Module):
         window_sizes: List[int] = None,
         dropout: float = 0.1,
     ):
+        """Initialize the Causal Grassmann Mixing layer.
+
+        Args:
+            model_dim (int): Dimension of the model embeddings.
+            reduced_dim (int): Dimension of the reduced vectors (r=32 in paper).
+            window_sizes (List[int], optional): Window sizes for looking back.
+            dropout (float): Dropout probability.
+        """
         super().__init__()
         self.model_dim = model_dim
         self.reduced_dim = reduced_dim
@@ -106,6 +120,7 @@ class CausalGrassmannMixing(nn.Module):
         self._init_weights()
 
     def _init_weights(self):
+        """Initialize weights for the Grassmann mixing layer."""
         # Paper doesn't specify init, use reasonable defaults
         nn.init.xavier_uniform_(self.W_red.weight)
         nn.init.zeros_(self.W_red.bias)
@@ -186,6 +201,15 @@ class GrassmannBlock(nn.Module):
         window_sizes: List[int] = None,
         dropout: float = 0.1,
     ):
+        """Initialize the Grassmann block.
+
+        Args:
+            model_dim (int): Dimension of the model embeddings.
+            reduced_dim (int): Dimension of the reduced vectors.
+            ff_dim (int, optional): Dimension of the feed-forward network.
+            window_sizes (List[int], optional): Window sizes for Grassmann mixing.
+            dropout (float): Dropout probability.
+        """
         super().__init__()
         ff_dim = ff_dim or 4 * model_dim
 
@@ -207,6 +231,14 @@ class GrassmannBlock(nn.Module):
         )
 
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
+        """Forward pass of the Grassmann block.
+
+        Args:
+            hidden_states (torch.Tensor): Input hidden states.
+
+        Returns:
+            torch.Tensor: Output hidden states after Grassmann mixing and FFN.
+        """
         # Grassmann mixing with residual
         normed = self.ln1(hidden_states)
         hidden_states = hidden_states + self.grassmann(normed)
@@ -242,6 +274,19 @@ class GrassmannGPT(nn.Module):
         dropout: float = 0.1,
         tie_weights: bool = True,
     ):
+        """Initialize the GrassmannGPT model.
+
+        Args:
+            vocab_size (int): Size of the vocabulary.
+            max_seq_len (int): Maximum sequence length.
+            model_dim (int): Dimension of the model embeddings.
+            num_layers (int): Number of layers.
+            reduced_dim (int): Dimension of the reduced vectors (r=32 in paper).
+            ff_dim (int, optional): Dimension of the feed-forward network.
+            window_sizes (List[int], optional): Window sizes for Grassmann mixing.
+            dropout (float): Dropout probability.
+            tie_weights (bool): Whether to tie input and output embeddings.
+        """
         super().__init__()
         self.vocab_size = vocab_size
         self.max_seq_len = max_seq_len
@@ -277,6 +322,11 @@ class GrassmannGPT(nn.Module):
         self.apply(self._init_weights)
 
     def _init_weights(self, module):
+        """Initialize model weights.
+
+        Args:
+            module: The module to initialize.
+        """
         if isinstance(module, nn.Linear):
             torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
             if module.bias is not None:
@@ -293,6 +343,16 @@ class GrassmannGPT(nn.Module):
         attention_mask: Optional[torch.Tensor] = None,
         labels: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        """Forward pass of the GrassmannGPT model.
+
+        Args:
+            input_ids (torch.Tensor): Input token ids.
+            attention_mask (torch.Tensor, optional): Attention mask.
+            labels (torch.Tensor, optional): Target token ids for loss.
+
+        Returns:
+            tuple: (logits, loss) where loss is None if labels not provided.
+        """
         batch_size, seq_len = input_ids.shape
         device = input_ids.device
 
@@ -319,6 +379,11 @@ class GrassmannGPT(nn.Module):
         return logits, loss
 
     def get_num_params(self) -> int:
+        """Get the total number of parameters in the model.
+
+        Returns:
+            int: Number of parameters.
+        """
         return sum(p.numel() for p in self.parameters())
 
     @torch.no_grad()
@@ -329,6 +394,17 @@ class GrassmannGPT(nn.Module):
         temperature: float = 1.0,
         top_k: Optional[int] = None,
     ) -> torch.Tensor:
+        """Generate text autoregressively.
+
+        Args:
+            input_ids (torch.Tensor): Input token ids.
+            max_new_tokens (int): Maximum number of tokens to generate.
+            temperature (float): Sampling temperature.
+            top_k (int, optional): Top-k sampling.
+
+        Returns:
+            torch.Tensor: Generated token ids.
+        """
         for _ in range(max_new_tokens):
             idx_cond = input_ids[:, -self.max_seq_len:]
             logits, _ = self(idx_cond)

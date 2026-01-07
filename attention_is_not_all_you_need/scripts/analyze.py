@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 
 def main():
+    """Main function for analyzing training results."""
     parser = argparse.ArgumentParser(description="Analyze training results")
     parser.add_argument("--results_dir", type=str, required=True, help="Results directory")
     args = parser.parse_args()

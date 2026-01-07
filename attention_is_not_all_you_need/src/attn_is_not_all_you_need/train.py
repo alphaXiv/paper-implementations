@@ -19,129 +19,16 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
+from torch.cuda.amp import autocast, GradScaler
 from datasets import load_dataset
-from transformers import GPT2Tokenizer
+from transformers import BertTokenizer, DistilBertModel, DistilBertTokenizer
 import wandb
+from tqdm import tqdm
 
 sys.path.insert(0, 'src')
-from attention_is_not_all_you_need.models import GrassmannGPT
+from attn_is_not_all_you_need.models import GrassmannGPT, SNLIModel
+from attn_is_not_all_you_need.models.gpt2 import BaseTransformer
 
-
-# -----------------------------------------------------------------------------
-# Small Transformer Baseline (size-matched to Grassmann)
-# -----------------------------------------------------------------------------
-
-class SmallTransformerBlock(nn.Module):
-    """Standard transformer block with multi-head attention."""
-
-    def __init__(self, model_dim: int, num_heads: int, ff_dim: int, dropout: float = 0.1):
-        super().__init__()
-        self.ln1 = nn.LayerNorm(model_dim)
-        self.attn = nn.MultiheadAttention(model_dim, num_heads, dropout=dropout, batch_first=True)
-        self.ln2 = nn.LayerNorm(model_dim)
-        self.ffn = nn.Sequential(
-            nn.Linear(model_dim, ff_dim),
-            nn.GELU(),
-            nn.Dropout(dropout),
-            nn.Linear(ff_dim, model_dim),
-            nn.Dropout(dropout),
-        )
-        self.dropout = nn.Dropout(dropout)
-
-    def forward(self, x: torch.Tensor, attn_mask: torch.Tensor = None) -> torch.Tensor:
-        # Self-attention with residual
-        normed = self.ln1(x)
-        # Generate causal mask if not provided
-        if attn_mask is None:
-            seq_len = x.size(1)
-            attn_mask = torch.nn.Transformer.generate_square_subsequent_mask(seq_len, device=x.device, dtype=x.dtype)
-        attn_out, _ = self.attn(normed, normed, normed, attn_mask=attn_mask, is_causal=True)
-        x = x + self.dropout(attn_out)
-
-        # FFN with residual
-        normed = self.ln2(x)
-        x = x + self.ffn(normed)
-
-        return x
-
-
-class SmallTransformer(nn.Module):
-    """Size-matched Transformer for fair comparison with Grassmann."""
-
-    def __init__(
-        self,
-        vocab_size: int = 50257,
-        max_seq_len: int = 256,
-        model_dim: int = 256,
-        num_layers: int = 6,
-        num_heads: int = 8,
-        ff_dim: int = None,
-        dropout: float = 0.1,
-        tie_weights: bool = True,
-    ):
-        super().__init__()
-        self.vocab_size = vocab_size
-        self.max_seq_len = max_seq_len
-        self.model_dim = model_dim
-
-        ff_dim = ff_dim or 4 * model_dim
-
-        self.token_embedding = nn.Embedding(vocab_size, model_dim)
-        self.position_embedding = nn.Embedding(max_seq_len, model_dim)
-        self.embedding_dropout = nn.Dropout(dropout)
-
-        self.blocks = nn.ModuleList([
-            SmallTransformerBlock(model_dim, num_heads, ff_dim, dropout)
-            for _ in range(num_layers)
-        ])
-
-        self.ln_f = nn.LayerNorm(model_dim)
-        self.lm_head = nn.Linear(model_dim, vocab_size, bias=False)
-
-        if tie_weights:
-            self.lm_head.weight = self.token_embedding.weight
-
-        self.apply(self._init_weights)
-
-    def _init_weights(self, module):
-        if isinstance(module, nn.Linear):
-            torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
-            if module.bias is not None:
-                torch.nn.init.zeros_(module.bias)
-        elif isinstance(module, nn.Embedding):
-            torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
-        elif isinstance(module, nn.LayerNorm):
-            torch.nn.init.ones_(module.weight)
-            torch.nn.init.zeros_(module.bias)
-
-    def forward(self, input_ids, labels=None):
-        batch_size, seq_len = input_ids.shape
-        device = input_ids.device
-
-        tok_emb = self.token_embedding(input_ids)
-        pos_emb = self.position_embedding(torch.arange(seq_len, device=device))
-        hidden_states = self.embedding_dropout(tok_emb + pos_emb)
-
-        for block in self.blocks:
-            hidden_states = block(hidden_states)
-
-        hidden_states = self.ln_f(hidden_states)
-        logits = self.lm_head(hidden_states)
-
-        loss = None
-        if labels is not None:
-            shift_logits = logits[:, :-1, :].contiguous()
-            shift_labels = labels[:, 1:].contiguous()
-            loss = F.cross_entropy(
-                shift_logits.view(-1, self.vocab_size),
-                shift_labels.view(-1),
-                ignore_index=-100,
-            )
-
-        return logits, loss
-
-    def get_num_params(self) -> int:
-        return sum(p.numel() for p in self.parameters())
 
 
 # -----------------------------------------------------------------------------
@@ -152,6 +39,13 @@ class Wikitext2Dataset(Dataset):
     """Wikitext-2 dataset for language modeling."""
 
     def __init__(self, split: str, tokenizer, max_seq_len: int = 256):
+        """Initialize the dataset.
+
+        Args:
+            split (str): Dataset split ('train', 'validation', 'test').
+            tokenizer: Tokenizer for encoding text.
+            max_seq_len (int): Maximum sequence length.
+        """
         self.max_seq_len = max_seq_len
         self.tokenizer = tokenizer
 
@@ -167,9 +61,22 @@ class Wikitext2Dataset(Dataset):
         self.tokens = self.tokens[:self.num_chunks * max_seq_len]
 
     def __len__(self):
+        """Return the number of chunks in the dataset.
+
+        Returns:
+            int: Number of chunks.
+        """
         return self.num_chunks
 
     def __getitem__(self, idx):
+        """Get a chunk of tokens.
+
+        Args:
+            idx (int): Index of the chunk.
+
+        Returns:
+            tuple: (input_ids, target_ids) both of shape (max_seq_len,).
+        """
         start = idx * self.max_seq_len
         chunk = self.tokens[start:start + self.max_seq_len]
         x = torch.tensor(chunk, dtype=torch.long)
@@ -180,21 +87,49 @@ class Wikitext2Dataset(Dataset):
 # Training
 # -----------------------------------------------------------------------------
 
-def train_epoch(model, dataloader, optimizer, scheduler, device, epoch, log_interval=50):
+def train_epoch(model, dataloader, optimizer, scheduler, device, epoch, scaler=None, log_interval=50):
+    """Train for one epoch.
+
+    Args:
+        model: The model to train.
+        dataloader: DataLoader for training data.
+        optimizer: Optimizer.
+        scheduler: Learning rate scheduler.
+        device: Device to run on.
+        epoch (int): Current epoch number.
+        scaler: GradScaler for AMP (optional).
+        log_interval (int): Logging interval.
+
+    Returns:
+        float: Average training loss.
+    """
     model.train()
     total_loss = 0
     total_tokens = 0
     start_time = time.time()
+    use_amp = scaler is not None
 
     pbar = tqdm(dataloader, desc=f"Epoch {epoch}")
     for step, (x, y) in enumerate(pbar):
         x, y = x.to(device), y.to(device)
 
         optimizer.zero_grad()
-        _, loss = model(x, labels=y)
-        loss.backward()
-        grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-        optimizer.step()
+        
+        # Use automatic mixed precision
+        with autocast(enabled=use_amp, dtype=torch.bfloat16):
+            _, loss = model(x, labels=y)
+        
+        if use_amp:
+            scaler.scale(loss).backward()
+            scaler.unscale_(optimizer)
+            grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+            scaler.step(optimizer)
+            scaler.update()
+        else:
+            loss.backward()
+            grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+            optimizer.step()
+        
         scheduler.step()
 
         total_loss += loss.item() * x.size(0)
@@ -216,6 +151,16 @@ def train_epoch(model, dataloader, optimizer, scheduler, device, epoch, log_inte
 
 @torch.no_grad()
 def evaluate(model, dataloader, device):
+    """Evaluate the model on validation/test set.
+
+    Args:
+        model: The model to evaluate.
+        dataloader: DataLoader for evaluation data.
+        device: Device to run on.
+
+    Returns:
+        tuple: (avg_loss, perplexity)
+    """
     model.eval()
     total_loss = 0
     total_count = 0
@@ -231,16 +176,26 @@ def evaluate(model, dataloader, device):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Wikitext-2 Paper Reproduction")
+    """Main training function for reproducing the paper's experiments."""
+    parser = argparse.ArgumentParser(description="Paper Reproduction: Wikitext-2 & SNLI")
+    parser.add_argument("--task", type=str, default="wikitext", choices=["wikitext", "snli"], help="Task to train on")
     parser.add_argument("--model", type=str, default="both", choices=["grassmann", "transformer", "both"])
-    parser.add_argument("--model-dim", type=int, default=256, help="Model dimension (256 gives ~15M params)")
-    parser.add_argument("--num-layers", type=int, default=6, help="Number of layers")
-    parser.add_argument("--max-seq-len", type=int, default=256, help="Max sequence length")
-    parser.add_argument("--batch-size", type=int, default=32, help="Batch size")
-    parser.add_argument("--epochs", type=int, default=20, help="Number of epochs")
-    parser.add_argument("--lr", type=float, default=3e-4, help="Learning rate")
-    parser.add_argument("--output-dir", type=str, default="outputs/wikitext2_reproduction")
+    parser.add_argument("--model-dim", type=int, default=256, help="Model dimension (paper: 256)")
+    parser.add_argument("--num-layers", type=int, default=6, help="Number of layers (paper: 6 or 12)")
+    parser.add_argument("--max-seq-len", type=int, default=128, help="Max sequence length (paper: 128 or 256)")
+    parser.add_argument("--batch-size", type=int, default=None, help="Batch size (auto: 32 for L=128, 16 for L=256)")
+    parser.add_argument("--epochs", type=int, default=None, help="Number of epochs (auto: 30 for wikitext, 20 for SNLI)")
+    parser.add_argument("--lr", type=float, default=6e-4, help="Learning rate")
+    parser.add_argument("--output-dir", type=str, default=None, help="Output directory")
     args = parser.parse_args()
+    
+    # Set defaults based on task and block size
+    if args.batch_size is None:
+        args.batch_size = 32 if args.max_seq_len == 128 else 16
+    if args.epochs is None:
+        args.epochs = 30 if args.task == "wikitext" else 20
+    if args.output_dir is None:
+        args.output_dir = f"outputs/{args.task}_reproduction"
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
@@ -249,12 +204,31 @@ def main():
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Load tokenizer
-    tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
-    vocab_size = len(tokenizer)
+    if args.task == "wikitext":
+        return train_wikitext(args, device, output_dir)
+    else:
+        # Call separate SNLI training script
+        import subprocess
+        cmd = [
+            "python", "-m", "attn_is_not_all_you_need.train_snli",
+            "--model", args.model,
+            "--batch-size", str(args.batch_size),
+            "--epochs", str(args.epochs),
+            "--lr", str(args.lr),
+            "--output-dir", str(output_dir),
+        ]
+        result = subprocess.run(cmd, cwd=".")
+        return result.returncode
+
+
+def train_wikitext(args, device, output_dir):
+    """Train on Wikitext-2 language modeling."""
+    # Load tokenizer - use BERT tokenizer for vocab ~30522
+    tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+    vocab_size = len(tokenizer)  # Should be ~30522
 
     # Load datasets
-    print("Loading Wikitext-2...")
+    print(f"Loading Wikitext-2 (block_size={args.max_seq_len})...")
     train_dataset = Wikitext2Dataset("train", tokenizer, args.max_seq_len)
     val_dataset = Wikitext2Dataset("validation", tokenizer, args.max_seq_len)
     test_dataset = Wikitext2Dataset("test", tokenizer, args.max_seq_len)
@@ -294,6 +268,14 @@ def main():
             dir=str(output_dir),
         )
 
+        # Paper: W={1,2,4,8,12,16} for 6-layer, (1,1,2,2,4,4,8,8,12,12,16,16) for 12-layer
+        if args.num_layers == 6:
+            window_sizes = [1, 2, 4, 8, 12, 16]
+        elif args.num_layers == 12:
+            window_sizes = [1, 1, 2, 2, 4, 4, 8, 8, 12, 12, 16, 16]
+        else:
+            window_sizes = [1, 2, 4, 8, 12, 16]  # default
+        
         if model_type == "grassmann":
             model = GrassmannGPT(
                 vocab_size=vocab_size,
@@ -301,24 +283,35 @@ def main():
                 model_dim=args.model_dim,
                 num_layers=args.num_layers,
                 reduced_dim=32,  # Paper's value
-                ff_dim=4 * args.model_dim,
-                window_sizes=[1, 2, 4, 8, 12, 16],  # Paper's values
+                ff_dim=1024,  # Paper: dff=1024
+                window_sizes=window_sizes,
                 dropout=0.1,
             )
         else:
-            model = SmallTransformer(
+            model = BaseTransformer(
                 vocab_size=vocab_size,
                 max_seq_len=args.max_seq_len,
                 model_dim=args.model_dim,
                 num_layers=args.num_layers,
-                num_heads=8,
-                ff_dim=4 * args.model_dim,
+                num_heads=4,  # Paper: 4 heads
+                ff_dim=1024,  # Paper: dff=1024
                 dropout=0.1,
             )
 
         model = model.to(device)
-        num_params = model.get_num_params()
+        
+        # Compile model with torch.compile for better performance
+        print("Compiling model with torch.compile...")
+        model = torch.compile(model)
+        
+        num_params = sum(p.numel() for p in model.parameters())
         print(f"Model parameters: {num_params:,} ({num_params/1e6:.2f}M)")
+
+        # Enable automatic mixed precision for Flash Attention
+        use_amp = torch.cuda.is_available()
+        scaler = GradScaler(enabled=use_amp)
+        if use_amp:
+            print("Automatic Mixed Precision (AMP) enabled - Flash Attention will be used!")
 
         optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.01)
         total_steps = len(train_loader) * args.epochs
@@ -331,7 +324,7 @@ def main():
 
         epoch_pbar = tqdm(range(1, args.epochs + 1), desc="Training", unit="epoch")
         for epoch in epoch_pbar:
-            train_loss = train_epoch(model, train_loader, optimizer, scheduler, device, epoch)
+            train_loss = train_epoch(model, train_loader, optimizer, scheduler, device, epoch, scaler if use_amp else None)
             val_loss, val_ppl = evaluate(model, val_loader, device)
 
             train_losses.append(train_loss)

@@ -9,13 +9,27 @@ set -e  # Exit on error
 # Attention Is Not All You Need models on various datasets.
 #
 # Usage: ./speedrun.sh [MODEL] [DATASET]
-#   MODEL: gpt2 | grassmann | all
-#   DATASET: wikitext
+#   MODEL: transformer | grassmann | all
+#   DATASET: wikitext | snli | all
+#
+# Paper Specifications:
+#   - Wikitext-2: Trains with BOTH L=128 and L=256 block sizes (paper spec)
+#   - Default: 6-layer models (N=6)
+#   - For 12-layer models: LAYER_DEPTHS_OVERRIDE=6,12 ./speedrun.sh all wikitext
 #
 # Examples:
-#   ./speedrun.sh grassmann wikitext    # Train Grassmann on Wikitext-2
-#   ./speedrun.sh gpt2 wikitext         # Train GPT-2 baseline on Wikitext-2
-#   ./speedrun.sh all wikitext          # Train all models on Wikitext-2
+#   ./speedrun.sh grassmann wikitext     # Train Grassmann on Wikitext (L=128 & L=256)
+#   ./speedrun.sh transformer snli       # Train Transformer on SNLI
+#   ./speedrun.sh all wikitext           # Train both models on Wikitext (L=128 & L=256)
+#   ./speedrun.sh all snli               # Train both models on SNLI
+#   ./speedrun.sh grassmann all          # Train Grassmann on all datasets
+#   ./speedrun.sh all all                # Train all models on all datasets
+#   
+#   # For 12-layer models:
+#   LAYER_DEPTHS_OVERRIDE=12 ./speedrun.sh all wikitext
+#   
+#   # For both 6 and 12 layer models:
+#   LAYER_DEPTHS_OVERRIDE=6,12 ./speedrun.sh all wikitext
 # ============================================================================
 
 # Detect number of GPUs dynamically
@@ -40,8 +54,8 @@ echo "=========================================="
 echo "Attention Is Not All You Need Training & Evaluation"
 echo "=========================================="
 echo "Detected GPUs: $DETECTED_GPUS"
-echo "Model: $MODEL"
-echo "Dataset: $DATASET"
+echo "Model(s): $MODEL"
+echo "Dataset(s): $DATASET"
 echo "Using GPUs: $NUM_GPUS"
 echo "=========================================="
 echo ""
@@ -56,7 +70,7 @@ echo "[Step 0/4] Setting up environment..."
 if ! command -v uv &> /dev/null; then
     echo "Installing uv..."
     curl -LsSf https://astral.sh/uv/install.sh | sh
-    source $HOME/.cargo/env
+    export PATH="$HOME/.local/bin:$PATH"
 fi
 
 # Create virtual environment if it doesn't exist
@@ -105,35 +119,65 @@ OUTPUT_DIR="outputs/${TIMESTAMP}"
 run_training() {
     local model=$1
     local dataset=$2
+    local block_size=$3
+    local num_layers=$4
 
-    echo "Training $model on $dataset..."
-
-   
-        #[ Use the exact reproduction script for Wikitext-2
-        python scripts/train.py \
+    if [ "$dataset" = "wikitext" ]; then
+        echo "Training $model on $dataset (L=$block_size, N=$num_layers layers)..."
+        # Use the exact reproduction script for Wikitext-2
+        python src/attn_is_not_all_you_need/train.py \
+            --task wikitext \
             --model "$model" \
-            --output_dir "${OUTPUT_DIR}/${model}_${dataset}" \
-            --epochs 5]
+            --max-seq-len "$block_size" \
+            --num-layers "$num_layers" \
+            --epochs 30 \
+            --output-dir "${OUTPUT_DIR}/${model}_${dataset}_L${block_size}_N${num_layers}"
+    elif [ "$dataset" = "snli" ]; then
+        echo "Training $model on $dataset..."
+        # Use separate SNLI training script
+        python src/attn_is_not_all_you_need/train_snli.py \
+            --model "$model" \
+            --epochs 20 \
+            --output-dir "${OUTPUT_DIR}/${model}_${dataset}"
     fi
 }
 
 # Determine which models and datasets to run
 if [ "$MODEL" = "all" ]; then
-    MODELS=("gpt2" "grassmann")
+    MODELS=("transformer" "grassmann")
 else
     MODELS=("$MODEL")
 fi
 
 if [ "$DATASET" = "all" ]; then
-    DATASETS=("wikitext")
+    DATASETS=("wikitext" "snli")
 else
     DATASETS=("$DATASET")
 fi
 
 # Run training for all combinations
+# Paper specs: L=128 and L=256 for Wikitext, N=6 or N=12 layers
+BLOCK_SIZES=(128 256)  # Both block sizes from paper
+LAYER_DEPTHS=(6 12)       # Default to 6 layers (can be overridden with env var)
+
+# Allow user to specify layer depths via environment variable
+if [ -n "$LAYER_DEPTHS_OVERRIDE" ]; then
+    IFS=',' read -ra LAYER_DEPTHS <<< "$LAYER_DEPTHS_OVERRIDE"
+fi
+
 for model in "${MODELS[@]}"; do
     for dataset in "${DATASETS[@]}"; do
-        run_training "$model" "$dataset"
+        if [ "$dataset" = "wikitext" ]; then
+            # For Wikitext, run with both block sizes (L=128 and L=256)
+            for block_size in "${BLOCK_SIZES[@]}"; do
+                for num_layers in "${LAYER_DEPTHS[@]}"; do
+                    run_training "$model" "$dataset" "$block_size" "$num_layers"
+                done
+            done
+        else
+            # For SNLI, block size and layers don't apply
+            run_training "$model" "$dataset" "" ""
+        fi
     done
 done
 
@@ -147,28 +191,80 @@ echo "[Step 3/4] Running evaluation..."
 echo "Running performance analysis..."
 python scripts/analyze.py --results_dir "$OUTPUT_DIR"
 
-# Run SNLI evaluation for each trained model
-echo "Running SNLI evaluation..."
+# Evaluate each trained model on appropriate test datasets
+echo "Running test dataset evaluations..."
 for model in "${MODELS[@]}"; do
     for dataset in "${DATASETS[@]}"; do
-        MODEL_DIR="${OUTPUT_DIR}/${model}_${dataset}"
-        if [ -d "$MODEL_DIR" ]; then
-            # Check for checkpoint (different naming conventions)
-            CHECKPOINT=""
-            if [ -f "${MODEL_DIR}/${model}_best.pt" ]; then
-                CHECKPOINT="${MODEL_DIR}/${model}_best.pt"
-            elif [ -f "${MODEL_DIR}/best_model.pt" ]; then
-                CHECKPOINT="${MODEL_DIR}/best_model.pt"
-            fi
-            if [ -f "$CHECKPOINT" ]; then
-                echo "Evaluating $model trained on $dataset on SNLI..."
-                python scripts/eval_snli.py \
-                    --model_path "$CHECKPOINT" \
-                    --model_type "$model" \
-                    --output_file "${MODEL_DIR}/snli_results.json" \
-                    --max_samples 1000  # Limit for speed
-            else
-                echo "Warning: Checkpoint not found for $model on $dataset"
+        if [ "$dataset" = "wikitext" ]; then
+            # Evaluate Wikitext models with both block sizes
+            for block_size in "${BLOCK_SIZES[@]}"; do
+                for num_layers in "${LAYER_DEPTHS[@]}"; do
+                    MODEL_DIR="${OUTPUT_DIR}/${model}_${dataset}_L${block_size}_N${num_layers}"
+                    if [ -d "$MODEL_DIR" ]; then
+                        CHECKPOINT=""
+                        if [ -f "${MODEL_DIR}/${model}_best.pt" ]; then
+                            CHECKPOINT="${MODEL_DIR}/${model}_best.pt"
+                        elif [ -f "${MODEL_DIR}/best_model.pt" ]; then
+                            CHECKPOINT="${MODEL_DIR}/best_model.pt"
+                        fi
+                        
+                        if [ -f "$CHECKPOINT" ]; then
+                            # Run separate Wikitext test evaluation with 5 runs for CI
+                            echo "Evaluating $model on Wikitext-2 test split (L=$block_size, N=$num_layers) - 5 runs for 95% CI..."
+                            python src/attn_is_not_all_you_need/eval_wikitext.py \
+                                --model_path "$CHECKPOINT" \
+                                --model_type "$model" \
+                                --max-seq-len "$block_size" \
+                                --num-layers "$num_layers" \
+                                --num_runs 5 \
+                                --output_file "${MODEL_DIR}/wikitext_test_results.json"
+                            
+                            # Also evaluate on SNLI test split with 5 runs for CI
+                            echo "Evaluating $model (trained on Wikitext L=$block_size) on SNLI test split - 5 runs for 95% CI..."
+                            python src/attn_is_not_all_you_need/eval_snli.py \
+                                --model_path "$CHECKPOINT" \
+                                --model_type "$model" \
+                                --split test \
+                                --num_runs 5 \
+                                --output_file "${MODEL_DIR}/snli_test_results.json"
+                        fi
+                    fi
+                done
+            done
+        else
+            # Evaluate SNLI models
+            MODEL_DIR="${OUTPUT_DIR}/${model}_${dataset}"
+            if [ -d "$MODEL_DIR" ]; then
+                CHECKPOINT=""
+                if [ -f "${MODEL_DIR}/${model}_best.pt" ]; then
+                    CHECKPOINT="${MODEL_DIR}/${model}_best.pt"
+                elif [ -f "${MODEL_DIR}/best_model.pt" ]; then
+                    CHECKPOINT="${MODEL_DIR}/best_model.pt"
+                elif [ -f "${MODEL_DIR}/snli_${model}_best.pt" ]; then
+                    CHECKPOINT="${MODEL_DIR}/snli_${model}_best.pt"
+                fi
+                
+                if [ -f "$CHECKPOINT" ]; then
+                    # SNLI test evaluation with 5 runs for CI
+                    echo "Evaluating $model on SNLI test split - 5 runs for 95% CI..."
+                    python src/attn_is_not_all_you_need/eval_snli.py \
+                        --model_path "$CHECKPOINT" \
+                        --model_type "$model" \
+                        --split test \
+                        --num_runs 5 \
+                        --output_file "${MODEL_DIR}/snli_test_results.json"
+                    
+                    # Optional: Also evaluate on validation for comparison (5 runs for CI)
+                    echo "Evaluating $model on SNLI validation split - 5 runs for 95% CI..."
+                    python src/attn_is_not_all_you_need/eval_snli.py \
+                        --model_path "$CHECKPOINT" \
+                        --model_type "$model" \
+                        --split validation \
+                        --num_runs 5 \
+                        --output_file "${MODEL_DIR}/snli_val_results.json"
+                else
+                    echo "Warning: Checkpoint not found for $model on $dataset"
+                fi
             fi
         fi
     done
@@ -185,6 +281,39 @@ echo "Results Summary"
 echo "=========================================="
 echo "Output directory: $OUTPUT_DIR"
 echo "Check the analysis results in: $OUTPUT_DIR/analysis/"
+echo ""
+echo "Test Dataset Evaluations:"
+for model in "${MODELS[@]}"; do
+    for dataset in "${DATASETS[@]}"; do
+        if [ "$dataset" = "wikitext" ]; then
+            for block_size in "${BLOCK_SIZES[@]}"; do
+                for num_layers in "${LAYER_DEPTHS[@]}"; do
+                    MODEL_DIR="${OUTPUT_DIR}/${model}_${dataset}_L${block_size}_N${num_layers}"
+                    if [ -d "$MODEL_DIR" ]; then
+                        echo "  $model (L=$block_size, N=$num_layers):"
+                        if [ -f "${MODEL_DIR}/wikitext_test_results.json" ]; then
+                            echo "    - Wikitext-2 test: ${MODEL_DIR}/wikitext_test_results.json"
+                        fi
+                        if [ -f "${MODEL_DIR}/snli_test_results.json" ]; then
+                            echo "    - SNLI test: ${MODEL_DIR}/snli_test_results.json"
+                        fi
+                    fi
+                done
+            done
+        else
+            MODEL_DIR="${OUTPUT_DIR}/${model}_${dataset}"
+            if [ -d "$MODEL_DIR" ]; then
+                echo "  $model:"
+                if [ -f "${MODEL_DIR}/snli_test_results.json" ]; then
+                    echo "    - SNLI test: ${MODEL_DIR}/snli_test_results.json"
+                fi
+                if [ -f "${MODEL_DIR}/snli_val_results.json" ]; then
+                    echo "    - SNLI validation: ${MODEL_DIR}/snli_val_results.json"
+                fi
+            fi
+        fi
+    done
+done
 echo ""
 echo "To run inference on trained models:"
 echo "  ./speedrun-inference.sh [model_path]"

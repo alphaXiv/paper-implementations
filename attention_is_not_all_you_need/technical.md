@@ -146,19 +146,6 @@ Discrepancy: +7.6% to +12.6% worse than claimed
 
 ---
 
-## Comparison with Earlier Experiments
-
-### OpenWebText Results (85M params, 1 epoch)
-| Model | Val PPL |
-|-------|---------|
-| GPT-2 | 223 |
-| GrassmannGPTv3 | 312 |
-| GrassmannGPT | 350 |
-
-Note: These were not size-matched comparisons and used different dataset.
-
----
-
 ## Conclusions
 
 1. **Paper claims not reproduced**: Our 22.6% gap significantly exceeds the claimed 10-15%
