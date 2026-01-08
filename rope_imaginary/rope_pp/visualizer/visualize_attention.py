@@ -160,6 +160,160 @@ def get_color_code(value):
         return "\033[48;5;196m"  # Bright red
 
 
+def ascii_heatmap_multi(matrices, titles, max_width=25, max_height=20, use_color=True):
+    """
+    Create side-by-side ASCII heatmap visualizations of multiple 2D matrices.
+    
+    Args:
+        matrices: List of 2D numpy arrays
+        titles: List of titles for each matrix
+        max_width: Maximum character width for each heatmap
+        max_height: Maximum character height for display
+        use_color: Use ANSI color codes for better visualization
+        
+    Returns:
+        String containing the side-by-side ASCII heatmaps
+    """
+    if not matrices:
+        return ""
+    
+    num_plots = len(matrices)
+    all_lines = []
+    
+    # Process each matrix
+    for matrix, title in zip(matrices, titles):
+        # Normalize matrix to 0-1 using PER-HEAD adaptive normalization
+        matrix = matrix.astype(float)
+        matrix_min = matrix.min()
+        matrix_max = matrix.max()
+        matrix_median = np.median(matrix)
+        matrix_p95 = np.percentile(matrix, 95)
+        matrix_p99 = np.percentile(matrix, 99)
+        matrix_mean = matrix.mean()
+        
+        # Calculate sparsity (percentage of very low values)
+        sparsity = (matrix < 0.001).sum() / matrix.size * 100
+        
+        # Normalize to p95 (clip values above to 1.0)
+        if matrix_p95 > matrix_min:
+            matrix_norm = np.clip((matrix - matrix_min) / (matrix_p95 - matrix_min), 0, 1)
+            norm_range_max = matrix_p95
+        else:
+            matrix_norm = matrix * 0
+            norm_range_max = matrix_max
+        
+        # Downsample if needed
+        rows, cols = matrix_norm.shape
+        original_rows, original_cols = rows, cols
+        
+        if rows > max_height:
+            row_factor = rows / max_height
+            new_matrix = []
+            for i in range(max_height):
+                start_row = int(i * row_factor)
+                end_row = int((i + 1) * row_factor)
+                new_matrix.append(matrix_norm[start_row:end_row].mean(axis=0))
+            matrix_norm = np.array(new_matrix)
+            rows = max_height
+        
+        if cols > max_width:
+            col_factor = cols / max_width
+            new_matrix = []
+            for j in range(max_width):
+                start_col = int(j * col_factor)
+                end_col = int((j + 1) * col_factor)
+                new_matrix.append(matrix_norm[:, start_col:end_col].mean(axis=1))
+            matrix_norm = np.array(new_matrix).T
+            cols = max_width
+        
+        # Store processed info
+        all_lines.append({
+            'matrix_norm': matrix_norm,
+            'title': title,
+            'rows': rows,
+            'cols': cols,
+            'original_rows': original_rows,
+            'original_cols': original_cols,
+            'stats': {
+                'min': matrix_min,
+                'max': matrix_max,
+                'median': matrix_median,
+                'mean': matrix_mean,
+                'p95': matrix_p95,
+                'p99': matrix_p99,
+                'sparsity': sparsity,
+                'norm_range_max': norm_range_max
+            }
+        })
+    
+    # Build side-by-side output
+    reset = "\033[0m"
+    output_lines = []
+    
+    # Titles
+    title_line = "  ".join([info['title'].center(info['cols'] * 2 + 4) for info in all_lines])
+    output_lines.append("\n" + title_line)
+    output_lines.append("=" * len(title_line))
+    
+    # Stats (compact, one line per stat)
+    stats_keys = ['min', 'max', 'median', 'mean', 'p95', 'sparsity']
+    for key in stats_keys:
+        if key == 'sparsity':
+            stat_line = "  ".join([
+                f"{key}={info['stats'][key]:.1f}%".center(info['cols'] * 2 + 4)
+                for info in all_lines
+            ])
+        else:
+            stat_line = "  ".join([
+                f"{key}={info['stats'][key]:.4f}".center(info['cols'] * 2 + 4)
+                for info in all_lines
+            ])
+        output_lines.append(stat_line)
+    
+    output_lines.append("")
+    
+    # Top border
+    border_line = "  ".join(["┌" + "─" * (info['cols'] * 2) + "┐" for info in all_lines])
+    output_lines.append(border_line)
+    
+    # Matrix rows
+    max_rows = max(info['rows'] for info in all_lines)
+    for i in range(max_rows):
+        row_parts = []
+        for info in all_lines:
+            if i < info['rows']:
+                line = "│"
+                for j in range(info['cols']):
+                    val = info['matrix_norm'][i, j]
+                    if use_color:
+                        color = get_color_code(val)
+                        line += color + "  " + reset
+                    else:
+                        chars = " ░▒▓█"
+                        char_idx = int(val * (len(chars) - 1))
+                        line += chars[char_idx] * 2
+                line += "│"
+            else:
+                # Empty placeholder
+                line = "│" + " " * (info['cols'] * 2) + "│"
+            row_parts.append(line)
+        output_lines.append("  ".join(row_parts))
+    
+    # Bottom border
+    border_line = "  ".join(["└" + "─" * (info['cols'] * 2) + "┘" for info in all_lines])
+    output_lines.append(border_line)
+    
+    # Color legend (only once)
+    if use_color:
+        output_lines.append("\nColor scale: " + 
+                         get_color_code(0.0) + "  " + reset + " Low → " +
+                         get_color_code(0.33) + "  " + reset + " → " +
+                         get_color_code(0.66) + "  " + reset + " → " +
+                         get_color_code(1.0) + "  " + reset + " High")
+    
+    return "\n".join(output_lines)
+
+
 def ascii_heatmap(matrix, max_width=60, max_height=20, title="", use_color=True):
     """
     Create an ASCII heatmap visualization of a 2D matrix.
@@ -423,36 +577,50 @@ def visualize_attention_patterns(model, tokenizer, text, layer_indices, head_ind
         else:
             heads_to_show = [h for h in head_indices if h < num_heads]
         
-        print(f"\n{'='*80}")
+        print(f"\n{'='*120}")
         print(f"LAYER {layer_idx} - Total heads: {num_heads}")
-        print(f"{'='*80}\n")
+        print(f"{'='*120}\n")
         
-        for head_idx in heads_to_show:
-            attn_matrix = capture.get_attention(layer_idx, head_idx)
-            
-            # Determine if this is a real or imaginary head (for RoPE++)
-            head_type = "Unknown"
+        # Helper function to determine head type
+        def get_head_type(head_idx):
             if hasattr(model.config, 'rope_config') and model.config.rope_config.get('imag'):
                 imag_mode = model.config.rope_config.get('imag_mode', 'imag1')
                 if imag_mode == 'imag1':
-                    # First half real, second half imaginary
-                    head_type = "Real" if head_idx < num_heads // 2 else "Imaginary"
+                    return "Real" if head_idx < num_heads // 2 else "Imaginary"
                 elif imag_mode == 'imag2':
-                    # Even heads real, odd heads imaginary
-                    head_type = "Real" if head_idx % 2 == 0 else "Imaginary"
+                    return "Real" if head_idx % 2 == 0 else "Imaginary"
                 elif imag_mode == 'imagx':
-                    # Even indices real, odd indices imaginary
-                    head_type = "Real" if head_idx % 2 == 0 else "Imaginary"
-                title = f"Layer {layer_idx}, Head {head_idx} ({head_type})"
-            else:
-                title = f"Layer {layer_idx}, Head {head_idx}"
+                    return "Real" if head_idx % 2 == 0 else "Imaginary"
+            return ""
+        
+        # Display heads side by side in groups (e.g., pairs or triplets)
+        # Default to pairs for side-by-side comparison
+        heads_per_row = 2
+        
+        for i in range(0, len(heads_to_show), heads_per_row):
+            group_heads = heads_to_show[i:i + heads_per_row]
             
-            # Print heatmap
-            heatmap = ascii_heatmap(
-                attn_matrix,
+            # Collect matrices and titles for this group
+            matrices = []
+            titles = []
+            
+            for head_idx in group_heads:
+                attn_matrix = capture.get_attention(layer_idx, head_idx)
+                matrices.append(attn_matrix)
+                
+                head_type = get_head_type(head_idx)
+                if head_type:
+                    title = f"Head {head_idx} ({head_type})"
+                else:
+                    title = f"Head {head_idx}"
+                titles.append(title)
+            
+            # Print side-by-side heatmaps
+            heatmap = ascii_heatmap_multi(
+                matrices,
+                titles,
                 max_width=min(25, seq_len),
                 max_height=min(25, seq_len),
-                title=title,
                 use_color=True
             )
             print(heatmap)

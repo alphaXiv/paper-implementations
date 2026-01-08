@@ -23,4 +23,15 @@ Now imagine we have query $q = a+bi$ and key $k = c+di$. Taking the dot product 
 
 This imaginary component of attention uses a sine-based characteristic curve which decays much more slowly over distance compared to the cosine-based curve in standard RoPE's real attention. The authors suggest that this slower decay means imaginary attention maintains stronger weights for distant tokens rather than emphasizing only nearby tokens, allowing it to better capture long-range dependencies in the sequence.
 
+## Visualizations
+
+To visualize this, the authors plot the query*key dot product heatmaps for different layers and heads. We provide an easy [visualization script](rope_pp/visualizer.sh) that produces these heatmaps across different layers:
+
+![Layer 2 Attention](rope_pp/visualizer/images/layer-2.png)
+![Layer 6 Attention](rope_pp/visualizer/images/layer-6.png)
+![Layer 7 Attention](rope_pp/visualizer/images/layer-7.png)
+
+The idea is that a lot of activity on the diagonal line shows queries attending to nearby keys in the sequence, and we'd expect to see more distributed activity in the imaginary setting. There honestly isn't a huge difference in the real and imaginary graphs we produced above. What is particularly interesting is that these were run over a long wikipedia article, and when we produced similar heatmaps for shorter lengths we got images much closer to the heatmaps in the paper. We'd love to hear the author's or anyone else's thoughts on this.
+
+## Training!
 In this implementation we provide both a cleaned-up adaptation of the official "Rope++" codebase as well as an implementation of "Rope++" with Karpathy's Nanochat repo. For the cleaned-up version of the original Rope++ codebase, we greatly simplify the setup, training, and evaluation process, providing a Nanochat-style 'speedrun' bash script which sets up UV, installs the necessary packages, and runs the training+evaluation scripts all in one go.
