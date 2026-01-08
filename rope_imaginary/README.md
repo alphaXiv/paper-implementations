@@ -17,15 +17,15 @@ After applying the rotational transformation $e^{i(m\theta)}$ to the input vecto
 
 ## What is imaginary RoPE (RoPE++)?
 
-The basis of Rope++ is that the imaginary component of the attention score contains important information and should be considered in half of the attention heads. To wrap your head around this, a brief refresher on complex numbers and linear algebra might be useful. Say I have the query vector $q = [a, b]$ and want apply a rotation of $\theta$ to the vector. To do so, I can multiply the vector with matrix $$M = \begin{bmatrix} \cos\theta & -\sin\theta \\ \sin\theta & \cos\theta \end{bmatrix}$$ This is equivalent to to treating $q = a+bi$ and multiplying it by $e^{i\theta} = cos(\theta)+isin(\theta)$ since $$(a+bi)(e^{i\theta}) = (a+bi)(cos(\theta)+isin(\theta)) = (acos(\theta) - bsin(\theta)) + i(asin(\theta) + bcos(\theta))$$
+The basis of Rope++ is that the imaginary component of the attention score contains important information and should be considered in half of the attention heads. To wrap your head around this, a brief refresher on complex numbers and linear algebra might be useful. Say I have the query vector $q = [a, b]$ and want apply a rotation of $\theta$ to the vector. To do so, I can multiply the vector with matrix $$M = \begin{bmatrix} \cos\theta & -\sin\theta \\\ \sin\theta & \cos\theta \end{bmatrix}$$ This is equivalent to to treating $q = a+bi$ and multiplying it by $e^{i\theta} = cos(\theta)+isin(\theta)$ since $$(a+bi)(e^{i\theta}) = (a+bi)(cos(\theta)+isin(\theta)) = (acos(\theta) - bsin(\theta)) + i(asin(\theta) + bcos(\theta))$$
 
-Now imagine we have query $q = a+bi$ and key $k = c+di$. Taking the dot product is equivalent to $qk$ = $(a+bi)(c-di)$ = $(ac+bd) + (bc-ad)i$. Rope++ suggests that this imaginary component can be  useful, and that some of the heads should carry this information. Practically speaking, this means we can pick some heads to be 'imaginary', simply applying a $\begin{bmatrix} 0 & 1 \\ -1 & 0 \end{bmatrix}$ transformation to the query rotational embeddings in that head. 
+Now imagine we have query $q = a+bi$ and key $k = c+di$. Taking the dot product is equivalent to $qk$ = $(a+bi)(c-di)$ = $(ac+bd) + (bc-ad)i$. Rope++ suggests that this imaginary component can be  useful, and that some of the heads should carry this information. Practically speaking, this means we can pick some heads to be 'imaginary', simply applying a $\begin{bmatrix} 0 & 1 \\\ -1 & 0 \end{bmatrix}$ transformation to the query rotational embeddings in that head. 
 
 This imaginary component of attention uses a sine-based characteristic curve which decays much more slowly over distance compared to the cosine-based curve in standard RoPE's real attention. The authors suggest that this slower decay means imaginary attention maintains stronger weights for distant tokens rather than emphasizing only nearby tokens, allowing it to better capture long-range dependencies in the sequence.
 
 ## Visualizations
 
-To visualize this, the authors plot the query*key dot product heatmaps for different layers and heads. We provide an easy [visualization script](rope_pp/visualizer.sh) that produces these heatmaps across different layers:
+To visualize this, the authors plot the attention score heatmaps for different layers and heads. We provide an easy [visualization script](rope_pp/visualizer.sh) that produces these heatmaps across different layers:
 
 ![Layer 2 Attention](rope_pp/visualizer/images/layer-2.png)
 ![Layer 6 Attention](rope_pp/visualizer/images/layer-6.png)
