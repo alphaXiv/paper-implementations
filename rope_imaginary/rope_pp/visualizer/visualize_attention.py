@@ -450,7 +450,7 @@ def visualize_attention_patterns(model, tokenizer, text, layer_indices, head_ind
             # Print heatmap
             heatmap = ascii_heatmap(
                 attn_matrix,
-                max_width=min(50, seq_len),
+                max_width=min(25, seq_len),
                 max_height=min(25, seq_len),
                 title=title,
                 use_color=True
