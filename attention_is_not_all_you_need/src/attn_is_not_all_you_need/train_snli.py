@@ -19,7 +19,7 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from torch.cuda.amp import autocast, GradScaler
+from torch.amp import autocast, GradScaler
 from transformers import DistilBertTokenizer
 from datasets import load_dataset
 import wandb
@@ -27,60 +27,10 @@ from tqdm import tqdm
 
 sys.path.insert(0, 'src')
 from attn_is_not_all_you_need.models import SNLIModel
+from attn_is_not_all_you_need.data import SNLIDataset
 
 
-class SNLIDataset(torch.utils.data.Dataset):
-    """SNLI dataset for classification."""
-    
-    def __init__(self, split: str, tokenizer, max_seq_len: int = 48):
-        """Initialize SNLI dataset.
-        
-        Args:
-            split: Dataset split ('train', 'validation', 'test')
-            tokenizer: Tokenizer for encoding text
-            max_seq_len: Maximum sequence length per sentence
-        """
-        self.tokenizer = tokenizer
-        self.max_seq_len = max_seq_len
-        
-        # Load SNLI
-        dataset = load_dataset("snli", split=split)
-        
-        # Filter out examples with label -1 (no gold label)
-        self.examples = []
-        for example in dataset:
-            if example["label"] != -1:
-                self.examples.append({
-                    "premise": example["premise"],
-                    "hypothesis": example["hypothesis"],
-                    "label": example["label"]
-                })
-    
-    def __len__(self):
-        return len(self.examples)
-    
-    def __getitem__(self, idx):
-        example = self.examples[idx]
-        
-        # Tokenize premise and hypothesis together (DistilBERT style)
-        encoding = self.tokenizer(
-            example["premise"],
-            example["hypothesis"],
-            max_length=self.max_seq_len * 2,  # Both sentences
-            padding="max_length",
-            truncation='only_first',  # Truncate only premise if needed
-            return_overflowing_tokens=False,
-            return_tensors="pt"
-        )
-        
-        return {
-            "input_ids": encoding["input_ids"].squeeze(0),
-            "attention_mask": encoding["attention_mask"].squeeze(0),
-            "labels": torch.tensor(example["label"], dtype=torch.long)
-        }
-
-
-def train_epoch(model, dataloader, optimizer, scheduler, device, epoch, log_interval=50):
+def train_epoch(model, dataloader, optimizer, scheduler, device, epoch, scaler=None, log_interval=50):
     """Train SNLI model for one epoch.
     
     Args:
@@ -111,7 +61,7 @@ def train_epoch(model, dataloader, optimizer, scheduler, device, epoch, log_inte
         optimizer.zero_grad()
         
         # Use automatic mixed precision
-        with autocast(enabled=use_amp, dtype=torch.bfloat16):
+        with autocast('cuda', enabled=use_amp, dtype=torch.bfloat16):
             outputs = model(input_ids, attention_mask, labels)
             loss = outputs["loss"]
             logits = outputs["logits"]
@@ -241,7 +191,6 @@ def main():
         
         # Paper specs for SNLI heads
         head_kwargs = {
-            "model_dim": 256,
             "num_heads": 4,
             "ff_dim": 512,
             "dropout": 0.1,
@@ -250,6 +199,7 @@ def main():
         
         if model_type == "grassmann":
             head_kwargs.update({
+                "dmodel": 256,
                 "dproj": 64,
                 "window_size": 8,
                 "stride": 8,
@@ -257,16 +207,17 @@ def main():
             })
             model = SNLIModel(
                 head_type="grassmann",
-                freeze_backbone=False,
+                freeze_backbone=True,
                 **head_kwargs
             )
         else:
             head_kwargs.update({
+                "model_dim": 256,
                 "num_layers": 2,
             })
             model = SNLIModel(
                 head_type="transformer",
-                freeze_backbone=False,
+                freeze_backbone=True,
                 **head_kwargs
             )
         
@@ -281,7 +232,7 @@ def main():
         
         # Enable automatic mixed precision for Flash Attention
         use_amp = torch.cuda.is_available()
-        scaler = GradScaler(enabled=use_amp)
+        scaler = GradScaler('cuda', enabled=use_amp)
         if use_amp:
             print("Automatic Mixed Precision (AMP) enabled - Flash Attention will be used!")
         
@@ -289,8 +240,9 @@ def main():
         total_steps = len(train_loader) * args.epochs
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, total_steps)
         
-        best_val_acc = 0
-        best_val_loss = float("inf")
+        # Create checkpoint directory
+        ckpt_dir = output_dir / "checkpoints"
+        ckpt_dir.mkdir(exist_ok=True)
         
         epoch_pbar = tqdm(range(1, args.epochs + 1), desc="Training", unit="epoch")
         for epoch in epoch_pbar:
@@ -314,25 +266,33 @@ def main():
                 "val_loss": val_loss,
             })
             
-            if val_acc > best_val_acc:
-                best_val_acc = val_acc
-                best_val_loss = val_loss
-                torch.save(model.state_dict(), output_dir / f"snli_{model_type}_best.pt")
+            # Save checkpoint every 5 epochs
+            if epoch % 5 == 0:
+                ckpt_path = ckpt_dir / f"epoch_{epoch}.pt"
+                torch.save({
+                    "epoch": epoch,
+                    "model_state_dict": model.state_dict(),
+                    "optimizer_state_dict": optimizer.state_dict(),
+                    "scheduler_state_dict": scheduler.state_dict(),
+                    "val_acc": val_acc,
+                    "val_loss": val_loss,
+                }, ckpt_path)
+                print(f"Checkpoint saved: {ckpt_path}")
         
         print(f"\nFinal Results for {model_type.upper()}:")
-        print(f"  Best Val Acc: {best_val_acc:.4f}, Best Val Loss: {best_val_loss:.4f}")
-        print(f"  Note: Run eval_snli.py with --split test for final test accuracy")
+        print(f"  Training complete. Checkpoints saved in {ckpt_dir}")
+        print(f"  Note: Run eval_snli.py with checkpoint for test accuracy")
         
         results[model_type] = {
             "num_params": num_params,
-            "best_val_acc": best_val_acc,
-            "best_val_loss": best_val_loss,
+            "final_val_acc": val_acc,
+            "final_val_loss": val_loss,
         }
         
         # Log final results to W&B
         wandb.log({
-            "final/best_val_acc": best_val_acc,
-            "final/best_val_loss": best_val_loss,
+            "final/val_acc": val_acc,
+            "final/val_loss": val_loss,
             "final/num_params": num_params,
         })
         
@@ -344,15 +304,15 @@ def main():
         for k, v in results.items():
             save_results[k] = {
                 "num_params": v["num_params"],
-                "best_val_acc": float(v["best_val_acc"]),
-                "best_val_loss": float(v["best_val_loss"]),
+                "final_val_acc": float(v["final_val_acc"]),
+                "final_val_loss": float(v["final_val_loss"]),
             }
         json.dump(save_results, f, indent=2)
     
     print(f"\n{'='*60}")
-    print("Training complete! Validation results saved.")
+    print("Training complete! Checkpoints saved.")
     print("Run separate test evaluation with:")
-    print(f"  python -m attn_is_not_all_you_need.eval_snli --model_path {output_dir}/snli_<model>_best.pt --model_type <model> --split test")
+    print(f"  python -m attn_is_not_all_you_need.eval_snli --checkpoint {output_dir}/checkpoints/epoch_<N>.pt --model_type <model> --split test")
     print(f"{'='*60}")
     
     return results

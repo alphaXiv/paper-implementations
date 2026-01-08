@@ -19,7 +19,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, Dataset
-from torch.cuda.amp import autocast, GradScaler
+from torch.amp import autocast, GradScaler
 from datasets import load_dataset
 from transformers import BertTokenizer, DistilBertModel, DistilBertTokenizer
 import wandb
@@ -28,61 +28,11 @@ from tqdm import tqdm
 sys.path.insert(0, 'src')
 from attn_is_not_all_you_need.models import GrassmannGPT, SNLIModel
 from attn_is_not_all_you_need.models.gpt2 import BaseTransformer
+from attn_is_not_all_you_need.data import Wikitext2Dataset
 
 
 
 # -----------------------------------------------------------------------------
-# Wikitext-2 Dataset
-# -----------------------------------------------------------------------------
-
-class Wikitext2Dataset(Dataset):
-    """Wikitext-2 dataset for language modeling."""
-
-    def __init__(self, split: str, tokenizer, max_seq_len: int = 256):
-        """Initialize the dataset.
-
-        Args:
-            split (str): Dataset split ('train', 'validation', 'test').
-            tokenizer: Tokenizer for encoding text.
-            max_seq_len (int): Maximum sequence length.
-        """
-        self.max_seq_len = max_seq_len
-        self.tokenizer = tokenizer
-
-        # Load wikitext-2
-        dataset = load_dataset("wikitext", "wikitext-2-raw-v1", split=split)
-
-        # Concatenate all text and tokenize
-        all_text = "\n".join([t for t in dataset["text"] if t.strip()])
-        self.tokens = tokenizer.encode(all_text)
-
-        # Create chunks
-        self.num_chunks = len(self.tokens) // max_seq_len
-        self.tokens = self.tokens[:self.num_chunks * max_seq_len]
-
-    def __len__(self):
-        """Return the number of chunks in the dataset.
-
-        Returns:
-            int: Number of chunks.
-        """
-        return self.num_chunks
-
-    def __getitem__(self, idx):
-        """Get a chunk of tokens.
-
-        Args:
-            idx (int): Index of the chunk.
-
-        Returns:
-            tuple: (input_ids, target_ids) both of shape (max_seq_len,).
-        """
-        start = idx * self.max_seq_len
-        chunk = self.tokens[start:start + self.max_seq_len]
-        x = torch.tensor(chunk, dtype=torch.long)
-        return x, x.clone()  # input and target are same for LM
-
-
 # -----------------------------------------------------------------------------
 # Training
 # -----------------------------------------------------------------------------
@@ -116,7 +66,7 @@ def train_epoch(model, dataloader, optimizer, scheduler, device, epoch, scaler=N
         optimizer.zero_grad()
         
         # Use automatic mixed precision
-        with autocast(enabled=use_amp, dtype=torch.bfloat16):
+        with autocast('cuda', enabled=use_amp, dtype=torch.bfloat16):
             _, loss = model(x, labels=y)
         
         if use_amp:
@@ -184,7 +134,7 @@ def main():
     parser.add_argument("--num-layers", type=int, default=6, help="Number of layers (paper: 6 or 12)")
     parser.add_argument("--max-seq-len", type=int, default=128, help="Max sequence length (paper: 128 or 256)")
     parser.add_argument("--batch-size", type=int, default=None, help="Batch size (auto: 32 for L=128, 16 for L=256)")
-    parser.add_argument("--epochs", type=int, default=None, help="Number of epochs (auto: 30 for wikitext, 20 for SNLI)")
+    parser.add_argument("--epochs", type=int, default=20, help="Number of epochs (auto: 30 for wikitext, 20 for SNLI)")
     parser.add_argument("--lr", type=float, default=6e-4, help="Learning rate")
     parser.add_argument("--output-dir", type=str, default=None, help="Output directory")
     args = parser.parse_args()
@@ -309,7 +259,7 @@ def train_wikitext(args, device, output_dir):
 
         # Enable automatic mixed precision for Flash Attention
         use_amp = torch.cuda.is_available()
-        scaler = GradScaler(enabled=use_amp)
+        scaler = GradScaler('cuda', enabled=use_amp)
         if use_amp:
             print("Automatic Mixed Precision (AMP) enabled - Flash Attention will be used!")
 
@@ -317,10 +267,12 @@ def train_wikitext(args, device, output_dir):
         total_steps = len(train_loader) * args.epochs
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, total_steps)
 
-        best_val_loss = float("inf")
-        best_val_ppl = float("inf")
         train_losses = []
         val_losses = []
+        
+        # Create checkpoint directory
+        ckpt_dir = output_dir / "checkpoints"
+        ckpt_dir.mkdir(exist_ok=True)
 
         epoch_pbar = tqdm(range(1, args.epochs + 1), desc="Training", unit="epoch")
         for epoch in epoch_pbar:
@@ -347,23 +299,27 @@ def train_wikitext(args, device, output_dir):
                 "val_perplexity": val_ppl,
             })
 
-            if val_loss < best_val_loss:
-                best_val_loss = val_loss
-                best_val_ppl = val_ppl
-                torch.save(model.state_dict(), output_dir / f"{model_type}_best.pt")
+            # Save checkpoint every 5 epochs
+            if epoch % 5 == 0:
+                ckpt_path = ckpt_dir / f"epoch_{epoch}.pt"
+                torch.save({
+                    "epoch": epoch,
+                    "model_state_dict": model.state_dict(),
+                    "optimizer_state_dict": optimizer.state_dict(),
+                    "scheduler_state_dict": scheduler.state_dict(),
+                    "val_loss": val_loss,
+                    "val_ppl": val_ppl,
+                }, ckpt_path)
+                print(f"Checkpoint saved: {ckpt_path}")
 
-        # Final test evaluation
-        model.load_state_dict(torch.load(output_dir / f"{model_type}_best.pt"))
+        # Final test evaluation (use last epoch model)
         test_loss, test_ppl = evaluate(model, test_loader, device)
 
         print(f"\nFinal Results for {model_type.upper()}:")
-        print(f"  Best Val Loss: {best_val_loss:.4f}, Best Val PPL: {best_val_ppl:.2f}")
         print(f"  Test Loss: {test_loss:.4f}, Test PPL: {test_ppl:.2f}")
 
         results[model_type] = {
             "num_params": num_params,
-            "best_val_loss": best_val_loss,
-            "best_val_ppl": best_val_ppl,
             "test_loss": test_loss,
             "test_ppl": test_ppl,
             "train_losses": train_losses,
@@ -372,8 +328,6 @@ def train_wikitext(args, device, output_dir):
 
         # Log final results to W&B
         wandb.log({
-            "final/best_val_loss": best_val_loss,
-            "final/best_val_perplexity": best_val_ppl,
             "final/test_loss": test_loss,
             "final/test_perplexity": test_ppl,
             "final/num_params": num_params,
@@ -389,8 +343,6 @@ def train_wikitext(args, device, output_dir):
         for k, v in results.items():
             save_results[k] = {
                 "num_params": v["num_params"],
-                "best_val_loss": float(v["best_val_loss"]),
-                "best_val_ppl": float(v["best_val_ppl"]),
                 "test_loss": float(v["test_loss"]),
                 "test_ppl": float(v["test_ppl"]),
             }

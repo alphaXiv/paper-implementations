@@ -14,6 +14,8 @@ import torch.nn.functional as F
 from transformers import DistilBertModel
 from typing import List
 
+from .grassmann import PluckerEncoder
+
 
 class TransformerNLIHead(nn.Module):
     """
@@ -113,7 +115,7 @@ class GrassmannPluckerNLIHead(nn.Module):
         stride: int = 8,
         num_layers: int = 2,
         num_heads: int = 4,
-        dff: int = 512,
+        ff_dim: int = 512,
         dropout: float = 0.1,
         num_classes: int = 3,
     ):
@@ -127,7 +129,7 @@ class GrassmannPluckerNLIHead(nn.Module):
             stride: Stride for windowing
             num_layers: Number of mixing layers
             num_heads: Number of mixing heads
-            dff: Feed-forward dimension
+            ff_dim: Feed-forward dimension
             dropout: Dropout probability
             num_classes: Number of output classes (3 for SNLI)
         """
@@ -147,7 +149,7 @@ class GrassmannPluckerNLIHead(nn.Module):
                 model_dim=dmodel,
                 reduced_dim=dproj,
                 num_heads=num_heads,
-                ff_dim=dff,
+                ff_dim=ff_dim,
                 dropout=dropout,
             )
             for _ in range(num_layers)
@@ -205,8 +207,8 @@ class GrassmannMixingLayer(nn.Module):
         # Projection to reduced dimension
         self.to_reduced = nn.Linear(model_dim, reduced_dim)
         
-        # Plucker coordinate encoder
-        self.plucker_encoder = PluckerEncoderSimple(reduced_dim)
+        # Plucker coordinate encoder (reuse from grassmann.py)
+        self.plucker_encoder = PluckerEncoder(reduced_dim)
         
         # Project Plucker coordinates back to model_dim
         self.from_plucker = nn.Linear(self.plucker_dim, model_dim)
@@ -261,45 +263,6 @@ class GrassmannMixingLayer(nn.Module):
         x = self.ln2(x + self.ffn(x))
         
         return x
-
-
-class PluckerEncoderSimple(nn.Module):
-    """Simplified Plucker encoder for NLI."""
-    
-    def __init__(self, reduced_dim: int, eps: float = 1e-8):
-        super().__init__()
-        self.reduced_dim = reduced_dim
-        self.eps = eps
-        self.plucker_dim = reduced_dim * (reduced_dim - 1) // 2
-        
-        # Create index tensors for upper triangular elements
-        indices_i, indices_j = [], []
-        for i in range(reduced_dim):
-            for j in range(i + 1, reduced_dim):
-                indices_i.append(i)
-                indices_j.append(j)
-        self.register_buffer('idx_i', torch.tensor(indices_i, dtype=torch.long))
-        self.register_buffer('idx_j', torch.tensor(indices_j, dtype=torch.long))
-        
-    def forward(self, z_current: torch.Tensor, z_past: torch.Tensor) -> torch.Tensor:
-        """Compute L2-normalized Plucker coordinates.
-        
-        Args:
-            z_current: (batch, seq, r) current vectors
-            z_past: (batch, seq, r) past vectors
-            
-        Returns:
-            p_normalized: (batch, seq, plucker_dim)
-        """
-        # p_ij = z_current_i * z_past_j - z_current_j * z_past_i
-        p = (z_current[..., self.idx_i] * z_past[..., self.idx_j] -
-             z_current[..., self.idx_j] * z_past[..., self.idx_i])
-        
-        # L2 normalize
-        norm = torch.norm(p, dim=-1, keepdim=True)
-        p_normalized = p / torch.clamp(norm, min=self.eps)
-        
-        return p_normalized
 
 
 class SNLIModel(nn.Module):

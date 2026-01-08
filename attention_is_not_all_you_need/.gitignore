@@ -49,7 +49,6 @@ wandb/
 Thumbs.db
 
 # Data cache
-data/
 .cache/
 
 # CUDA build artifacts

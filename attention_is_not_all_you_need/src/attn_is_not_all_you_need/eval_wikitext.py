@@ -7,6 +7,7 @@ and reports perplexity with 95% confidence intervals.
 
 import torch
 import argparse
+from datetime import datetime
 from transformers import BertTokenizer
 from datasets import load_dataset
 import json
@@ -15,45 +16,12 @@ import sys
 from tqdm import tqdm
 import numpy as np
 from scipy import stats
+import wandb
 
 sys.path.insert(0, 'src')
 from attn_is_not_all_you_need.models import GrassmannGPT
 from attn_is_not_all_you_need.models.gpt2 import BaseTransformer
-
-
-class Wikitext2Dataset(torch.utils.data.Dataset):
-    """Wikitext-2 dataset for language modeling."""
-
-    def __init__(self, split: str, tokenizer, max_seq_len: int = 256):
-        """Initialize the dataset.
-
-        Args:
-            split (str): Dataset split ('train', 'validation', 'test').
-            tokenizer: Tokenizer for encoding text.
-            max_seq_len (int): Maximum sequence length.
-        """
-        self.max_seq_len = max_seq_len
-        self.tokenizer = tokenizer
-
-        # Load wikitext-2
-        dataset = load_dataset("wikitext", "wikitext-2-raw-v1", split=split)
-
-        # Concatenate all text and tokenize
-        all_text = "\n".join([t for t in dataset["text"] if t.strip()])
-        self.tokens = tokenizer.encode(all_text)
-
-        # Create chunks
-        self.num_chunks = len(self.tokens) // max_seq_len
-        self.tokens = self.tokens[:self.num_chunks * max_seq_len]
-
-    def __len__(self):
-        return self.num_chunks
-
-    def __getitem__(self, idx):
-        start = idx * self.max_seq_len
-        chunk = self.tokens[start:start + self.max_seq_len]
-        x = torch.tensor(chunk, dtype=torch.long)
-        return x, x.clone()
+from attn_is_not_all_you_need.data import Wikitext2Dataset
 
 
 def load_model(model_path, model_type, vocab_size, max_seq_len, model_dim, num_layers):
@@ -135,6 +103,21 @@ def main():
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
+
+    # Initialize W&B
+    wandb.init(
+        project="attn-is-not-all-you-need-wikitext2-eval",
+        name=f"{args.model_type}_wikitext2_test_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+        config={
+            "model_type": args.model_type,
+            "model_path": args.model_path,
+            "max_seq_len": args.max_seq_len,
+            "num_layers": args.num_layers,
+            "batch_size": args.batch_size,
+            "num_runs": args.num_runs,
+            "confidence": args.confidence,
+        },
+    )
 
     # Load tokenizer
     tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
@@ -231,6 +214,16 @@ def main():
         with open(args.output_file, 'w') as f:
             json.dump(results, f, indent=2)
         print(f"\nResults saved to {args.output_file}")
+
+    # Log to W&B
+    wandb.log({
+        "test/loss_mean": loss_mean,
+        "test/loss_ci": loss_ci,
+        "test/perplexity_mean": ppl_mean,
+        "test/perplexity_ci": ppl_ci,
+    })
+    
+    wandb.finish()
 
 
 

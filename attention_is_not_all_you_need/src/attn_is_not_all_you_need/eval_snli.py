@@ -24,57 +24,7 @@ from scipy import stats
 # Add src to path
 sys.path.insert(0, 'src')
 from attn_is_not_all_you_need.models import SNLIModel
-
-
-class SNLIDataset(torch.utils.data.Dataset):
-    """SNLI dataset for classification."""
-    
-    def __init__(self, split: str, tokenizer, max_seq_len: int = 48):
-        """Initialize SNLI dataset.
-        
-        Args:
-            split: Dataset split ('train', 'validation', 'test')
-            tokenizer: Tokenizer for encoding text
-            max_seq_len: Maximum sequence length per sentence
-        """
-        self.tokenizer = tokenizer
-        self.max_seq_len = max_seq_len
-        
-        # Load SNLI
-        dataset = load_dataset("snli", split=split)
-        
-        # Filter out examples with label -1 (no gold label)
-        self.examples = []
-        for example in dataset:
-            if example["label"] != -1:
-                self.examples.append({
-                    "premise": example["premise"],
-                    "hypothesis": example["hypothesis"],
-                    "label": example["label"]
-                })
-    
-    def __len__(self):
-        return len(self.examples)
-    
-    def __getitem__(self, idx):
-        example = self.examples[idx]
-        
-        # Tokenize premise and hypothesis together (DistilBERT style)
-        encoding = self.tokenizer(
-            example["premise"],
-            example["hypothesis"],
-            max_length=self.max_seq_len * 2,  # Both sentences
-            padding="max_length",
-            truncation='only_first',  # Truncate only premise if needed
-            return_overflowing_tokens=False,
-            return_tensors="pt"
-        )
-        
-        return {
-            "input_ids": encoding["input_ids"].squeeze(0),
-            "attention_mask": encoding["attention_mask"].squeeze(0),
-            "labels": torch.tensor(example["label"], dtype=torch.long)
-        }
+from attn_is_not_all_you_need.data import SNLIDataset
 
 
 def load_model(model_path, model_type):

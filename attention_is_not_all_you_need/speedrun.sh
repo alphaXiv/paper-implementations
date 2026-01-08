@@ -130,7 +130,7 @@ run_training() {
             --model "$model" \
             --max-seq-len "$block_size" \
             --num-layers "$num_layers" \
-            --epochs 30 \
+            --epochs 20 \
             --output-dir "${OUTPUT_DIR}/${model}_${dataset}_L${block_size}_N${num_layers}"
     elif [ "$dataset" = "snli" ]; then
         echo "Training $model on $dataset..."
