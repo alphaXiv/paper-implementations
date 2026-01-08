@@ -200,5 +200,4 @@ wandb/
 logs/
 tmp.py
 *.pkl
-*.txt
 *heatmap*.jpg
