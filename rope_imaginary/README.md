@@ -19,13 +19,17 @@ After applying the rotational transformation $e^{i(m\theta)}$ to the input vecto
 
 The basis of Rope++ is that the imaginary component of the attention score contains important information and should be considered in half of the attention heads. To wrap your head around this, a brief refresher on complex numbers and linear algebra might be useful. Say I have the query vector $q = [a, b]$ and want apply a rotation of $\theta$ to the vector. To do so, I can multiply the vector with matrix 
 
-![M](https://latex.codecogs.com/svg.latex?M=\begin{bmatrix}\cos\theta&-\sin\theta\\\sin\theta&\cos\theta\end{bmatrix}) 
+<p align="center">
+  <img src="https://latex.codecogs.com/svg.latex?M=\begin{bmatrix}\cos\theta&-\sin\theta\\\sin\theta&\cos\theta\end{bmatrix}" alt="M">
+</p>
 
 This is equivalent to to treating $q = a+bi$ and multiplying it by $e^{i\theta} = cos(\theta)+isin(\theta)$ since $$(a+bi)(e^{i\theta}) = (a+bi)(cos(\theta)+isin(\theta)) = (acos(\theta) - bsin(\theta)) + i(asin(\theta) + bcos(\theta))$$
 
 Now imagine we have query $q = a+bi$ and key $k = c+di$. Taking the dot product is equivalent to $qk$ = $(a+bi)(c-di)$ = $(ac+bd) + (bc-ad)i$. Rope++ suggests that this imaginary component can be  useful, and that some of the heads should carry this information. Practically speaking, this means we can pick some heads to be 'imaginary', simply applying a 
 
-![transformation](https://latex.codecogs.com/svg.latex?\begin{bmatrix}0&1\\-1&0\end{bmatrix}) 
+<p align="center">
+  <img src="https://latex.codecogs.com/svg.latex?\begin{bmatrix}0&1\\-1&0\end{bmatrix}" alt="transformation">
+</p>
 
 transformation to the query rotational embeddings in that head. 
 
