@@ -2,28 +2,31 @@
 
 # 💭 Spurious Rewards: Rethinking Training Signals in RLVR
 
-[![Paper](https://img.shields.io/badge/Paper-000000.svg?style=for-the-badge&logo=arxiv&logoColor=white)](http://arxiv.org/abs/2506.10947)
-
 </div>
 
-Welcome to **Spurious Rewards**! This repository provides an implementation of the [Spurious Rewards](http://arxiv.org/abs/2506.10947) paper, which investigates how different reward functions in Reinforcement Learning from Verifier Rewards (RLVR) can lead to spurious correlations that improve performance without truly understanding the task. The implementation is built on top of [TTRL](https://github.com/PRIME-RL/TTRL), a framework for efficient RL training of large language models.
+Welcome to **Spurious Rewards**! This repository provides an implementation of the [Spurious Rewards](http://alphaxiv.org/abs/2506.10947) paper, which investigates how different reward functions in Reinforcement Learning from Verifier Rewards (RLVR) can lead to spurious correlations that improve performance without truly understanding the task. The implementation is built on top of [TTRL](https://github.com/PRIME-RL/TTRL), a framework for efficient RL training of large language models.
 
-This repo serves as a practical guide to reproducing the experiments from the paper, exploring how reward design impacts learning in mathematical reasoning tasks. Rather than just providing code, we structure it as an annotated walkthrough to understand the effects of different reward signals.
+This repo serves as a practical guide to reproducing the experiments from the paper, exploring how reward design impacts learning in mathematical reasoning tasks. Rather than just providing code, we structure it as an annotated walkthrough to understand the effects of different reward signals. We also had a lot of hassle trying to set up and run the original codebase, so we've provided a simple speedrun.sh (for training) and inference.sh script that work out of the box on a [Lambda Labs](https://lambda.ai/) 8xH100 instance.
 
 ## What are we trying to solve?
 
-Training language models for complex reasoning tasks like mathematics is challenging. Traditional supervised fine-tuning can achieve high accuracy on training data, but often fails to generalize to harder problems or different formats. Reinforcement Learning from Human Feedback (RLHF) has shown promise, but the choice of reward function critically affects what the model actually learns.
+Training language models for mathematical reasoning is challenging. Supervised fine-tuning (SFT) achieves high accuracy on training data but often fails to generalize to harder problems or different formats. 
 
-The key insight of this work is that **reward functions can create spurious correlations** - patterns that help the model score well on the reward without truly solving the underlying task. For example:
+Reinforcement Learning from Verifier Rewards (RLVR) addresses this by training models with automated verifiers that check answer correctness. Unlike RLHF which uses human preferences, RLVR uses programmatic verification of final answers. There's been a surge of literature proposing different methods for RL fine-tuning all showcasing promising results. This paper poses the question: how much of these improvements are due to RL itself and how much are due to baked-in knowledge during pre-training? 
 
-- A reward that gives points for using Python code might encourage models to mention Python even when it's unnecessary
-- Format-based rewards might prioritize box notation over correct mathematics
-- Random rewards can still improve performance through unintended correlations
+This paper illustrates this by showing, on certain models, **even weak or random reward signals improve performance**. Models trained with format-only rewards, Python-mentioning rewards, or even 50% random rewards still get better at math. Why?
 
-We need to understand:
-1. **How different rewards affect learning trajectories**
-2. **Which rewards lead to genuine improvement vs. spurious gains**
-3. **How to design reward functions that promote true mathematical understanding**
+This work shows that RLVR primarily **elicits pre-existing capabilities** rather than teaching new reasoning skills. Similar conclusions are drawn in papers like [On the Interplay of Pre-Training, Mid-Training, and RL on Reasoning Language Models](https://www.alphaxiv.org/abs/2512.07783) which is also a fantastic read. The key findings:
+
+- RLVR success depends heavily on what the base model already knows from pretraining (e.g., Qwen's strong code reasoning)
+- Of all the models tried, Qwen sees the most improvement. The takeaway here is to take some papers with a grain of salt when they propose tweaks/variations/optimizations for RL fine-tuning. It's relatively easy to show improvements fine-tuning Qwen.
+- Algorithmic artifacts like GRPO's clipping mechanism amplify existing high-probability behaviors, explaining why even random rewards work.
+
+An LLM-generated analogy that I actually found pretty useful to understand this paper is as follows: say you're an English teacher with a smart but lazy student in your class. They are constantly receiving Fs for writing two sentences and then calling it quits. If you can incentivize them to simply write more (without a care about what they are actually writing), chances are their grade is going to improve dramatically. Let's consider an actual example output from the base Qwen model compared to a variant where the model is fine-tuned to always include a boxed answer:
+
+![Example comparison](images/example.png)
+
+Even though we don't give qwen a proper reward if the answer is right, just encouraging it to leave a boxed answer goes a long way! The knowledge was already embedded in pre-training, but the RL fine-tuning can elicit this out. 
 
 ## Built on TTRL
 
