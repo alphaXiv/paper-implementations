@@ -270,6 +270,10 @@ def train_wikitext(args, device, output_dir):
         train_losses = []
         val_losses = []
         
+        # Track best validation perplexity
+        best_val_ppl = float('inf')
+        best_epoch = 0
+        
         # Create checkpoint directory
         ckpt_dir = output_dir / "checkpoints"
         ckpt_dir.mkdir(exist_ok=True)
@@ -287,6 +291,7 @@ def train_wikitext(args, device, output_dir):
                 "train_loss": f"{train_loss:.4f}",
                 "val_loss": f"{val_loss:.4f}",
                 "val_ppl": f"{val_ppl:.2f}",
+                "best_ppl": f"{best_val_ppl:.2f}",
             })
 
             print(f"Epoch {epoch}: Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Val PPL: {val_ppl:.2f}")
@@ -311,15 +316,37 @@ def train_wikitext(args, device, output_dir):
                     "val_ppl": val_ppl,
                 }, ckpt_path)
                 print(f"Checkpoint saved: {ckpt_path}")
+            
+            # Save best checkpoint
+            if val_ppl < best_val_ppl:
+                best_val_ppl = val_ppl
+                best_epoch = epoch
+                best_ckpt_path = ckpt_dir / "best.pt"
+                torch.save({
+                    "epoch": epoch,
+                    "model_state_dict": model.state_dict(),
+                    "optimizer_state_dict": optimizer.state_dict(),
+                    "scheduler_state_dict": scheduler.state_dict(),
+                    "val_loss": val_loss,
+                    "val_ppl": val_ppl,
+                }, best_ckpt_path)
+                print(f"✨ New best validation PPL: {val_ppl:.2f} at epoch {epoch} - saved to {best_ckpt_path}")
 
-        # Final test evaluation (use last epoch model)
+        # Final test evaluation (use best checkpoint model)
+        print(f"\nLoading best checkpoint from epoch {best_epoch} (Val PPL: {best_val_ppl:.2f})...")
+        best_checkpoint = torch.load(ckpt_dir / "best.pt")
+        model.load_state_dict(best_checkpoint['model_state_dict'])
+        
         test_loss, test_ppl = evaluate(model, test_loader, device)
 
         print(f"\nFinal Results for {model_type.upper()}:")
+        print(f"  Best Val PPL: {best_val_ppl:.2f} (epoch {best_epoch})")
         print(f"  Test Loss: {test_loss:.4f}, Test PPL: {test_ppl:.2f}")
 
         results[model_type] = {
             "num_params": num_params,
+            "best_val_ppl": float(best_val_ppl),
+            "best_epoch": best_epoch,
             "test_loss": test_loss,
             "test_ppl": test_ppl,
             "train_losses": train_losses,
@@ -328,6 +355,8 @@ def train_wikitext(args, device, output_dir):
 
         # Log final results to W&B
         wandb.log({
+            "final/best_val_ppl": best_val_ppl,
+            "final/best_epoch": best_epoch,
             "final/test_loss": test_loss,
             "final/test_perplexity": test_ppl,
             "final/num_params": num_params,
@@ -343,6 +372,8 @@ def train_wikitext(args, device, output_dir):
         for k, v in results.items():
             save_results[k] = {
                 "num_params": v["num_params"],
+                "best_val_ppl": float(v["best_val_ppl"]),
+                "best_epoch": v["best_epoch"],
                 "test_loss": float(v["test_loss"]),
                 "test_ppl": float(v["test_ppl"]),
             }
@@ -357,11 +388,11 @@ def train_wikitext(args, device, output_dir):
         g = results["grassmann"]
         t = results["transformer"]
 
-        print(f"{'Model':<20} {'Params':<12} {'Val PPL':<12} {'Test PPL':<12}")
-        print("-" * 56)
-        print(f"{'Grassmann':<20} {g['num_params']/1e6:.2f}M{'':<6} {g['best_val_ppl']:<12.2f} {g['test_ppl']:<12.2f}")
-        print(f"{'Transformer':<20} {t['num_params']/1e6:.2f}M{'':<6} {t['best_val_ppl']:<12.2f} {t['test_ppl']:<12.2f}")
-        print("-" * 56)
+        print(f"{'Model':<20} {'Params':<12} {'Best Val PPL':<14} {'Test PPL':<12}")
+        print("-" * 58)
+        print(f"{'Grassmann':<20} {g['num_params']/1e6:.2f}M{'':<6} {g['best_val_ppl']:<14.2f} {g['test_ppl']:<12.2f}")
+        print(f"{'Transformer':<20} {t['num_params']/1e6:.2f}M{'':<6} {t['best_val_ppl']:<14.2f} {t['test_ppl']:<12.2f}")
+        print("-" * 58)
 
         ppl_ratio = g["test_ppl"] / t["test_ppl"]
         gap_percent = (ppl_ratio - 1) * 100

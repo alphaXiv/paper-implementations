@@ -240,6 +240,10 @@ def main():
         total_steps = len(train_loader) * args.epochs
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, total_steps)
         
+        # Track best validation accuracy
+        best_val_acc = 0.0
+        best_epoch = 0
+        
         # Create checkpoint directory
         ckpt_dir = output_dir / "checkpoints"
         ckpt_dir.mkdir(exist_ok=True)
@@ -253,6 +257,7 @@ def main():
                 "epoch": epoch,
                 "train_acc": f"{train_acc:.4f}",
                 "val_acc": f"{val_acc:.4f}",
+                "best_acc": f"{best_val_acc:.4f}",
             })
             
             print(f"Epoch {epoch}: Train Acc: {train_acc:.4f}, Val Acc: {val_acc:.4f}, Val Loss: {val_loss:.4f}")
@@ -278,19 +283,39 @@ def main():
                     "val_loss": val_loss,
                 }, ckpt_path)
                 print(f"Checkpoint saved: {ckpt_path}")
+            
+            # Save best checkpoint
+            if val_acc > best_val_acc:
+                best_val_acc = val_acc
+                best_epoch = epoch
+                best_ckpt_path = ckpt_dir / "best.pt"
+                torch.save({
+                    "epoch": epoch,
+                    "model_state_dict": model.state_dict(),
+                    "optimizer_state_dict": optimizer.state_dict(),
+                    "scheduler_state_dict": scheduler.state_dict(),
+                    "val_acc": val_acc,
+                    "val_loss": val_loss,
+                }, best_ckpt_path)
+                print(f"✨ New best validation accuracy: {val_acc:.4f} ({val_acc*100:.2f}%) at epoch {epoch} - saved to {best_ckpt_path}")
         
         print(f"\nFinal Results for {model_type.upper()}:")
+        print(f"  Best Val Acc: {best_val_acc:.4f} ({best_val_acc*100:.2f}%) at epoch {best_epoch}")
         print(f"  Training complete. Checkpoints saved in {ckpt_dir}")
-        print(f"  Note: Run eval_snli.py with checkpoint for test accuracy")
+        print(f"  Note: Run eval_snli.py with best checkpoint for test accuracy")
         
         results[model_type] = {
             "num_params": num_params,
+            "best_val_acc": float(best_val_acc),
+            "best_epoch": best_epoch,
             "final_val_acc": val_acc,
             "final_val_loss": val_loss,
         }
         
         # Log final results to W&B
         wandb.log({
+            "final/best_val_acc": best_val_acc,
+            "final/best_epoch": best_epoch,
             "final/val_acc": val_acc,
             "final/val_loss": val_loss,
             "final/num_params": num_params,

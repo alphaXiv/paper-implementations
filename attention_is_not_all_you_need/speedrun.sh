@@ -1,3 +1,4 @@
+
 #!/bin/bash
 
 set -e  # Exit on error
@@ -8,9 +9,10 @@ set -e  # Exit on error
 # This script provides a one-file solution for training and evaluating
 # Attention Is Not All You Need models on various datasets.
 #
-# Usage: ./speedrun.sh [MODEL] [DATASET]
+# Usage: ./speedrun.sh [MODEL] [DATASET] [MODE]
 #   MODEL: transformer | grassmann | all
 #   DATASET: wikitext | snli | all
+#   MODE: train | eval | both (default: both)
 #
 # Paper Specifications:
 #   - Wikitext-2: Trains with BOTH L=128 and L=256 block sizes (paper spec)
@@ -18,12 +20,19 @@ set -e  # Exit on error
 #   - For 12-layer models: LAYER_DEPTHS_OVERRIDE=6,12 ./speedrun.sh all wikitext
 #
 # Examples:
-#   ./speedrun.sh grassmann wikitext     # Train Grassmann on Wikitext (L=128 & L=256)
-#   ./speedrun.sh transformer snli       # Train Transformer on SNLI
-#   ./speedrun.sh all wikitext           # Train both models on Wikitext (L=128 & L=256)
-#   ./speedrun.sh all snli               # Train both models on SNLI
-#   ./speedrun.sh grassmann all          # Train Grassmann on all datasets
-#   ./speedrun.sh all all                # Train all models on all datasets
+#   ./speedrun.sh grassmann wikitext     # Train & eval Grassmann on Wikitext (L=128 & L=256)
+#   ./speedrun.sh transformer snli       # Train & eval Transformer on SNLI
+#   ./speedrun.sh all wikitext           # Train & eval both models on Wikitext (L=128 & L=256)
+#   ./speedrun.sh all snli               # Train & eval both models on SNLI
+#   ./speedrun.sh grassmann all          # Train & eval Grassmann on all datasets
+#   ./speedrun.sh all all                # Train & eval all models on all datasets
+#   
+#   # Eval only mode (use existing checkpoints):
+#   ./speedrun.sh all wikitext eval      # Eval only - all models on Wikitext
+#   ./speedrun.sh grassmann snli eval    # Eval only - Grassmann on SNLI
+#   
+#   # Train only (skip eval):
+#   ./speedrun.sh all wikitext train     # Train only - all models on Wikitext
 #   
 #   # For 12-layer models:
 #   LAYER_DEPTHS_OVERRIDE=12 ./speedrun.sh all wikitext
@@ -48,7 +57,14 @@ fi
 # Configuration
 MODEL=${1:-"grassmann"}  # Default to Grassmann
 DATASET=${2:-"wikitext"}  # Default to Wikitext-2
+MODE=${3:-"both"}  # Default to both train and eval
 NUM_GPUS=$DETECTED_GPUS  # Use all available GPUs
+
+# Validate mode
+if [[ "$MODE" != "train" && "$MODE" != "eval" && "$MODE" != "both" ]]; then
+    echo "ERROR: Invalid MODE '$MODE'. Must be 'train', 'eval', or 'both'."
+    exit 1
+fi
 
 echo "=========================================="
 echo "Attention Is Not All You Need Training & Evaluation"
@@ -56,6 +72,7 @@ echo "=========================================="
 echo "Detected GPUs: $DETECTED_GPUS"
 echo "Model(s): $MODEL"
 echo "Dataset(s): $DATASET"
+echo "Mode: $MODE"
 echo "Using GPUs: $NUM_GPUS"
 echo "=========================================="
 echo ""
@@ -74,17 +91,22 @@ if ! command -v uv &> /dev/null; then
 fi
 
 # Create virtual environment if it doesn't exist
-if [ ! -d ".venv" ]; then
+VENV_DIR=".venv-attn-is-not-all-you-need"
+if [ ! -d "$VENV_DIR" ]; then
     echo "Creating virtual environment..."
-    uv venv
+    uv venv "$VENV_DIR"
+    
+    # Activate virtual environment
+    source "$VENV_DIR/bin/activate"
+    
+    # Install dependencies only on first creation
+    echo "Installing dependencies..."
+    uv pip install -e .
+else
+    echo "Virtual environment already exists, skipping dependency installation..."
+    # Activate virtual environment
+    source "$VENV_DIR/bin/activate"
 fi
-
-# Activate virtual environment
-source .venv/bin/activate
-
-# Install dependencies
-echo "Installing dependencies..."
-uv pip install -e .
 
 # Login to Weights & Biases - REQUIRED
 if [ -z "$WANDB_API_KEY" ]; then
@@ -114,12 +136,29 @@ echo "Data will be downloaded automatically during training..."
 # Step 2: Training
 # ============================================================================
 
-echo "[Step 2/4] Starting training..."
-
-
-# Create output directory with timestamp
-TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
-OUTPUT_DIR="outputs/${TIMESTAMP}"
+if [[ "$MODE" == "eval" ]]; then
+    # For eval-only mode, use the most recent output directory
+    echo "[Step 2/4] Skipping training (eval-only mode)..."
+    
+    # Find the most recent output directory
+    LATEST_OUTPUT=$(ls -td outputs/*/ 2>/dev/null | head -1)
+    if [ -z "$LATEST_OUTPUT" ]; then
+        echo "ERROR: No existing output directory found. Please train models first or specify a different mode."
+        exit 1
+    fi
+    OUTPUT_DIR="${LATEST_OUTPUT%/}"  # Remove trailing slash
+    echo "Using existing output directory: $OUTPUT_DIR"
+    echo ""
+    echo "Available model directories:"
+    ls -1 "$OUTPUT_DIR" | grep -E "^(transformer|grassmann)_" | head -10
+    echo ""
+else
+    echo "[Step 2/4] Starting training..."
+    
+    # Create output directory with timestamp
+    TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
+    OUTPUT_DIR="outputs/${TIMESTAMP}"
+fi
 
 # Function to run training for a specific model and dataset
 run_training() {
@@ -168,37 +207,48 @@ LAYER_DEPTHS=(6 12)       # Default to 6 layers (can be overridden with env var)
 
 # Allow user to specify layer depths via environment variable
 if [ -n "$LAYER_DEPTHS_OVERRIDE" ]; then
-    IFS=',' read -ra LAYER_DEPTHS <<< "$LAYER_DEPTHS_OVERRIDE"mk
+    IFS=',' read -ra LAYER_DEPTHS <<< "$LAYER_DEPTHS_OVERRIDE"
 fi
 
-for model in "${MODELS[@]}"; do
-    for dataset in "${DATASETS[@]}"; do
-        if [ "$dataset" = "wikitext" ]; then
-            # For Wikitext, run with both block sizes (L=128 and L=256)
-            for block_size in "${BLOCK_SIZES[@]}"; do
-                for num_layers in "${LAYER_DEPTHS[@]}"; do
-                    run_training "$model" "$dataset" "$block_size" "$num_layers"
+# Run training only if not in eval-only mode
+if [[ "$MODE" != "eval" ]]; then
+    for model in "${MODELS[@]}"; do
+        for dataset in "${DATASETS[@]}"; do
+            if [ "$dataset" = "wikitext" ]; then
+                # For Wikitext, run with both block sizes (L=128 and L=256)
+                for block_size in "${BLOCK_SIZES[@]}"; do
+                    for num_layers in "${LAYER_DEPTHS[@]}"; do
+                        run_training "$model" "$dataset" "$block_size" "$num_layers"
+                    done
                 done
-            done
-        else
-            # For SNLI, block size and layers don't apply
-            run_training "$model" "$dataset" "" ""
-        fi
+            else
+                # For SNLI, block size and layers don't apply
+                run_training "$model" "$dataset" "" ""
+            fi
+        done
     done
-done
+fi
 
 # ============================================================================
 # Step 3: Evaluation
 # ============================================================================
 
-echo "[Step 3/4] Running evaluation..."
+# Skip evaluation if in train-only mode
+if [[ "$MODE" == "train" ]]; then
+    echo "[Step 3/4] Skipping evaluation (train-only mode)..."
+else
+    echo "[Step 3/4] Running evaluation..."
+    
+    # Run analysis script
+    echo "Running performance analysis..."
+    python scripts/analyze.py --results_dir "$OUTPUT_DIR"
+    
+    # Evaluate each trained model on appropriate test datasets
+    echo "Running test dataset evaluations..."
+fi
 
-# Run analysis script
-echo "Running performance analysis..."
-python scripts/analyze.py --results_dir "$OUTPUT_DIR"
-
-# Evaluate each trained model on appropriate test datasets
-echo "Running test dataset evaluations..."
+# Only run evaluation loop if not in train-only mode
+if [[ "$MODE" != "train" ]]; then
 for model in "${MODELS[@]}"; do
     for dataset in "${DATASETS[@]}"; do
         if [ "$dataset" = "wikitext" ]; then
@@ -208,38 +258,25 @@ for model in "${MODELS[@]}"; do
                     MODEL_DIR="${OUTPUT_DIR}/${model}_${dataset}_L${block_size}_N${num_layers}"
                     if [ -d "$MODEL_DIR" ]; then
                         CHECKPOINT=""
-                        # Look for checkpoint files - use the latest epoch checkpoint
-                        if [ -d "${MODEL_DIR}/checkpoints" ]; then
-                            # Find the latest epoch checkpoint (highest epoch number)
-                            LATEST_EPOCH=$(ls "${MODEL_DIR}/checkpoints"/epoch_*.pt 2>/dev/null | sed 's/.*epoch_\([0-9]*\)\.pt/\1/' | sort -n | tail -1)
-                            if [ -n "$LATEST_EPOCH" ]; then
-                                CHECKPOINT="${MODEL_DIR}/checkpoints/epoch_${LATEST_EPOCH}.pt"
-                            fi
-                        elif [ -f "${MODEL_DIR}/${model}_best.pt" ]; then
-                            CHECKPOINT="${MODEL_DIR}/${model}_best.pt"
-                        elif [ -f "${MODEL_DIR}/best_model.pt" ]; then
-                            CHECKPOINT="${MODEL_DIR}/best_model.pt"
+                        # Only use best.pt checkpoint
+                        if [ -f "${MODEL_DIR}/checkpoints/best.pt" ]; then
+                            CHECKPOINT="${MODEL_DIR}/checkpoints/best.pt"
+                        else
+                            echo "WARNING: No best.pt checkpoint found in ${MODEL_DIR}/checkpoints/"
+                            echo "         Skipping evaluation. Please ensure training completed successfully."
+                            continue
                         fi
                         
                         if [ -n "$CHECKPOINT" ] && [ -f "$CHECKPOINT" ]; then
-                            # Run separate Wikitext test evaluation with 5 runs for CI
-                            echo "Evaluating $model on Wikitext-2 test split (L=$block_size, N=$num_layers) - 5 runs for 95% CI..."
+                            # Run Wikitext test evaluation (single run - eval is deterministic)
+                            echo "Evaluating $model on Wikitext-2 test split (L=$block_size, N=$num_layers)..."
                             python src/attn_is_not_all_you_need/eval_wikitext.py \
                                 --model_path "$CHECKPOINT" \
                                 --model_type "$model" \
                                 --max-seq-len "$block_size" \
                                 --num-layers "$num_layers" \
-                                --num_runs 5 \
+                                --num_runs 1 \
                                 --output_file "${MODEL_DIR}/wikitext_test_results.json"
-                            
-                            # Also evaluate on SNLI test split with 5 runs for CI
-                            echo "Evaluating $model (trained on Wikitext L=$block_size) on SNLI test split - 5 runs for 95% CI..."
-                            python src/attn_is_not_all_you_need/eval_snli.py \
-                                --model_path "$CHECKPOINT" \
-                                --model_type "$model" \
-                                --split test \
-                                --num_runs 5 \
-                                --output_file "${MODEL_DIR}/snli_test_results.json"
                         fi
                     fi
                 done
@@ -249,46 +286,34 @@ for model in "${MODELS[@]}"; do
             MODEL_DIR="${OUTPUT_DIR}/${model}_${dataset}"
             if [ -d "$MODEL_DIR" ]; then
                 CHECKPOINT=""
-                # Look for checkpoint files - use the latest epoch checkpoint
-                if [ -d "${MODEL_DIR}/checkpoints" ]; then
-                    # Find the latest epoch checkpoint (highest epoch number)
-                    LATEST_EPOCH=$(ls "${MODEL_DIR}/checkpoints"/epoch_*.pt 2>/dev/null | sed 's/.*epoch_\([0-9]*\)\.pt/\1/' | sort -n | tail -1)
-                    if [ -n "$LATEST_EPOCH" ]; then
-                        CHECKPOINT="${MODEL_DIR}/checkpoints/epoch_${LATEST_EPOCH}.pt"
-                    fi
-                elif [ -f "${MODEL_DIR}/${model}_best.pt" ]; then
-                    CHECKPOINT="${MODEL_DIR}/${model}_best.pt"
-                elif [ -f "${MODEL_DIR}/best_model.pt" ]; then
-                    CHECKPOINT="${MODEL_DIR}/best_model.pt"
-                elif [ -f "${MODEL_DIR}/snli_${model}_best.pt" ]; then
-                    CHECKPOINT="${MODEL_DIR}/snli_${model}_best.pt"
+                # Only use best.pt checkpoint
+                if [ -f "${MODEL_DIR}/checkpoints/best.pt" ]; then
+                    CHECKPOINT="${MODEL_DIR}/checkpoints/best.pt"
+                else
+                    echo "WARNING: No best.pt checkpoint found in ${MODEL_DIR}/checkpoints/"
+                    echo "         Skipping evaluation. Please ensure training completed successfully."
+                    continue
                 fi
                 
                 if [ -n "$CHECKPOINT" ] && [ -f "$CHECKPOINT" ]; then
-                    # SNLI test evaluation with 5 runs for CI
-                    echo "Evaluating $model on SNLI test split - 5 runs for 95% CI..."
+                    # SNLI test evaluation
+                    echo "Evaluating $model on SNLI test split..."
                     python src/attn_is_not_all_you_need/eval_snli.py \
                         --model_path "$CHECKPOINT" \
                         --model_type "$model" \
                         --split test \
-                        --num_runs 5 \
+                        --num_runs 1 \
                         --output_file "${MODEL_DIR}/snli_test_results.json"
-                    
-                    # Optional: Also evaluate on validation for comparison (5 runs for CI)
-                    echo "Evaluating $model on SNLI validation split - 5 runs for 95% CI..."
-                    python src/attn_is_not_all_you_need/eval_snli.py \
-                        --model_path "$CHECKPOINT" \
-                        --model_type "$model" \
-                        --split validation \
-                        --num_runs 5 \
-                        --output_file "${MODEL_DIR}/snli_val_results.json"
                 else
-                    echo "Warning: Checkpoint not found for $model on $dataset"
+                    echo "Warning: Checkpoint not found for $model on $dataset in $MODEL_DIR"
                 fi
+            else
+                echo "Warning: Model directory not found: $MODEL_DIR"
             fi
         fi
     done
 done
+fi  # End of evaluation mode check
 
 # ============================================================================
 # Step 4: Results Summary

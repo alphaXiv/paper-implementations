@@ -59,9 +59,13 @@ def load_model(model_path, model_type, vocab_size, max_seq_len, model_dim, num_l
     # Load checkpoint
     checkpoint = torch.load(model_path, map_location='cpu')
     if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
-        model.load_state_dict(checkpoint['model_state_dict'])
+        state_dict = checkpoint['model_state_dict']
     else:
-        model.load_state_dict(checkpoint)
+        state_dict = checkpoint
+    
+    # Remove _orig_mod. prefix if present (from torch.compile)
+    state_dict = {k.replace('_orig_mod.', ''): v for k, v in state_dict.items()}
+    model.load_state_dict(state_dict)
     
     model.eval()
     return model
@@ -166,23 +170,33 @@ def main():
         print(f"Run {run_idx + 1} - Loss: {test_loss:.4f}, Perplexity: {test_ppl:.2f}")
 
     # Calculate statistics
-    def calculate_ci(values, confidence=0.95):
-        """Calculate mean and confidence interval."""
-        n = len(values)
-        mean = np.mean(values)
-        std_err = stats.sem(values)
-        ci = std_err * stats.t.ppf((1 + confidence) / 2, n - 1)
-        return mean, ci, std_err
-
-    loss_mean, loss_ci, loss_std_err = calculate_ci(all_losses, args.confidence)
-    ppl_mean, ppl_ci, ppl_std_err = calculate_ci(all_ppls, args.confidence)
-
-    # Print results with CI
+    loss_mean = np.mean(all_losses)
+    ppl_mean = np.mean(all_ppls)
+    
+    # Print results
     print(f"\n{'='*70}")
-    print(f"Wikitext-2 Test Results - {args.num_runs} runs")
-    print(f"{'='*70}")
-    print(f"Loss:       {loss_mean:.4f} ± {loss_ci:.4f} (95% CI: [{loss_mean - loss_ci:.4f}, {loss_mean + loss_ci:.4f}])")
-    print(f"Perplexity: {ppl_mean:.2f} ± {ppl_ci:.2f} (95% CI: [{ppl_mean - ppl_ci:.2f}, {ppl_mean + ppl_ci:.2f}])")
+    if args.num_runs == 1:
+        print(f"Wikitext-2 Test Results")
+        print(f"{'='*70}")
+        print(f"Loss:       {loss_mean:.4f}")
+        print(f"Perplexity: {ppl_mean:.2f}")
+    else:
+        # Calculate CI only for multiple runs
+        def calculate_ci(values, confidence=0.95):
+            """Calculate mean and confidence interval."""
+            n = len(values)
+            mean = np.mean(values)
+            std_err = stats.sem(values)
+            ci = std_err * stats.t.ppf((1 + confidence) / 2, n - 1)
+            return mean, ci, std_err
+
+        loss_mean, loss_ci, loss_std_err = calculate_ci(all_losses, args.confidence)
+        ppl_mean, ppl_ci, ppl_std_err = calculate_ci(all_ppls, args.confidence)
+        
+        print(f"Wikitext-2 Test Results - {args.num_runs} runs")
+        print(f"{'='*70}")
+        print(f"Loss:       {loss_mean:.4f} ± {loss_ci:.4f} (95% CI: [{loss_mean - loss_ci:.4f}, {loss_mean + loss_ci:.4f}])")
+        print(f"Perplexity: {ppl_mean:.2f} ± {ppl_ci:.2f} (95% CI: [{ppl_mean - ppl_ci:.2f}, {ppl_mean + ppl_ci:.2f}])")
     print(f"{'='*70}")
 
     # Save results
@@ -191,24 +205,34 @@ def main():
         "max_seq_len": args.max_seq_len,
         "num_layers": args.num_layers,
         "num_runs": args.num_runs,
-        "confidence_level": args.confidence,
         "test_loss": {
             "mean": float(loss_mean),
-            "ci": float(loss_ci),
-            "std_err": float(loss_std_err),
-            "ci_lower": float(loss_mean - loss_ci),
-            "ci_upper": float(loss_mean + loss_ci),
             "all_runs": [float(l) for l in all_losses],
         },
         "test_perplexity": {
             "mean": float(ppl_mean),
+            "all_runs": [float(p) for p in all_ppls],
+        },
+    }
+    
+    # Add CI stats only for multiple runs
+    if args.num_runs > 1:
+        loss_ci = loss_std_err * stats.t.ppf((1 + args.confidence) / 2, args.num_runs - 1)
+        ppl_ci = ppl_std_err * stats.t.ppf((1 + args.confidence) / 2, args.num_runs - 1)
+        
+        results["confidence_level"] = args.confidence
+        results["test_loss"].update({
+            "ci": float(loss_ci),
+            "std_err": float(loss_std_err),
+            "ci_lower": float(loss_mean - loss_ci),
+            "ci_upper": float(loss_mean + loss_ci),
+        })
+        results["test_perplexity"].update({
             "ci": float(ppl_ci),
             "std_err": float(ppl_std_err),
             "ci_lower": float(ppl_mean - ppl_ci),
             "ci_upper": float(ppl_mean + ppl_ci),
-            "all_runs": [float(p) for p in all_ppls],
-        },
-    }
+        })
 
     if args.output_file:
         with open(args.output_file, 'w') as f:
@@ -216,12 +240,16 @@ def main():
         print(f"\nResults saved to {args.output_file}")
 
     # Log to W&B
-    wandb.log({
-        "test/loss_mean": loss_mean,
-        "test/loss_ci": loss_ci,
-        "test/perplexity_mean": ppl_mean,
-        "test/perplexity_ci": ppl_ci,
-    })
+    wandb_metrics = {
+        "test/loss": loss_mean,
+        "test/perplexity": ppl_mean,
+    }
+    if args.num_runs > 1:
+        wandb_metrics.update({
+            "test/loss_ci": loss_ci,
+            "test/perplexity_ci": ppl_ci,
+        })
+    wandb.log(wandb_metrics)
     
     wandb.finish()
 
