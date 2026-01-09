@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spurious-rewards"
+version = "0.1.0"
+description = "Paper implementations for spurious rewards research"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "alphaXiv"}
+]
+
+dependencies = [
+    "torch>=2.0.0",
+    "einops",
+    "tqdm",
+    "coolname",
+    "pydantic>=2.0.0",
+    "argdantic",
+    "wandb",
+    "omegaconf",
+    "hydra-core",
+    "huggingface_hub",
+    "packaging",
+    "numba",
+    "ninja",
+    "wandb"
+]
