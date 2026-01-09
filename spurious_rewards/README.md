@@ -69,29 +69,10 @@ The key finding is that suboptimal rewards can still improve performance through
 ## Experimental Setup
 
 The experiments use:
-- **Base Model**: Qwen2.5-Math-7B
+- **Base Model**: Qwen2.5-Math-1.5B
 - **Dataset**: DeepScaleR (filtered mathematical problems)
 - **Training**: GRPO/PPO algorithms
 - **Evaluation**: MATH-500, AIME-2024/2025, AMC benchmarks
-
-## Architecture Overview
-
-The codebase follows a similar hybrid architecture to Agent-R1:
-
-### Training Scripts
-Located in `src/spurious_rewards/code/scripts/`:
-- `rlvr_deepscaler_grpo_qwen_ground_truth.sh`: Main GRPO training script
-- `rlvr_deepscaler_grpo_qwen_1.5b_ground_truth.sh`: Main GRPO training script
-- 
-### Data Processing
-- `data/`: Contains processed datasets
-- `scripts/`: Data preparation and labeling scripts
-- Supports different data sources via the `TASK` variable
-
-### Evaluation Framework
-- `eval_checkpoint.py`: Benchmark evaluation script
-- `export_checkpoint.py`: Convert DeepSpeed checkpoints to HF format
-- Supports multiple datasets with configurable temperature/shards
 
 ## Data and Results
 
