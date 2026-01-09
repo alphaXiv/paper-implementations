@@ -104,7 +104,7 @@ for metric_base in ['avg', 'pass']:
     plt.xlabel('Checkpoint Step', fontsize=13, fontweight='bold')
     plt.ylabel(f'{metric_base}@k', fontsize=13, fontweight='bold')
     plt.title(f'{metric_base}@k across checkpoints for different datasets', fontsize=15, fontweight='bold')
-    plt.legend(fontsize=11, loc='best', framealpha=0.95)
+    plt.legend(fontsize=11, loc='upper right', bbox_to_anchor=(1.0, 1.0), framealpha=0.95)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.savefig(f'{metric_base}_performance.png', dpi=150, bbox_inches='tight')
