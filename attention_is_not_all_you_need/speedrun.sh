@@ -86,14 +86,20 @@ source .venv/bin/activate
 echo "Installing dependencies..."
 uv pip install -e .
 
-# Login to Weights & Biases if API key is set
-if [ -n "$WANDB_API_KEY" ]; then
-    echo "Logging in to Weights & Biases..."
-    wandb login "$WANDB_API_KEY"
-    echo "W&B login successful!"
-else
-    echo "WANDB_API_KEY not set. Skipping W&B login. Set it to enable logging."
+# Login to Weights & Biases - REQUIRED
+if [ -z "$WANDB_API_KEY" ]; then
+    echo "ERROR: WANDB_API_KEY is not set!"
+    echo "This script requires Weights & Biases for experiment tracking."
+    echo "Please set your WANDB_API_KEY environment variable:"
+    echo "  export WANDB_API_KEY=your_api_key_here"
+    echo ""
+    echo "Get your API key from: https://wandb.ai/authorize"
+    exit 1
 fi
+
+echo "Logging in to Weights & Biases..."
+wandb login "$WANDB_API_KEY"
+echo "W&B login successful!"
 
 # ============================================================================
 # Step 1: Data Preparation
@@ -162,7 +168,7 @@ LAYER_DEPTHS=(6 12)       # Default to 6 layers (can be overridden with env var)
 
 # Allow user to specify layer depths via environment variable
 if [ -n "$LAYER_DEPTHS_OVERRIDE" ]; then
-    IFS=',' read -ra LAYER_DEPTHS <<< "$LAYER_DEPTHS_OVERRIDE"
+    IFS=',' read -ra LAYER_DEPTHS <<< "$LAYER_DEPTHS_OVERRIDE"mk
 fi
 
 for model in "${MODELS[@]}"; do
@@ -202,13 +208,20 @@ for model in "${MODELS[@]}"; do
                     MODEL_DIR="${OUTPUT_DIR}/${model}_${dataset}_L${block_size}_N${num_layers}"
                     if [ -d "$MODEL_DIR" ]; then
                         CHECKPOINT=""
-                        if [ -f "${MODEL_DIR}/${model}_best.pt" ]; then
+                        # Look for checkpoint files - use the latest epoch checkpoint
+                        if [ -d "${MODEL_DIR}/checkpoints" ]; then
+                            # Find the latest epoch checkpoint (highest epoch number)
+                            LATEST_EPOCH=$(ls "${MODEL_DIR}/checkpoints"/epoch_*.pt 2>/dev/null | sed 's/.*epoch_\([0-9]*\)\.pt/\1/' | sort -n | tail -1)
+                            if [ -n "$LATEST_EPOCH" ]; then
+                                CHECKPOINT="${MODEL_DIR}/checkpoints/epoch_${LATEST_EPOCH}.pt"
+                            fi
+                        elif [ -f "${MODEL_DIR}/${model}_best.pt" ]; then
                             CHECKPOINT="${MODEL_DIR}/${model}_best.pt"
                         elif [ -f "${MODEL_DIR}/best_model.pt" ]; then
                             CHECKPOINT="${MODEL_DIR}/best_model.pt"
                         fi
                         
-                        if [ -f "$CHECKPOINT" ]; then
+                        if [ -n "$CHECKPOINT" ] && [ -f "$CHECKPOINT" ]; then
                             # Run separate Wikitext test evaluation with 5 runs for CI
                             echo "Evaluating $model on Wikitext-2 test split (L=$block_size, N=$num_layers) - 5 runs for 95% CI..."
                             python src/attn_is_not_all_you_need/eval_wikitext.py \
@@ -236,7 +249,14 @@ for model in "${MODELS[@]}"; do
             MODEL_DIR="${OUTPUT_DIR}/${model}_${dataset}"
             if [ -d "$MODEL_DIR" ]; then
                 CHECKPOINT=""
-                if [ -f "${MODEL_DIR}/${model}_best.pt" ]; then
+                # Look for checkpoint files - use the latest epoch checkpoint
+                if [ -d "${MODEL_DIR}/checkpoints" ]; then
+                    # Find the latest epoch checkpoint (highest epoch number)
+                    LATEST_EPOCH=$(ls "${MODEL_DIR}/checkpoints"/epoch_*.pt 2>/dev/null | sed 's/.*epoch_\([0-9]*\)\.pt/\1/' | sort -n | tail -1)
+                    if [ -n "$LATEST_EPOCH" ]; then
+                        CHECKPOINT="${MODEL_DIR}/checkpoints/epoch_${LATEST_EPOCH}.pt"
+                    fi
+                elif [ -f "${MODEL_DIR}/${model}_best.pt" ]; then
                     CHECKPOINT="${MODEL_DIR}/${model}_best.pt"
                 elif [ -f "${MODEL_DIR}/best_model.pt" ]; then
                     CHECKPOINT="${MODEL_DIR}/best_model.pt"
@@ -244,7 +264,7 @@ for model in "${MODELS[@]}"; do
                     CHECKPOINT="${MODEL_DIR}/snli_${model}_best.pt"
                 fi
                 
-                if [ -f "$CHECKPOINT" ]; then
+                if [ -n "$CHECKPOINT" ] && [ -f "$CHECKPOINT" ]; then
                     # SNLI test evaluation with 5 runs for CI
                     echo "Evaluating $model on SNLI test split - 5 runs for 95% CI..."
                     python src/attn_is_not_all_you_need/eval_snli.py \
