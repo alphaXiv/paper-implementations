@@ -16,7 +16,7 @@ This paper proposes replacing transformer self-attention with Grassmann manifold
 - ✅ **SNLI Surprise:** Grassmann **outperforms** Transformer by 4.57% (71.00% vs 66.43%) when trained from scratch
 - 📊 **Best Validation Results:** Transformer L256 N12 achieves 168.68 Val PPL vs Grassmann L256 N12 at 245.10 Val PPL
 - 📉 **Discrepancy:** Wikitext gap is **4x larger** than paper's reported results
-- 🔍 **Paper vs Ours:** Paper uses pre-trained DistilBERT backbone for SNLI (~85%), we train from scratch (~63-67%)
+- 🔍 **Paper vs Ours:** Paper uses pre-trained DistilBERT backbone for SNLI (~85%), and us (~63-67%)
 
 
 ---
