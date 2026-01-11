@@ -52,14 +52,24 @@ class TransformerNLIHead(nn.Module):
         self.input_projection = nn.Linear(hidden_dim, model_dim)
         
         # Transformer layers
-        encoder_layer = nn.TransformerEncoderLayer(
+        encoder_layer1 = nn.TransformerEncoderLayer(
             d_model=model_dim,
             nhead=num_heads,
             dim_feedforward=ff_dim,
             dropout=dropout,
             batch_first=True,
         )
-        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
+        
+        encoder_layer2 = nn.TransformerEncoderLayer(
+            d_model=model_dim,
+            nhead=num_heads,
+            dim_feedforward=ff_dim,
+            dropout=dropout,
+            batch_first=True,
+        )
+        
+        self.transformer1 = nn.TransformerEncoder(encoder_layer1, num_layers=num_layers)
+        self.transformer2 = nn.TransformerEncoder(encoder_layer2, num_layers=num_layers)
         
         # Classification head
         self.classifier = nn.Sequential(
@@ -83,8 +93,8 @@ class TransformerNLIHead(nn.Module):
         x = x.unsqueeze(1)  # (batch, 1, model_dim) - add sequence dimension
         
         # Apply transformer layers
-        x = self.transformer(x)  # (batch, 1, model_dim)
-        
+        x = self.transformer1(x)  # (batch, 1, model_dim)
+        x = self.transformer2(x)  # (batch, 1, model_dim)
         # Pool and classify
         x = x.squeeze(1)  # (batch, model_dim)
         logits = self.classifier(x)  # (batch, num_classes)
@@ -326,8 +336,20 @@ class SNLIModel(nn.Module):
             attention_mask=attention_mask
         )
         
-        # Use [CLS] token representation (first token)
-        pooled_output = outputs.last_hidden_state[:, 0, :]  # (batch, hidden_dim)
+        # Apply mean pooling over sequence to get sentence-level features
+        last_hidden = outputs.last_hidden_state  # (batch, seq_len, hidden_dim)
+        
+        # Mask padding tokens before pooling
+        if attention_mask is not None:
+            # Expand mask to match hidden state dimensions
+            mask_expanded = attention_mask.unsqueeze(-1).expand(last_hidden.size()).float()
+            # Sum embeddings and divide by number of non-padding tokens
+            sum_embeddings = torch.sum(last_hidden * mask_expanded, dim=1)
+            sum_mask = torch.clamp(mask_expanded.sum(dim=1), min=1e-9)
+            pooled_output = sum_embeddings / sum_mask  # (batch, hidden_dim)
+        else:
+            # Simple mean pooling if no mask
+            pooled_output = last_hidden.mean(dim=1)  # (batch, hidden_dim)
         
         # Classification head
         logits = self.head(pooled_output)  # (batch, 3)

@@ -11,6 +11,7 @@ import os
 import sys
 import json
 import time
+import math
 import argparse
 from datetime import datetime
 from pathlib import Path
@@ -37,21 +38,22 @@ from attn_is_not_all_you_need.data import Wikitext2Dataset
 # Training
 # -----------------------------------------------------------------------------
 
-def train_epoch(model, dataloader, optimizer, scheduler, device, epoch, scaler=None, log_interval=50):
+def train_epoch(model, dataloader, optimizer, get_lr_fn, device, epoch, scaler=None, log_interval=50, global_step=0):
     """Train for one epoch.
 
     Args:
         model: The model to train.
         dataloader: DataLoader for training data.
         optimizer: Optimizer.
-        scheduler: Learning rate scheduler.
+        get_lr_fn: Learning rate schedule function (or None for no scheduling).
         device: Device to run on.
         epoch (int): Current epoch number.
         scaler: GradScaler for AMP (optional).
         log_interval (int): Logging interval.
+        global_step (int): Global training step counter.
 
     Returns:
-        float: Average training loss.
+        tuple: (avg_loss, global_step)
     """
     model.train()
     total_loss = 0
@@ -62,6 +64,12 @@ def train_epoch(model, dataloader, optimizer, scheduler, device, epoch, scaler=N
     pbar = tqdm(dataloader, desc=f"Epoch {epoch}")
     for step, (x, y) in enumerate(pbar):
         x, y = x.to(device), y.to(device)
+
+        # Update learning rate if scheduler provided
+        if get_lr_fn is not None:
+            lr = get_lr_fn(global_step)
+            for param_group in optimizer.param_groups:
+                param_group['lr'] = lr
 
         optimizer.zero_grad()
         
@@ -80,7 +88,7 @@ def train_epoch(model, dataloader, optimizer, scheduler, device, epoch, scaler=N
             grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optimizer.step()
         
-        scheduler.step()
+        global_step += 1
 
         total_loss += loss.item() * x.size(0)
         total_tokens += x.numel()
@@ -88,15 +96,17 @@ def train_epoch(model, dataloader, optimizer, scheduler, device, epoch, scaler=N
         if step % log_interval == 0:
             elapsed = time.time() - start_time
             tok_per_sec = total_tokens / elapsed if elapsed > 0 else 0
+            current_lr = optimizer.param_groups[0]['lr']
             pbar.set_postfix({
                 "loss": f"{loss.item():.4f}",
                 "ppl": f"{loss.exp().item():.2f}",
+                "lr": f"{current_lr:.2e}",
                 "tok/s": f"{tok_per_sec:.0f}",
                 "grad_norm": f"{grad_norm.item():.4f}",
             })
 
     avg_loss = total_loss / len(dataloader.dataset)
-    return avg_loss
+    return avg_loss, global_step
 
 
 @torch.no_grad()
@@ -181,13 +191,11 @@ def train_wikitext(args, device, output_dir):
     print(f"Loading Wikitext-2 (block_size={args.max_seq_len})...")
     train_dataset = Wikitext2Dataset("train", tokenizer, args.max_seq_len)
     val_dataset = Wikitext2Dataset("validation", tokenizer, args.max_seq_len)
-    test_dataset = Wikitext2Dataset("test", tokenizer, args.max_seq_len)
 
-    print(f"Train: {len(train_dataset)} chunks, Val: {len(val_dataset)}, Test: {len(test_dataset)}")
+    print(f"Train: {len(train_dataset)} chunks, Val: {len(val_dataset)}")
 
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, num_workers=4)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, num_workers=4)
-    test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=4)
 
     results = {}
 
@@ -264,8 +272,25 @@ def train_wikitext(args, device, output_dir):
             print("Automatic Mixed Precision (AMP) enabled - Flash Attention will be used!")
 
         optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.01)
-        total_steps = len(train_loader) * args.epochs
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, total_steps)
+        
+        # Custom learning rate scheduler with warmup and cosine decay
+        max_lr = args.lr
+        min_lr = 6e-5
+        warmup_iters = 100
+        lr_decay_iters = len(train_loader) * args.epochs
+        
+        def get_lr(it):
+            # 1) linear warmup for warmup_iters steps
+            if it < warmup_iters:
+                return max_lr * (it + 1) / (warmup_iters + 1)
+            # 2) if it > lr_decay_iters, return min learning rate
+            if it > lr_decay_iters:
+                return min_lr
+            # 3) in between, use cosine decay down to min learning rate
+            decay_ratio = (it - warmup_iters) / (lr_decay_iters - warmup_iters)
+            assert 0 <= decay_ratio <= 1
+            coeff = 0.5 * (1.0 + math.cos(math.pi * decay_ratio))
+            return min_lr + coeff * (max_lr - min_lr)
 
         train_losses = []
         val_losses = []
@@ -279,8 +304,9 @@ def train_wikitext(args, device, output_dir):
         ckpt_dir.mkdir(exist_ok=True)
 
         epoch_pbar = tqdm(range(1, args.epochs + 1), desc="Training", unit="epoch")
+        global_step = 0
         for epoch in epoch_pbar:
-            train_loss = train_epoch(model, train_loader, optimizer, scheduler, device, epoch, scaler if use_amp else None)
+            train_loss, global_step = train_epoch(model, train_loader, optimizer, get_lr, device, epoch, scaler if use_amp else None, global_step=global_step)
             val_loss, val_ppl = evaluate(model, val_loader, device)
 
             train_losses.append(train_loss)
@@ -311,7 +337,6 @@ def train_wikitext(args, device, output_dir):
                     "epoch": epoch,
                     "model_state_dict": model.state_dict(),
                     "optimizer_state_dict": optimizer.state_dict(),
-                    "scheduler_state_dict": scheduler.state_dict(),
                     "val_loss": val_loss,
                     "val_ppl": val_ppl,
                 }, ckpt_path)
@@ -326,29 +351,20 @@ def train_wikitext(args, device, output_dir):
                     "epoch": epoch,
                     "model_state_dict": model.state_dict(),
                     "optimizer_state_dict": optimizer.state_dict(),
-                    "scheduler_state_dict": scheduler.state_dict(),
                     "val_loss": val_loss,
                     "val_ppl": val_ppl,
                 }, best_ckpt_path)
                 print(f"✨ New best validation PPL: {val_ppl:.2f} at epoch {epoch} - saved to {best_ckpt_path}")
 
-        # Final test evaluation (use best checkpoint model)
-        print(f"\nLoading best checkpoint from epoch {best_epoch} (Val PPL: {best_val_ppl:.2f})...")
-        best_checkpoint = torch.load(ckpt_dir / "best.pt")
-        model.load_state_dict(best_checkpoint['model_state_dict'])
-        
-        test_loss, test_ppl = evaluate(model, test_loader, device)
-
         print(f"\nFinal Results for {model_type.upper()}:")
         print(f"  Best Val PPL: {best_val_ppl:.2f} (epoch {best_epoch})")
-        print(f"  Test Loss: {test_loss:.4f}, Test PPL: {test_ppl:.2f}")
+        print(f"  Training complete. Checkpoints saved in {ckpt_dir}")
+        print(f"  Note: Run eval_wikitext.py with best checkpoint for test perplexity")
 
         results[model_type] = {
             "num_params": num_params,
             "best_val_ppl": float(best_val_ppl),
             "best_epoch": best_epoch,
-            "test_loss": test_loss,
-            "test_ppl": test_ppl,
             "train_losses": train_losses,
             "val_losses": val_losses,
         }
@@ -357,8 +373,6 @@ def train_wikitext(args, device, output_dir):
         wandb.log({
             "final/best_val_ppl": best_val_ppl,
             "final/best_epoch": best_epoch,
-            "final/test_loss": test_loss,
-            "final/test_perplexity": test_ppl,
             "final/num_params": num_params,
         })
 
@@ -374,36 +388,9 @@ def train_wikitext(args, device, output_dir):
                 "num_params": v["num_params"],
                 "best_val_ppl": float(v["best_val_ppl"]),
                 "best_epoch": v["best_epoch"],
-                "test_loss": float(v["test_loss"]),
-                "test_ppl": float(v["test_ppl"]),
             }
         json.dump(save_results, f, indent=2)
 
-    # Print comparison
-    if len(results) == 2:
-        print(f"\n{'='*60}")
-        print("COMPARISON: Paper Reproduction on Wikitext-2")
-        print(f"{'='*60}")
-
-        g = results["grassmann"]
-        t = results["transformer"]
-
-        print(f"{'Model':<20} {'Params':<12} {'Best Val PPL':<14} {'Test PPL':<12}")
-        print("-" * 58)
-        print(f"{'Grassmann':<20} {g['num_params']/1e6:.2f}M{'':<6} {g['best_val_ppl']:<14.2f} {g['test_ppl']:<12.2f}")
-        print(f"{'Transformer':<20} {t['num_params']/1e6:.2f}M{'':<6} {t['best_val_ppl']:<14.2f} {t['test_ppl']:<12.2f}")
-        print("-" * 58)
-
-        ppl_ratio = g["test_ppl"] / t["test_ppl"]
-        gap_percent = (ppl_ratio - 1) * 100
-        print(f"\nGrassmann/Transformer PPL ratio: {ppl_ratio:.3f}")
-        print(f"Gap: {gap_percent:.1f}% (Paper claims 10-15%)")
-
-        if gap_percent <= 15:
-            print("RESULT: Paper claim VERIFIED - within 15% gap")
-        else:
-            print(f"RESULT: Paper claim NOT verified - gap is {gap_percent:.1f}%")
-
-
+    
 if __name__ == "__main__":
     main()

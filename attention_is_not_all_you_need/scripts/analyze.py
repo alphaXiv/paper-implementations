@@ -17,12 +17,15 @@ def main():
 
     print("Analyzing results...")
 
-    # Look for results.json files
-    for json_file in results_dir.rglob("results.json"):
-        print(f"Found results: {json_file}")
-        with open(json_file, 'r') as f:
-            results = json.load(f)
-            print(json.dumps(results, indent=2))
+    # Look for all result JSON files
+    result_patterns = ["results.json", "*_validation_results.json", "*_test_results.json"]
+    
+    for pattern in result_patterns:
+        for json_file in results_dir.rglob(pattern):
+            print(f"Found results: {json_file}")
+            with open(json_file, 'r') as f:
+                results = json.load(f)
+                print(json.dumps(results, indent=2))
 
     print("Analysis complete.")
 

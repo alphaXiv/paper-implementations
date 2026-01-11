@@ -158,7 +158,7 @@ def main():
     parser = argparse.ArgumentParser(description="Evaluate trained SNLI model")
     parser.add_argument("--model_path", type=str, required=True, help="Path to trained model checkpoint")
     parser.add_argument("--model_type", type=str, choices=["transformer", "grassmann"], required=True)
-    parser.add_argument("--split", type=str, default="test", choices=["train", "validation", "test"], 
+    parser.add_argument("--split", type=str, default="validation", choices=["train", "validation", "test"], 
                         help="Dataset split to evaluate on")
     parser.add_argument("--output_file", type=str, default=None, help="Output JSON file for results")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for evaluation")
@@ -241,32 +241,6 @@ def main():
         print(f"  Entailment:    {ent_mean:.4f}")
         print(f"  Neutral:       {neu_mean:.4f}")
         print(f"  Contradiction: {con_mean:.4f}")
-    else:
-        # Calculate CI only for multiple runs
-        def calculate_ci(values, confidence=0.95):
-            """Calculate mean and confidence interval."""
-            n = len(values)
-            mean = np.mean(values)
-            std_err = stats.sem(values)
-            ci = std_err * stats.t.ppf((1 + confidence) / 2, n - 1)
-            return mean, ci, std_err
-        
-        # Overall accuracy CI
-        acc_mean, acc_ci, acc_std_err = calculate_ci(accuracies, args.confidence)
-        loss_mean, loss_ci, loss_std_err = calculate_ci(losses, args.confidence)
-        ent_mean, ent_ci, ent_std_err = calculate_ci(entailment_accs, args.confidence)
-        neu_mean, neu_ci, neu_std_err = calculate_ci(neutral_accs, args.confidence)
-        con_mean, con_ci, con_std_err = calculate_ci(contradiction_accs, args.confidence)
-        
-        print(f"SNLI Evaluation Results ({args.split} split) - {args.num_runs} runs")
-        print(f"{'='*70}")
-        print(f"Overall Accuracy: {acc_mean:.4f} ± {acc_ci:.4f} (95% CI: [{acc_mean - acc_ci:.4f}, {acc_mean + acc_ci:.4f}])")
-        print(f"Loss: {loss_mean:.4f} ± {loss_ci:.4f}")
-        print(f"Total Samples: {all_results[0]['total_samples']}")
-        print(f"\nPer-Class Accuracy (95% CI):")
-        print(f"  Entailment:    {ent_mean:.4f} ± {ent_ci:.4f} [{ent_mean - ent_ci:.4f}, {ent_mean + ent_ci:.4f}]")
-        print(f"  Neutral:       {neu_mean:.4f} ± {neu_ci:.4f} [{neu_mean - neu_ci:.4f}, {neu_mean + neu_ci:.4f}]")
-        print(f"  Contradiction: {con_mean:.4f} ± {con_ci:.4f} [{con_mean - con_ci:.4f}, {con_mean + con_ci:.4f}]")
     print(f"{'='*70}")
     
     # Log to W&B
@@ -278,15 +252,7 @@ def main():
         f"{args.split}/neutral_accuracy": neu_mean,
         f"{args.split}/contradiction_accuracy": con_mean,
     }
-    if args.num_runs > 1:
-        wandb_metrics.update({
-            f"{args.split}/accuracy_ci": acc_ci,
-            f"{args.split}/accuracy_std_err": acc_std_err,
-            f"{args.split}/loss_ci": loss_ci,
-            f"{args.split}/entailment_accuracy_ci": ent_ci,
-            f"{args.split}/neutral_accuracy_ci": neu_ci,
-            f"{args.split}/contradiction_accuracy_ci": con_ci,
-        })
+    
     wandb.log(wandb_metrics)
     
     # Save results
@@ -313,34 +279,7 @@ def main():
             'label_distribution': all_results[0]['label_distribution'],
         }
         
-        # Add CI stats only for multiple runs
-        if args.num_runs > 1:
-            save_results['confidence_level'] = args.confidence
-            save_results['accuracy'].update({
-                'ci': float(acc_ci),
-                'std_err': float(acc_std_err),
-                'ci_lower': float(acc_mean - acc_ci),
-                'ci_upper': float(acc_mean + acc_ci),
-            })
-            save_results['loss'].update({
-                'ci': float(loss_ci),
-                'std_err': float(loss_std_err),
-            })
-            save_results['entailment_accuracy'].update({
-                'ci': float(ent_ci),
-                'ci_lower': float(ent_mean - ent_ci),
-                'ci_upper': float(ent_mean + ent_ci),
-            })
-            save_results['neutral_accuracy'].update({
-                'ci': float(neu_ci),
-                'ci_lower': float(neu_mean - neu_ci),
-                'ci_upper': float(neu_mean + neu_ci),
-            })
-            save_results['contradiction_accuracy'].update({
-                'ci': float(con_ci),
-                'ci_lower': float(con_mean - con_ci),
-                'ci_upper': float(con_mean + con_ci),
-            })
+        
         
         with open(args.output_file, 'w') as f:
             json.dump(save_results, f, indent=2)

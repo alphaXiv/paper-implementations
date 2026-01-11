@@ -268,15 +268,15 @@ for model in "${MODELS[@]}"; do
                         fi
                         
                         if [ -n "$CHECKPOINT" ] && [ -f "$CHECKPOINT" ]; then
-                            # Run Wikitext test evaluation (single run - eval is deterministic)
-                            echo "Evaluating $model on Wikitext-2 test split (L=$block_size, N=$num_layers)..."
+                            # Run Wikitext validation evaluation (single run - eval is deterministic)
+                            echo "Evaluating $model on Wikitext-2 validation split (L=$block_size, N=$num_layers)..."
                             python src/attn_is_not_all_you_need/eval_wikitext.py \
                                 --model_path "$CHECKPOINT" \
                                 --model_type "$model" \
                                 --max-seq-len "$block_size" \
                                 --num-layers "$num_layers" \
                                 --num_runs 1 \
-                                --output_file "${MODEL_DIR}/wikitext_test_results.json"
+                                --output_file "${MODEL_DIR}/wikitext_validation_results.json"
                         fi
                     fi
                 done
@@ -296,6 +296,15 @@ for model in "${MODELS[@]}"; do
                 fi
                 
                 if [ -n "$CHECKPOINT" ] && [ -f "$CHECKPOINT" ]; then
+                    # SNLI validation evaluation
+                    echo "Evaluating $model on SNLI validation split..."
+                    python src/attn_is_not_all_you_need/eval_snli.py \
+                        --model_path "$CHECKPOINT" \
+                        --model_type "$model" \
+                        --split validation \
+                        --num_runs 1 \
+                        --output_file "${MODEL_DIR}/snli_validation_results.json"
+                    
                     # SNLI test evaluation
                     echo "Evaluating $model on SNLI test split..."
                     python src/attn_is_not_all_you_need/eval_snli.py \
@@ -327,7 +336,7 @@ echo "=========================================="
 echo "Output directory: $OUTPUT_DIR"
 echo "Check the analysis results in: $OUTPUT_DIR/analysis/"
 echo ""
-echo "Test Dataset Evaluations:"
+echo "Val & Test Dataset Evaluations:"
 for model in "${MODELS[@]}"; do
     for dataset in "${DATASETS[@]}"; do
         if [ "$dataset" = "wikitext" ]; then
@@ -336,11 +345,11 @@ for model in "${MODELS[@]}"; do
                     MODEL_DIR="${OUTPUT_DIR}/${model}_${dataset}_L${block_size}_N${num_layers}"
                     if [ -d "$MODEL_DIR" ]; then
                         echo "  $model (L=$block_size, N=$num_layers):"
-                        if [ -f "${MODEL_DIR}/wikitext_test_results.json" ]; then
-                            echo "    - Wikitext-2 test: ${MODEL_DIR}/wikitext_test_results.json"
+                        if [ -f "${MODEL_DIR}/wikitext_validation_results.json" ]; then
+                            echo "    - Wikitext-2 validation: ${MODEL_DIR}/wikitext_validation_results.json"
                         fi
-                        if [ -f "${MODEL_DIR}/snli_test_results.json" ]; then
-                            echo "    - SNLI test: ${MODEL_DIR}/snli_test_results.json"
+                        if [ -f "${MODEL_DIR}/snli_validation_results.json" ]; then
+                            echo "    - SNLI validation: ${MODEL_DIR}/snli_validation_results.json"
                         fi
                     fi
                 done
@@ -349,11 +358,11 @@ for model in "${MODELS[@]}"; do
             MODEL_DIR="${OUTPUT_DIR}/${model}_${dataset}"
             if [ -d "$MODEL_DIR" ]; then
                 echo "  $model:"
+                if [ -f "${MODEL_DIR}/snli_validation_results.json" ]; then
+                    echo "    - SNLI validation: ${MODEL_DIR}/snli_validation_results.json"
+                fi
                 if [ -f "${MODEL_DIR}/snli_test_results.json" ]; then
                     echo "    - SNLI test: ${MODEL_DIR}/snli_test_results.json"
-                fi
-                if [ -f "${MODEL_DIR}/snli_val_results.json" ]; then
-                    echo "    - SNLI validation: ${MODEL_DIR}/snli_val_results.json"
                 fi
             fi
         fi

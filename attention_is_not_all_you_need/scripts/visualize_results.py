@@ -16,11 +16,11 @@ colors_grassmann = '#A23B72'
 def create_wikitext_comparison():
     """Create bar graph comparing Wikitext-2 perplexity across configurations."""
     
-    # Our reproduction results (TEST SET) - from outputs/2026-01-09_19-25-27
+    # Our reproduction results (TEST SET) - from outputs/2026-01-10_23-46-12
     configs = ['L128\nN6', 'L128\nN12', 'L256\nN6', 'L256\nN12']
     
-    transformer_ppl_ours = [189.51, 183.89, 190.98, 177.74]
-    grassmann_ppl_ours = [261.58, 257.23, 260.66, 256.42]
+    transformer_ppl_ours = [181.66, 170.43, 180.85, 168.68]
+    grassmann_ppl_ours = [253.76, 244.61, 251.32, 245.10]
     
     # Paper's reported results (VALIDATION SET)
     # Table 1: L128 N6 - Transformer: 248.4, Grassmann: 275.7
@@ -91,10 +91,10 @@ def create_snli_comparison():
     
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 7))
     
-    # Our results - Per-class comparison (from outputs/2026-01-09_19-25-27)
+    # Our results - Per-class comparison (from outputs/2026-01-10_23-46-12)
     categories = ['Overall', 'Entailment', 'Neutral', 'Contradiction']
-    grassmann_acc = [66.47, 72.89, 61.08, 65.15]
-    transformer_acc = [62.79, 71.38, 57.19, 59.41]
+    grassmann_acc = [71.25, 76.07, 66.85, 70.62]
+    transformer_acc = [66.71, 74.41, 62.29, 63.11]
     
     x = np.arange(len(categories))
     width = 0.35
@@ -116,7 +116,7 @@ def create_snli_comparison():
     ax1.set_xticks(x)
     ax1.set_xticklabels(categories, fontsize=11)
     ax1.set_ylabel('Accuracy (%)', fontsize=13, fontweight='bold')
-    ax1.set_title('Our Results: SNLI Classification (Test Set)\nGrassmann outperforms Transformer (+3.68%)', 
+    ax1.set_title('Our Results: SNLI Classification (Test Set)\nGrassmann outperforms Transformer (+4.54%)', 
                   fontsize=13, fontweight='bold', pad=15)
     ax1.set_ylim([0, 80])
     ax1.grid(axis='y', alpha=0.3)
@@ -125,7 +125,7 @@ def create_snli_comparison():
     # Paper's results - Overall accuracy comparison
     models_paper = ['Transformer\nHead\n(Paper Test)', 'Grassmann\nHead\n(Paper Test)',
                     'Transformer\n(Our Test)', 'Grassmann\n(Our Test)']
-    accuracies_paper = [85.11, 85.38, 62.79, 66.47]
+    accuracies_paper = [85.11, 85.38, 66.71, 71.25]
     colors_paper = [colors_transformer, colors_grassmann, 
                     colors_transformer, colors_grassmann]
     
@@ -154,7 +154,7 @@ def create_snli_comparison():
     
     # Add gap annotations
     ax2.plot([0, 1], [85.11, 85.38], 'g--', linewidth=2, alpha=0.5, label='Paper Gap: +0.27%')
-    ax2.plot([2, 3], [62.79, 66.47], 'b--', linewidth=2, alpha=0.5, label='Our Gap: +3.68%')
+    ax2.plot([2, 3], [66.71, 71.25], 'b--', linewidth=2, alpha=0.5, label='Our Gap: +4.54%')
     ax2.legend(fontsize=10)
     
     plt.tight_layout()
@@ -170,10 +170,10 @@ def create_parameter_comparison():
     fig, ax = plt.subplots(1, 1, figsize=(14, 7))
     
     # Comparative bar chart - Best models only
-    models = ['Transformer\nL256 N12\n(Our Test)', 'Grassmann\nL128 N6\n(Our Test)', 
+    models = ['Transformer\nL256 N12\n(Our Test)', 'Grassmann\nL256 N12\n(Our Test)', 
               'Transformer\nL128 N6\n(Paper Val)', 'Grassmann\nL128 N6\n(Paper Val)',
               'Transformer\nL256 N12\n(Paper Val)', 'Grassmann\nL256 N12\n(Paper Val)']
-    values = [220.21, 310.13, 248.4, 275.7, 235.2, 261.1]
+    values = [168.68, 245.10, 248.4, 275.7, 235.2, 261.1]
     colors_bars = [colors_transformer, colors_grassmann, 
                    colors_transformer, colors_grassmann,
                    colors_transformer, colors_grassmann]
@@ -201,7 +201,7 @@ def create_parameter_comparison():
     ax.grid(axis='y', alpha=0.3)
     
     # Add gap lines
-    ax.plot([0, 1], [220.21, 310.13], 'r--', linewidth=2, alpha=0.5, label='Our Gap: 40.8%')
+    ax.plot([0, 1], [168.68, 245.10], 'r--', linewidth=2, alpha=0.5, label='Our Gap: 45.3%')
     ax.plot([2, 3], [248.4, 275.7], 'orange', linestyle='--', linewidth=2, alpha=0.5, label='Paper Gap: 11.0%')
     ax.plot([4, 5], [235.2, 261.1], 'orange', linestyle='--', linewidth=2, alpha=0.5)
     ax.legend(fontsize=11)
@@ -224,8 +224,8 @@ def create_combined_dashboard():
     
     # Our reproduction results (TEST SET)
     configs = ['L128 N6', 'L128 N12', 'L256 N6', 'L256 N12']
-    transformer_ppl_ours = [236.35, 232.75, 220.26, 220.21]
-    grassmann_ppl_ours = [310.13, 322.69, 311.37, 316.00]
+    transformer_ppl_ours = [181.66, 170.43, 180.85, 168.68]
+    grassmann_ppl_ours = [253.76, 244.61, 251.32, 245.10]
     
     # Paper's reported results (VALIDATION SET)
     transformer_ppl_paper = [248.4, None, None, 235.2]

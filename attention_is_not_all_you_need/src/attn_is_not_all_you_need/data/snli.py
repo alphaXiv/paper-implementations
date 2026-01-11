@@ -70,8 +70,7 @@ class SNLIDataset(torch.utils.data.Dataset):
             example["hypothesis"],
             max_length=self.max_seq_len * 2,  # Both sentences
             padding="max_length",
-            truncation='only_first',  # Truncate only premise if needed (preserves full hypothesis)
-            return_overflowing_tokens=False,
+            truncation='longest_first',  # Truncate longest sequence first to fit max_length
             return_tensors="pt"
         )
         

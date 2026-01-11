@@ -144,8 +144,8 @@ def main():
     model = torch.compile(model)
 
     # Load test dataset
-    print(f"Loading Wikitext-2 test split (L={args.max_seq_len})...")
-    test_dataset = Wikitext2Dataset("test", tokenizer, args.max_seq_len)
+    print(f"Loading Wikitext-2 validation split (L={args.max_seq_len})...")
+    test_dataset = Wikitext2Dataset("validation", tokenizer, args.max_seq_len)
 
     print(f"Running {args.num_runs} evaluation runs on {len(test_dataset)} examples...")
 
@@ -180,23 +180,6 @@ def main():
         print(f"{'='*70}")
         print(f"Loss:       {loss_mean:.4f}")
         print(f"Perplexity: {ppl_mean:.2f}")
-    else:
-        # Calculate CI only for multiple runs
-        def calculate_ci(values, confidence=0.95):
-            """Calculate mean and confidence interval."""
-            n = len(values)
-            mean = np.mean(values)
-            std_err = stats.sem(values)
-            ci = std_err * stats.t.ppf((1 + confidence) / 2, n - 1)
-            return mean, ci, std_err
-
-        loss_mean, loss_ci, loss_std_err = calculate_ci(all_losses, args.confidence)
-        ppl_mean, ppl_ci, ppl_std_err = calculate_ci(all_ppls, args.confidence)
-        
-        print(f"Wikitext-2 Test Results - {args.num_runs} runs")
-        print(f"{'='*70}")
-        print(f"Loss:       {loss_mean:.4f} ± {loss_ci:.4f} (95% CI: [{loss_mean - loss_ci:.4f}, {loss_mean + loss_ci:.4f}])")
-        print(f"Perplexity: {ppl_mean:.2f} ± {ppl_ci:.2f} (95% CI: [{ppl_mean - ppl_ci:.2f}, {ppl_mean + ppl_ci:.2f}])")
     print(f"{'='*70}")
 
     # Save results
@@ -214,25 +197,7 @@ def main():
             "all_runs": [float(p) for p in all_ppls],
         },
     }
-    
-    # Add CI stats only for multiple runs
-    if args.num_runs > 1:
-        loss_ci = loss_std_err * stats.t.ppf((1 + args.confidence) / 2, args.num_runs - 1)
-        ppl_ci = ppl_std_err * stats.t.ppf((1 + args.confidence) / 2, args.num_runs - 1)
-        
-        results["confidence_level"] = args.confidence
-        results["test_loss"].update({
-            "ci": float(loss_ci),
-            "std_err": float(loss_std_err),
-            "ci_lower": float(loss_mean - loss_ci),
-            "ci_upper": float(loss_mean + loss_ci),
-        })
-        results["test_perplexity"].update({
-            "ci": float(ppl_ci),
-            "std_err": float(ppl_std_err),
-            "ci_lower": float(ppl_mean - ppl_ci),
-            "ci_upper": float(ppl_mean + ppl_ci),
-        })
+   
 
     if args.output_file:
         with open(args.output_file, 'w') as f:

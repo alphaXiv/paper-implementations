@@ -12,6 +12,7 @@ import os
 import sys
 import json
 import time
+import math
 import argparse
 from datetime import datetime
 from pathlib import Path
@@ -30,21 +31,22 @@ from attn_is_not_all_you_need.models import SNLIModel
 from attn_is_not_all_you_need.data import SNLIDataset
 
 
-def train_epoch(model, dataloader, optimizer, scheduler, device, epoch, scaler=None, log_interval=50):
+def train_epoch(model, dataloader, optimizer, get_lr_fn, device, epoch, scaler=None, log_interval=50, global_step=0):
     """Train SNLI model for one epoch.
     
     Args:
         model: The SNLI model to train
         dataloader: DataLoader for training data
         optimizer: Optimizer
-        scheduler: Learning rate scheduler
+        get_lr_fn: Learning rate schedule function (or None for no scheduling)
         device: Device to run on
         epoch: Current epoch number
         scaler: GradScaler for AMP (optional)
         log_interval: Logging interval
+        global_step: Global training step counter
         
     Returns:
-        tuple: (avg_loss, accuracy)
+        tuple: (avg_loss, accuracy, global_step)
     """
     model.train()
     total_loss = 0
@@ -57,6 +59,12 @@ def train_epoch(model, dataloader, optimizer, scheduler, device, epoch, scaler=N
         input_ids = batch["input_ids"].to(device)
         attention_mask = batch["attention_mask"].to(device)
         labels = batch["labels"].to(device)
+        
+        # Update learning rate if scheduler provided
+        if get_lr_fn is not None:
+            lr = get_lr_fn(global_step)
+            for param_group in optimizer.param_groups:
+                param_group['lr'] = lr
         
         optimizer.zero_grad()
         
@@ -77,7 +85,7 @@ def train_epoch(model, dataloader, optimizer, scheduler, device, epoch, scaler=N
             grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optimizer.step()
         
-        scheduler.step()
+        global_step += 1
         
         total_loss += loss.item() * input_ids.size(0)
         preds = torch.argmax(logits, dim=-1)
@@ -86,15 +94,17 @@ def train_epoch(model, dataloader, optimizer, scheduler, device, epoch, scaler=N
         
         if step % log_interval == 0:
             acc = total_correct / total_count if total_count > 0 else 0
+            current_lr = optimizer.param_groups[0]['lr']
             pbar.set_postfix({
                 "loss": f"{loss.item():.4f}",
                 "acc": f"{acc:.4f}",
+                "lr": f"{current_lr:.2e}",
                 "grad_norm": f"{grad_norm.item():.4f}",
             })
     
     avg_loss = total_loss / total_count
     accuracy = total_correct / total_count
-    return avg_loss, accuracy
+    return avg_loss, accuracy, global_step
 
 
 @torch.no_grad()
@@ -137,9 +147,9 @@ def main():
     """Main training function for SNLI."""
     parser = argparse.ArgumentParser(description="SNLI Classification Training")
     parser.add_argument("--model", type=str, default="both", choices=["grassmann", "transformer", "both"])
-    parser.add_argument("--batch-size", type=int, default=64, help="Batch size")
+    parser.add_argument("--batch-size", type=int, default=32, help="Batch size")
     parser.add_argument("--epochs", type=int, default=20, help="Number of epochs (paper: 20)")
-    parser.add_argument("--lr", type=float, default=3e-4, help="Learning rate")
+    parser.add_argument("--lr", type=float, default=2e-4, help="Learning rate")
     parser.add_argument("--output-dir", type=str, default="outputs/snli_reproduction")
     args = parser.parse_args()
     
@@ -237,8 +247,25 @@ def main():
             print("Automatic Mixed Precision (AMP) enabled - Flash Attention will be used!")
         
         optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.01)
-        total_steps = len(train_loader) * args.epochs
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, total_steps)
+        
+        # Custom learning rate scheduler with warmup and cosine decay
+        max_lr = args.lr
+        min_lr = 2e-5
+        warmup_iters = 100
+        lr_decay_iters = len(train_loader) * args.epochs
+        
+        def get_lr(it):
+            # 1) linear warmup for warmup_iters steps
+            if it < warmup_iters:
+                return max_lr * (it + 1) / (warmup_iters + 1)
+            # 2) if it > lr_decay_iters, return min learning rate
+            if it > lr_decay_iters:
+                return min_lr
+            # 3) in between, use cosine decay down to min learning rate
+            decay_ratio = (it - warmup_iters) / (lr_decay_iters - warmup_iters)
+            assert 0 <= decay_ratio <= 1
+            coeff = 0.5 * (1.0 + math.cos(math.pi * decay_ratio))
+            return min_lr + coeff * (max_lr - min_lr)
         
         # Track best validation accuracy
         best_val_acc = 0.0
@@ -249,8 +276,9 @@ def main():
         ckpt_dir.mkdir(exist_ok=True)
         
         epoch_pbar = tqdm(range(1, args.epochs + 1), desc="Training", unit="epoch")
+        global_step = 0
         for epoch in epoch_pbar:
-            train_loss, train_acc = train_epoch(model, train_loader, optimizer, scheduler, device, epoch, scaler if use_amp else None)
+            train_loss, train_acc, global_step = train_epoch(model, train_loader, optimizer, get_lr, device, epoch, scaler if use_amp else None, global_step=global_step)
             val_acc, val_loss = evaluate(model, val_loader, device)
             
             epoch_pbar.set_postfix({
@@ -278,7 +306,6 @@ def main():
                     "epoch": epoch,
                     "model_state_dict": model.state_dict(),
                     "optimizer_state_dict": optimizer.state_dict(),
-                    "scheduler_state_dict": scheduler.state_dict(),
                     "val_acc": val_acc,
                     "val_loss": val_loss,
                 }, ckpt_path)
@@ -293,7 +320,6 @@ def main():
                     "epoch": epoch,
                     "model_state_dict": model.state_dict(),
                     "optimizer_state_dict": optimizer.state_dict(),
-                    "scheduler_state_dict": scheduler.state_dict(),
                     "val_acc": val_acc,
                     "val_loss": val_loss,
                 }, best_ckpt_path)
