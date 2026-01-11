@@ -2,7 +2,9 @@
 
 # Reproduction of "Attention Is Not What You Need" 
 
-This paperhttps://huggingface.co/datasets/stanfordnlp/snli to readme proeprl proposes replacing transformer self-attention with Grassmann manifold-based geometric operations using Plucker coordinates.
+This paper proposes replacing transformer self-attention with Grassmann manifold-based geometric operations using Plucker coordinates.
+
+**🤗 Models & Datasets:** [HuggingFace Collection](https://huggingface.co/collections/alphaXiv/attention-is-not-all-you-need-67822ce0a3b1e0e7f9a1d2b3)
 
 **Hardware:** NVIDIA H100 SXM5 80GB (1x GPU, Lambda Labs, Lambda Stack 22.04)  
 **Infrastructure:** Used for all training and evaluation experiments
@@ -14,7 +16,6 @@ This paperhttps://huggingface.co/datasets/stanfordnlp/snli to readme proeprl pro
 - 📊 **Best Validation Results:** Transformer L256 N12 achieves 168.68 Val PPL vs Grassmann L256 N12 at 245.10 Val PPL
 - 📉 **Discrepancy:** Wikitext gap is **4x larger** than paper's reported results
 - 🔍 **Paper vs Ours:** Paper uses pre-trained DistilBERT backbone for SNLI (~85%), we train from scratch (~63-67%)
-- 🎨 **Visualizations:** Run `python scripts/visualize_results.py` for comprehensive bar graphs comparing our results with paper's claims
 
 
 ---
@@ -338,10 +339,21 @@ This creates:
 - `images/wikitext_results.png` - Wikitext-2 perplexity comparison (our test vs paper's validation)
 - `images/snli_results.png` - SNLI accuracy comparison (Transformer vs Grassmann, our vs paper)
 
+#### Wikitext-2 Perplexity Comparison
+
+![Wikitext-2 Results](images/wikitext_results.png)
+
 **Paper's Claims vs Our Results:**
 - **Wikitext-2 (Val PPL):** Paper reports 10-11% gap (Transformer 235.2-248.4 vs Grassmann 261.1-275.7)
-- **Our Wikitext-2 (Test PPL):** We observe 36-44% gap (Transformer 177.74-190.98 vs Grassmann 256.42-261.58)
-- **SNLI:** Paper reports Grassmann wins by 0.27% (85.38% vs 85.11%); our results show Grassmann wins by 3.68% (66.47% vs 62.79%)
+- **Our Wikitext-2 (Test PPL):** We observe 45-50% gap (Transformer 168.68-181.66 vs Grassmann 244.61-253.76)
+
+#### SNLI Accuracy Comparison
+
+![SNLI Results](images/snli_results.png)
+
+**SNLI:**
+- Paper reports Grassmann wins by 0.27% (85.38% vs 85.11%)
+- Our results show Grassmann wins by 4.54% (71.25% vs 66.71%)
 
 ---
 

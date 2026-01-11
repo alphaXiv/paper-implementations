@@ -19,6 +19,13 @@ set -e  # Exit on error
 #   - Default: 6-layer models (N=6)
 #   - For 12-layer models: LAYER_DEPTHS_OVERRIDE=6,12 ./speedrun.sh all wikitext
 #
+# HuggingFace Integration (Eval Mode):
+#   - By default, eval mode downloads models from HuggingFace
+#   - Falls back to local models if download fails
+#   - Control with environment variables:
+#     USE_HF_MODELS=false ./speedrun.sh all wikitext eval  # Force local models
+#     HF_MODEL_REPO=username/repo ./speedrun.sh all wikitext eval  # Custom repo
+#
 # Examples:
 #   ./speedrun.sh grassmann wikitext     # Train & eval Grassmann on Wikitext (L=128 & L=256)
 #   ./speedrun.sh transformer snli       # Train & eval Transformer on SNLI
@@ -27,9 +34,12 @@ set -e  # Exit on error
 #   ./speedrun.sh grassmann all          # Train & eval Grassmann on all datasets
 #   ./speedrun.sh all all                # Train & eval all models on all datasets
 #   
-#   # Eval only mode (use existing checkpoints):
-#   ./speedrun.sh all wikitext eval      # Eval only - all models on Wikitext
-#   ./speedrun.sh grassmann snli eval    # Eval only - Grassmann on SNLI
+#   # Eval only mode (downloads from HuggingFace by default):
+#   ./speedrun.sh all wikitext eval      # Eval only - downloads from HF
+#   ./speedrun.sh grassmann snli eval    # Eval only - Grassmann on SNLI from HF
+#   
+#   # Eval with local models only:
+#   USE_HF_MODELS=false ./speedrun.sh all wikitext eval
 #   
 #   # Train only (skip eval):
 #   ./speedrun.sh all wikitext train     # Train only - all models on Wikitext
@@ -133,21 +143,120 @@ echo "[Step 1/4] Preparing data..."
 echo "Data will be downloaded automatically during training..."
 
 # ============================================================================
-# Step 2: Training
+# Configuration for model variants
+# ============================================================================
+
+# Paper specs: L=128 and L=256 for Wikitext, N=6 or N=12 layers
+BLOCK_SIZES=(128 256)  # Both block sizes from paper
+LAYER_DEPTHS=(6 12)    # Default to both 6 and 12 layers
+
+# Allow user to specify layer depths via environment variable
+if [ -n "$LAYER_DEPTHS_OVERRIDE" ]; then
+    IFS=',' read -ra LAYER_DEPTHS <<< "$LAYER_DEPTHS_OVERRIDE"
+fi
+
+# ============================================================================
+# Step 2: Training / Model Loading
 # ============================================================================
 
 if [[ "$MODE" == "eval" ]]; then
-    # For eval-only mode, use the most recent output directory
+    # For eval-only mode, try to download from HuggingFace first, then fall back to local
     echo "[Step 2/4] Skipping training (eval-only mode)..."
     
-    # Find the most recent output directory
-    LATEST_OUTPUT=$(ls -td outputs/*/ 2>/dev/null | head -1)
-    if [ -z "$LATEST_OUTPUT" ]; then
-        echo "ERROR: No existing output directory found. Please train models first or specify a different mode."
-        exit 1
+    # HuggingFace repository configuration
+    HF_REPO="${HF_MODEL_REPO:-alphaXiv/attention-is-not-all-you-need-models}"
+    USE_HF_MODELS="${USE_HF_MODELS:-true}"  # Default to using HF models
+    
+    # Create output directory for downloaded models
+    TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
+    OUTPUT_DIR="outputs/${TIMESTAMP}_hf_eval"
+    
+    if [[ "$USE_HF_MODELS" == "true" ]]; then
+        echo "Attempting to download models from HuggingFace: $HF_REPO"
+        mkdir -p "$OUTPUT_DIR"
+        
+        # Function to download a model from HuggingFace
+        download_hf_model() {
+            local model_name=$1
+            local target_dir="${OUTPUT_DIR}/${model_name}"
+            
+            echo "  Downloading $model_name..."
+            mkdir -p "$target_dir/checkpoints"
+            
+            # Download checkpoint
+            if python -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='$HF_REPO', filename='${model_name}/checkpoints/best.pt', local_dir='$OUTPUT_DIR', local_dir_use_symlinks=False)"; then
+                echo "    ✅ Downloaded checkpoint for $model_name"
+            else
+                echo "    ⚠️  Failed to download $model_name from HuggingFace"
+                return 1
+            fi
+        }
+        
+        # Download models based on requested configuration
+        HF_DOWNLOAD_SUCCESS=true
+        
+        # Determine which models to download
+        if [ "$MODEL" = "all" ]; then
+            HF_MODELS=("transformer" "grassmann")
+        else
+            HF_MODELS=("$MODEL")
+        fi
+        
+        if [ "$DATASET" = "all" ]; then
+            HF_DATASETS=("wikitext" "snli")
+        else
+            HF_DATASETS=("$DATASET")
+        fi
+        
+        # Download all requested models
+        for hf_model in "${HF_MODELS[@]}"; do
+            for hf_dataset in "${HF_DATASETS[@]}"; do
+                if [ "$hf_dataset" = "wikitext" ]; then
+                    for block_size in "${BLOCK_SIZES[@]}"; do
+                        for num_layers in "${LAYER_DEPTHS[@]}"; do
+                            model_name="${hf_model}_${hf_dataset}_L${block_size}_N${num_layers}"
+                            if ! download_hf_model "$model_name"; then
+                                HF_DOWNLOAD_SUCCESS=false
+                            fi
+                        done
+                    done
+                else
+                    model_name="${hf_model}_${hf_dataset}"
+                    if ! download_hf_model "$model_name"; then
+                        HF_DOWNLOAD_SUCCESS=false
+                    fi
+                fi
+            done
+        done
+        
+        if [ "$HF_DOWNLOAD_SUCCESS" = false ]; then
+            echo ""
+            echo "⚠️  Some models failed to download from HuggingFace"
+            echo "Falling back to local models..."
+            USE_HF_MODELS=false
+        else
+            echo "✅ All models downloaded successfully from HuggingFace"
+        fi
     fi
-    OUTPUT_DIR="${LATEST_OUTPUT%/}"  # Remove trailing slash
-    echo "Using existing output directory: $OUTPUT_DIR"
+    
+    # Fall back to local models if HF download failed or disabled
+    if [[ "$USE_HF_MODELS" == "false" ]] || [[ "$HF_DOWNLOAD_SUCCESS" == "false" ]]; then
+        # Find the most recent output directory
+        LATEST_OUTPUT=$(ls -td outputs/*/ 2>/dev/null | head -1)
+        if [ -z "$LATEST_OUTPUT" ]; then
+            echo "ERROR: No existing output directory found and HuggingFace download failed."
+            echo "Please train models first or check your HuggingFace repository."
+            echo ""
+            echo "To use HuggingFace models, ensure:"
+            echo "  1. Models are uploaded: python scripts/upload_to_hf.py"
+            echo "  2. Repository is public or you're logged in: huggingface-cli login"
+            echo "  3. HF_MODEL_REPO is set correctly (default: alphaXiv/attention-is-not-all-you-need-models)"
+            exit 1
+        fi
+        OUTPUT_DIR="${LATEST_OUTPUT%/}"  # Remove trailing slash
+        echo "Using existing local output directory: $OUTPUT_DIR"
+    fi
+    
     echo ""
     echo "Available model directories:"
     ls -1 "$OUTPUT_DIR" | grep -E "^(transformer|grassmann)_" | head -10
@@ -201,14 +310,7 @@ else
 fi
 
 # Run training for all combinations
-# Paper specs: L=128 and L=256 for Wikitext, N=6 or N=12 layers
-BLOCK_SIZES=(128 256)  # Both block sizes from paper
-LAYER_DEPTHS=(6 12)       # Default to 6 layers (can be overridden with env var)
-
-# Allow user to specify layer depths via environment variable
-if [ -n "$LAYER_DEPTHS_OVERRIDE" ]; then
-    IFS=',' read -ra LAYER_DEPTHS <<< "$LAYER_DEPTHS_OVERRIDE"
-fi
+# Configuration already set above
 
 # Run training only if not in eval-only mode
 if [[ "$MODE" != "eval" ]]; then
