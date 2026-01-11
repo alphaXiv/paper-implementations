@@ -4,6 +4,7 @@
 
 This paper proposes replacing transformer self-attention with Grassmann manifold-based geometric operations using Plucker coordinates.
 
+**📄 Paper:** [alphaXiv](https://www.alphaxiv.org/abs/2512.19428)  
 **🤗 Models & Datasets:** [HuggingFace Collection](https://huggingface.co/collections/alphaXiv/attention-is-not-all-you-need-67822ce0a3b1e0e7f9a1d2b3)
 
 **Hardware:** NVIDIA H100 SXM5 80GB (1x GPU, Lambda Labs, Lambda Stack 22.04)  
@@ -12,7 +13,7 @@ This paper proposes replacing transformer self-attention with Grassmann manifold
 ## 🎯 TL;DR
 
 - ❌ **Wikitext-2 Gap:** Grassmann flows show 43-49% higher validation perplexity vs Transformers (paper claimed 10-11%)
-- ✅ **SNLI Surprise:** Grassmann **outperforms** Transformer by 4.54% (71.25% vs 66.71%) when trained from scratch
+- ✅ **SNLI Surprise:** Grassmann **outperforms** Transformer by 4.57% (71.00% vs 66.43%) when trained from scratch
 - 📊 **Best Validation Results:** Transformer L256 N12 achieves 168.68 Val PPL vs Grassmann L256 N12 at 245.10 Val PPL
 - 📉 **Discrepancy:** Wikitext gap is **4x larger** than paper's reported results
 - 🔍 **Paper vs Ours:** Paper uses pre-trained DistilBERT backbone for SNLI (~85%), we train from scratch (~63-67%)
@@ -42,7 +43,7 @@ This paper proposes replacing transformer self-attention with Grassmann manifold
 
 This repository contains a complete reproduction of the Grassmann flow architecture for language modeling. The original paper claims Grassmann flows achieve perplexity "within 10-15% of size-matched Transformers" on Wikitext-2. **Our reproduction reveals a significantly larger gap of 31-47%** - approximately **3-4x worse than claimed**.
 
-However, we found a **surprising result on SNLI**: Grassmann models **outperform** Transformers by 4.54% when trained from scratch (71.25% vs 66.71%), suggesting geometric operations may be better suited for natural language inference than for language modeling.
+However, we found a **surprising result on SNLI**: Grassmann models **outperform** Transformers by 4.57% when trained from scratch (71.00% vs 66.43%), suggesting geometric operations may be better suited for natural language inference than for language modeling.
 
 **Wikitext-2 Results:**
 
@@ -57,7 +58,7 @@ Our best validation perplexities are:
 **SNLI Results:**
 
 Paper (with DistilBERT): Transformer 85.11% vs Grassmann 85.38% (+0.27%)  
-Our reproduction: Transformer 66.71% vs Grassmann 71.25% (+4.54%)
+Our reproduction: Transformer 66.43% vs Grassmann 71.00% (+4.57%)
 
 ### Key Results
 
@@ -78,22 +79,37 @@ Our reproduction: Transformer 66.71% vs Grassmann 71.25% (+4.54%)
 **Paper's Claim:** 10-11% gap  
 **Our Finding:** 43-49% gap (approximately **4x larger** than claimed)
 
-#### SNLI Natural Language Inference (Test Set)
+#### SNLI Natural Language Inference
+
+**Our Results (From-Scratch Training):**
+
+*Validation Set:*
+
+| Model       | Accuracy | Loss   | Entailment | Neutral | Contradiction |
+|-------------|----------|--------|------------|---------|---------------|
+| **Grassmann** | **70.79%**   | 0.6940 | 75.91%     | 67.39%  | 68.94%        |
+| **Transformer** | 66.06%   | 0.7697 | 72.21%     | 60.74%  | 65.07%        |
+
+*Test Set:*
 
 | Model       | Accuracy | Loss   | Entailment | Neutral | Contradiction | Parameters |
 |-------------|----------|--------|------------|---------|---------------|-----------|
-| **Grassmann** | **71.25%**   | 0.6816 | 76.07%     | 66.85%  | 70.62%        | 17.70M    |
-| **Transformer** | 66.71%   | 0.7626 | 74.41%     | 62.29%  | 63.11%        | 17.67M    |
+| **Grassmann** | **71.00%**   | 0.6860 | 75.15%     | 68.38%  | 69.29%        | 17.70M    |
+| **Transformer** | 66.43%   | 0.7662 | 72.48%     | 61.11%  | 65.43%        | 17.67M    |
 
-**Surprising Finding:** Grassmann **outperforms** Transformer on SNLI (+4.54% accuracy) when trained from scratch!
+**Paper's Results (with DistilBERT Backbone):**
 
-**Paper's Claims (with DistilBERT backbone):**
-- Transformer head: 85.11% test accuracy
-- Grassmann-Plücker head: 85.38% test accuracy (+0.27%)
+| Model       | Val Accuracy | Test Accuracy | Gap |
+|-------------|--------------|---------------|-----|
+| Transformer head | 85.45% | 85.11% | baseline |
+| Grassmann-Plücker head | **85.50%** | **85.38%** | +0.27% |
 
-**Our Results (from-scratch training):**
-- Transformer: 66.71% test accuracy
-- Grassmann: 71.25% test accuracy (+4.54%)
+**Key Findings:**
+
+- **Our Reproduction:** Grassmann **outperforms** Transformer by **+4.57%** on test (71.00% vs 66.43%) when trained from scratch
+- **Paper (DistilBERT):** Grassmann slightly outperforms Transformer by **+0.27%** (85.38% vs 85.11%)
+- **Architecture Difference:** Paper uses pre-trained DistilBERT backbone (~85% accuracy), we train from scratch (~66-71%)
+- **Surprising Finding:** The Grassmann advantage is **17x larger** in our from-scratch setting (4.57% vs 0.27%)
 
 
 ---

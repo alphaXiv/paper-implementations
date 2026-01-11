@@ -72,12 +72,7 @@ class TransformerNLIHead(nn.Module):
         self.transformer2 = nn.TransformerEncoder(encoder_layer2, num_layers=num_layers)
         
         # Classification head
-        self.classifier = nn.Sequential(
-            nn.Linear(model_dim, model_dim),
-            nn.GELU(),
-            nn.Dropout(dropout),
-            nn.Linear(model_dim, num_classes)
-        )
+        self.classifier = nn.Linear(model_dim, num_classes)
         
     def forward(self, pooled_output: torch.Tensor) -> torch.Tensor:
         """Forward pass.
@@ -166,12 +161,8 @@ class GrassmannPluckerNLIHead(nn.Module):
         ])
         
         # Final classification head
-        self.classifier = nn.Sequential(
-            nn.Linear(dmodel, dmodel),
-            nn.GELU(),
-            nn.Dropout(dropout),
-            nn.Linear(dmodel, num_classes)
-        )
+        self.classifier = nn.Linear(dmodel, num_classes)
+           
         
     def forward(self, pooled_output: torch.Tensor) -> torch.Tensor:
         """Forward pass.
