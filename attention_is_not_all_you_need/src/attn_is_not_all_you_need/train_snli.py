@@ -165,8 +165,8 @@ def main():
     
     # Load datasets - use train/val during training, test is for final eval
     print("Loading SNLI...")
-    train_dataset = SNLIDataset("train", tokenizer, max_seq_len=48)
-    val_dataset = SNLIDataset("validation", tokenizer, max_seq_len=48)
+    train_dataset = SNLIDataset("train", tokenizer, max_seq_len=256)
+    val_dataset = SNLIDataset("validation", tokenizer, max_seq_len=256)
     
     print(f"Train: {len(train_dataset)}, Val: {len(val_dataset)}")
     

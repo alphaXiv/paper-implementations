@@ -13,7 +13,7 @@ This paper proposes replacing transformer self-attention with Grassmann manifold
 ## 🎯 TL;DR
 
 - ❌ **Wikitext-2 Gap:** Grassmann flows show 43-49% higher validation perplexity vs Transformers (paper claimed 10-11%)
-- ✅ **SNLI Surprise:** Grassmann **outperforms** Transformer by 4.57% (71.00% vs 66.43%) when trained from scratch
+- ✅ **SNLI Results:** Grassmann and Transformer achieve **similar performance** (67.87% vs 67.94%) when trained from scratch
 - 📊 **Best Validation Results:** Transformer L256 N12 achieves 168.68 Val PPL vs Grassmann L256 N12 at 245.10 Val PPL
 - 📉 **Discrepancy:** Wikitext gap is **4x larger** than paper's reported results
 - 🔍 **Paper vs Ours:** Paper uses pre-trained DistilBERT backbone for SNLI (~85%), and us (~63-67%)
@@ -43,7 +43,7 @@ This paper proposes replacing transformer self-attention with Grassmann manifold
 
 This repository contains a complete reproduction of the Grassmann flow architecture for language modeling. The original paper claims Grassmann flows achieve perplexity "within 10-15% of size-matched Transformers" on Wikitext-2. **Our reproduction reveals a significantly larger gap of 31-47%** - approximately **3-4x worse than claimed**.
 
-However, we found a **surprising result on SNLI**: Grassmann models **outperform** Transformers by 4.57% when trained from scratch (71.00% vs 66.43%), suggesting geometric operations may be better suited for natural language inference than for language modeling.
+On SNLI, we found that Grassmann and Transformer models achieve **comparable performance** when trained from scratch (67.87% vs 67.94%), suggesting that for natural language inference tasks, geometric operations perform similarly to attention mechanisms.
 
 **Wikitext-2 Results:**
 
@@ -58,7 +58,7 @@ Our best validation perplexities are:
 **SNLI Results:**
 
 Paper (with DistilBERT): Transformer 85.11% vs Grassmann 85.38% (+0.27%)  
-Our reproduction: Transformer 66.43% vs Grassmann 71.00% (+4.57%)
+Our reproduction: Transformer 67.94% vs Grassmann 67.87% (-0.07%)
 
 ### Key Results
 
@@ -87,15 +87,15 @@ Our reproduction: Transformer 66.43% vs Grassmann 71.00% (+4.57%)
 
 | Model       | Accuracy | Loss   | Entailment | Neutral | Contradiction |
 |-------------|----------|--------|------------|---------|---------------|
-| **Grassmann** | **70.79%**   | 0.6940 | 75.91%     | 67.39%  | 68.94%        |
-| **Transformer** | 66.06%   | 0.7697 | 72.21%     | 60.74%  | 65.07%        |
+| **Grassmann** | 67.75%   | 0.7470 | 76.36%     | 61.82%  | 64.86%        |
+| **Transformer** | **67.54%**   | 0.7491 | 69.39%     | 66.46%  | 66.72%        |
 
 *Test Set:*
 
 | Model       | Accuracy | Loss   | Entailment | Neutral | Contradiction | Parameters |
-|-------------|----------|--------|------------|---------|---------------|-----------|
-| **Grassmann** | **71.00%**   | 0.6860 | 75.15%     | 68.38%  | 69.29%        | 17.70M    |
-| **Transformer** | 66.43%   | 0.7662 | 72.48%     | 61.11%  | 65.43%        | 17.67M    |
+|-------------|----------|--------|------------|---------|---------------|-----------||
+| **Grassmann** | 67.87%   | 0.7387 | 76.54%     | 62.13%  | 64.57%        | 17.70M    |
+| **Transformer** | **67.94%**   | 0.7409 | 69.00%     | 67.60%  | 67.16%        | 17.67M    |
 
 **Paper's Results (with DistilBERT Backbone):**
 
@@ -106,10 +106,10 @@ Our reproduction: Transformer 66.43% vs Grassmann 71.00% (+4.57%)
 
 **Key Findings:**
 
-- **Our Reproduction:** Grassmann **outperforms** Transformer by **+4.57%** on test (71.00% vs 66.43%) when trained from scratch
+- **Our Reproduction:** Grassmann and Transformer achieve **similar performance** on test (67.87% vs 67.94%, -0.07% difference) when trained from scratch
 - **Paper (DistilBERT):** Grassmann slightly outperforms Transformer by **+0.27%** (85.38% vs 85.11%)
-- **Architecture Difference:** Paper uses pre-trained DistilBERT backbone (~85% accuracy), we train from scratch (~66-71%)
-- **Surprising Finding:** The Grassmann advantage is **17x larger** in our from-scratch setting (4.57% vs 0.27%)
+- **Architecture Difference:** Paper uses pre-trained DistilBERT backbone (~85% accuracy), we train from scratch (~68%)
+- **Finding:** Both architectures show comparable performance from scratch, with Transformer marginally ahead
 
 
 ---

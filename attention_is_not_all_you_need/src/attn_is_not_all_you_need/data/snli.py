@@ -28,11 +28,11 @@ class SNLIDataset(torch.utils.data.Dataset):
     Args:
         split: Dataset split ('train', 'validation', 'test')
         tokenizer: HuggingFace tokenizer (e.g., DistilBertTokenizer)
-        max_seq_len: Maximum sequence length per sentence (default: 48)
-                     Total max length will be max_seq_len * 2 for both sentences
+        max_seq_len: Maximum sequence length per sentence (default: 256)
+                     Total max length will be max_seq_len * 2 for both sentences (512 total)
     """
     
-    def __init__(self, split: str, tokenizer, max_seq_len: int = 48):
+    def __init__(self, split: str, tokenizer, max_seq_len: int = 256):
         """Initialize SNLI dataset.
         
         Args:

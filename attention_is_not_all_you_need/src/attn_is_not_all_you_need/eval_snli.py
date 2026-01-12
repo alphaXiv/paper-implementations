@@ -197,7 +197,7 @@ def main():
     
     # Load dataset
     print(f"Loading SNLI {args.split} split...")
-    dataset = SNLIDataset(args.split, tokenizer, max_seq_len=48)
+    dataset = SNLIDataset(args.split, tokenizer, max_seq_len=256)
     
     print(f"Running {args.num_runs} evaluation runs on {len(dataset)} examples...")
     

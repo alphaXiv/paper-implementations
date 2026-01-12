@@ -60,17 +60,10 @@ class TransformerNLIHead(nn.Module):
             batch_first=True,
         )
         
-        encoder_layer2 = nn.TransformerEncoderLayer(
-            d_model=model_dim,
-            nhead=num_heads,
-            dim_feedforward=ff_dim,
-            dropout=dropout,
-            batch_first=True,
-        )
+       
         
         self.transformer1 = nn.TransformerEncoder(encoder_layer1, num_layers=num_layers)
-        self.transformer2 = nn.TransformerEncoder(encoder_layer2, num_layers=num_layers)
-        
+      
         # Classification head
         self.classifier = nn.Linear(model_dim, num_classes)
         
@@ -89,7 +82,7 @@ class TransformerNLIHead(nn.Module):
         
         # Apply transformer layers
         x = self.transformer1(x)  # (batch, 1, model_dim)
-        x = self.transformer2(x)  # (batch, 1, model_dim)
+        # x = self.transformer2(x)  # (batch, 1, model_dim)
         # Pool and classify
         x = x.squeeze(1)  # (batch, model_dim)
         logits = self.classifier(x)  # (batch, num_classes)

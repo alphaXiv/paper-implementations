@@ -91,10 +91,10 @@ def create_snli_comparison():
     
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 7))
     
-    # Our results - Per-class comparison (from outputs/2026-01-10_23-46-12)
+    # Our results - Per-class comparison (from outputs/2026-01-12_12-38-19)
     categories = ['Overall', 'Entailment', 'Neutral', 'Contradiction']
-    grassmann_acc = [71.25, 76.07, 66.85, 70.62]
-    transformer_acc = [66.71, 74.41, 62.29, 63.11]
+    grassmann_acc = [67.87, 76.54, 62.13, 64.57]
+    transformer_acc = [67.94, 69.00, 67.60, 67.16]
     
     x = np.arange(len(categories))
     width = 0.35
@@ -116,7 +116,7 @@ def create_snli_comparison():
     ax1.set_xticks(x)
     ax1.set_xticklabels(categories, fontsize=11)
     ax1.set_ylabel('Accuracy (%)', fontsize=13, fontweight='bold')
-    ax1.set_title('Our Results: SNLI Classification (Test Set)\nGrassmann outperforms Transformer (+4.54%)', 
+    ax1.set_title('Our Results: SNLI Classification (Test Set)\nSimilar Performance (Transformer +0.07%)', 
                   fontsize=13, fontweight='bold', pad=15)
     ax1.set_ylim([0, 80])
     ax1.grid(axis='y', alpha=0.3)
@@ -125,7 +125,7 @@ def create_snli_comparison():
     # Paper's results - Overall accuracy comparison
     models_paper = ['Transformer\nHead\n(Paper Test)', 'Grassmann\nHead\n(Paper Test)',
                     'Transformer\n(Our Test)', 'Grassmann\n(Our Test)']
-    accuracies_paper = [85.11, 85.38, 66.71, 71.25]
+    accuracies_paper = [85.11, 85.38, 67.94, 67.87]
     colors_paper = [colors_transformer, colors_grassmann, 
                     colors_transformer, colors_grassmann]
     
@@ -154,7 +154,7 @@ def create_snli_comparison():
     
     # Add gap annotations
     ax2.plot([0, 1], [85.11, 85.38], 'g--', linewidth=2, alpha=0.5, label='Paper Gap: +0.27%')
-    ax2.plot([2, 3], [66.71, 71.25], 'b--', linewidth=2, alpha=0.5, label='Our Gap: +4.54%')
+    ax2.plot([2, 3], [67.94, 67.87], 'b--', linewidth=2, alpha=0.5, label='Our Gap: -0.07%')
     ax2.legend(fontsize=10)
     
     plt.tight_layout()
@@ -258,8 +258,8 @@ def create_combined_dashboard():
     # 2. SNLI Accuracy by Class
     ax2 = fig.add_subplot(gs[1, 0])
     categories = ['Overall', 'Entailment', 'Neutral', 'Contradiction']
-    grassmann_acc = [66.36, 72.68, 61.17, 64.94]
-    transformer_acc = [62.63, 71.44, 56.76, 59.31]
+    grassmann_acc = [67.87, 76.54, 62.13, 64.57]
+    transformer_acc = [67.94, 69.00, 67.60, 67.16]
     
     x_snli = np.arange(len(categories))
     width_snli = 0.35
@@ -272,7 +272,7 @@ def create_combined_dashboard():
     ax2.set_xticks(x_snli)
     ax2.set_xticklabels(categories, fontsize=10)
     ax2.set_ylabel('Accuracy (%)', fontweight='bold')
-    ax2.set_title('SNLI: Our Results (Grassmann wins +3.73%)', fontsize=13, fontweight='bold')
+    ax2.set_title('SNLI: Our Results (Similar Performance)', fontsize=13, fontweight='bold')
     ax2.grid(axis='y', alpha=0.3)
     ax2.set_ylim([0, 80])
     ax2.legend(fontsize=10)
