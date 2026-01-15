@@ -76,7 +76,7 @@ if __name__ == '__main__':
             
             # Keep the same output schema as before
             data = {
-                "data_source": data_source,
+                "data_source": "math_dapo",
                 "prompt": [{
                     "role": "user",
                     "content": question
