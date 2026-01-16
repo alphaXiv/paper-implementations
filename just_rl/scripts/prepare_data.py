@@ -100,24 +100,28 @@ if __name__ == '__main__':
     def filter_valid(example):
         return example is not None and example.get('data_source') is not None
     
-    train_dataset = dataset.map(function=make_map_fn('train'), with_indices=True)
-    train_dataset = train_dataset.filter(filter_valid)
+    # Process the full dataset first
+    full_dataset = dataset.map(function=make_map_fn('train'), with_indices=True)
+    full_dataset = full_dataset.filter(filter_valid)
     
-    # For DAPO, check if test split exists, otherwise use train for both
-    try:
-        # Try to load test split
-        test_dataset_raw = datasets.load_dataset(data_source, split="test")
-        test_dataset = test_dataset_raw.map(function=make_map_fn('test'), with_indices=True)
-        test_dataset = test_dataset.filter(filter_valid)
-    except:
-        # If no test split exists, use train as test
-        test_dataset = train_dataset
+    # Split: 1% for validation, 99% for training
+    split_dataset = full_dataset.train_test_split(test_size=0.01, seed=42)
+    train_dataset = split_dataset['train']
+    val_dataset = split_dataset['test']  # 'test' key contains the 1% validation split
+    
+    # Update the split metadata for validation dataset
+    def update_split_to_val(example):
+        if 'extra_info' in example and isinstance(example['extra_info'], dict):
+            example['extra_info']['split'] = 'val'
+        return example
+    
+    val_dataset = val_dataset.map(update_split_to_val)
 
     local_dir = args.local_dir
     hdfs_dir = args.hdfs_dir
 
     train_dataset.to_parquet(os.path.join(local_dir, 'train.parquet'))
-    test_dataset.to_parquet(os.path.join(local_dir, 'test.parquet'))
+    val_dataset.to_parquet(os.path.join(local_dir, 'val.parquet'))
 
     makedirs(hdfs_dir)
 

@@ -8,16 +8,17 @@ export DATA_DIR="data/processed"
 export BASE_MODEL="Qwen/Qwen2.5-0.5B"
 export EXPERIMENT_NAME="verl-justrl-grpo-1"
 export CKPT_DIR="checkpoints/$EXPERIMENT_NAME"
+export TRAIN_DATA_FILE="train.parquet"
+export VAL_DATA_FILE="val.parquet"
 
 python -u -m verl.trainer.main_ppo \
     algorithm.adv_estimator=grpo \
-    data.train_files=$DATA_DIR/dapo_math_17k.parquet \
-    data.val_files=$DATA_DIR/dapo_math_17k.parquet \
+    data.train_files=$DATA_DIR/$TRAIN_DATA_FILE \
+    data.val_files=$DATA_DIR/$VAL_DATA_FILE \
     data.train_batch_size=256 \
     data.val_batch_size=64 \
     data.max_prompt_length=1024 \
     data.max_response_length=15360 \
-    data.truncation=right \
     actor_rollout_ref.model.path=$BASE_MODEL \
     actor_rollout_ref.actor.optim.lr=1e-6 \
     actor_rollout_ref.actor.ppo_mini_batch_size=64 \
@@ -33,7 +34,8 @@ python -u -m verl.trainer.main_ppo \
     actor_rollout_ref.rollout.tensor_model_parallel_size=$ROLLOUT_TP_SIZE \
     reward_model.reward_manager=dapo \
     ++trainer.seed=42 \
-    ++trainer.save_steps=250 \
+    ++trainer.save_steps=50 \
+    ++trainer.test_freq=50 \
     ++trainer.max_checkpoints=5 \
     trainer.logger=['console','wandb'] \
     trainer.project_name=verl-grpo-dapo \
