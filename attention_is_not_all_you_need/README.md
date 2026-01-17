@@ -5,7 +5,7 @@
 This paper proposes replacing transformer self-attention with Grassmann manifold-based geometric operations using Plucker coordinates.
 
 **📄 Paper:** [alphaXiv](https://www.alphaxiv.org/abs/2512.19428)  
-**🤗 Models & Datasets:** [HuggingFace Collection](https://huggingface.co/collections/alphaXiv/attention-is-not-all-you-need-67822ce0a3b1e0e7f9a1d2b3)
+**🤗 Models & Datasets:** [HuggingFace Collection](https://huggingface.co/collections/alphaXiv/attention-is-not-all-you-need)
 
 **Hardware:** NVIDIA H100 SXM5 80GB (1x GPU, Lambda Labs, Lambda Stack 22.04)  
 **Infrastructure:** Used for all training and evaluation experiments
