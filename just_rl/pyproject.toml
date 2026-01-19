@@ -19,6 +19,7 @@ dependencies = [
     "peft==0.17.1",
     "setuptools",  # Required by triton (vLLM dependency) at runtime
     "click==8.2.1",
+    "flashinfer-python",
 ]
 
 [build-system]
