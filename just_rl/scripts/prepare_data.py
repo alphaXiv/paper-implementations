@@ -35,7 +35,7 @@ if __name__ == '__main__':
         final_solution = final_solution.split('#### ')[1].replace(',', '')
         return final_solution
 
-    instruction_following = "Let's think step by step and output the final answer after \"####\"."
+    instruction_following = "Please reason step by step, and put your final answer within \\boxed{}."
 
     # add a row to each data item that represents a unique id
     def make_map_fn(split):
@@ -104,8 +104,8 @@ if __name__ == '__main__':
     full_dataset = dataset.map(function=make_map_fn('train'), with_indices=True)
     full_dataset = full_dataset.filter(filter_valid)
     
-    # Split: 1% for validation, 99% for training
-    split_dataset = full_dataset.train_test_split(test_size=0.01, seed=42)
+    # Split: 0.05% for validation, 99.95% for training
+    split_dataset = full_dataset.train_test_split(test_size=0.0005, seed=42)
     train_dataset = split_dataset['train']
     val_dataset = split_dataset['test']  # 'test' key contains the 1% validation split
     

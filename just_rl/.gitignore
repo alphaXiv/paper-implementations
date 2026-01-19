@@ -28,6 +28,7 @@ data/processed/
 
 # Output files
 outputs/
+checkpoints/
 
 # W&B Logs
 wandb/

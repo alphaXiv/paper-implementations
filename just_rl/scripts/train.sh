@@ -1,12 +1,12 @@
-export CUDA_VISIBLE_DEVICES=0
-export N_GPUS=1
+export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
+export N_GPUS=8
 export ROLLOUT_TP_SIZE=1
 
 export HYDRA_FULL_ERROR=1
 
 export DATA_DIR="data/processed"
 export BASE_MODEL="Qwen/Qwen2.5-0.5B"
-export EXPERIMENT_NAME="verl-justrl-grpo-2"
+export EXPERIMENT_NAME="verl-justrl-grpo-yes-strict-box-verify"
 export CKPT_DIR="checkpoints/$EXPERIMENT_NAME"
 export TRAIN_DATA_FILE="train.parquet"
 export VAL_DATA_FILE="val.parquet"
@@ -17,7 +17,7 @@ python -u -m verl.trainer.main_ppo \
     data.train_files=$DATA_DIR/$TRAIN_DATA_FILE \
     data.val_files=$DATA_DIR/$VAL_DATA_FILE \
     data.train_batch_size=128 \
-    data.val_batch_size=64 \
+    data.val_batch_size=128 \
     data.truncation=left \
     data.max_prompt_length=1024 \
     data.max_response_length=7168 \
@@ -36,13 +36,12 @@ python -u -m verl.trainer.main_ppo \
     actor_rollout_ref.rollout.temperature=1.0 \
     actor_rollout_ref.rollout.log_prob_micro_batch_size_per_gpu=8 \
     actor_rollout_ref.rollout.n=8 \
-    actor_rollout_ref.actor.ppo_micro_batch_size_per_gpu=1 \
+    actor_rollout_ref.actor.ppo_micro_batch_size_per_gpu=4 \
     actor_rollout_ref.rollout.tensor_model_parallel_size=$ROLLOUT_TP_SIZE \
     reward_model.reward_manager=dapo \
     ++trainer.seed=42 \
-    ++trainer.save_steps=10 \
-    ++trainer.test_freq=10 \
-    ++trainer.max_checkpoints=5 \
+    trainer.save_freq=5 \
+    trainer.test_freq=10 \
     trainer.logger=['console','wandb'] \
     trainer.project_name=verl-grpo-dapo \
     trainer.experiment_name=$EXPERIMENT_NAME \
