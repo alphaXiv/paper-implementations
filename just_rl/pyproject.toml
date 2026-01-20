@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "JustRL Reproduction: Scaling a 1.5B LLM with a Simple RL Recipe"
 requires-python = "==3.10.*"
 dependencies = [
-    "verl",
+    # verl is in the repo at ./verl, so we add the project root to PYTHONPATH instead
     "vllm==0.8.4",
     "torch==2.6.0",
     "transformers==4.51.3",
@@ -20,6 +20,9 @@ dependencies = [
     "setuptools",  # Required by triton (vLLM dependency) at runtime
     "click==8.2.1",
     "flashinfer-python",
+    "tensordict==0.6.2",
+    "torchdata==0.11.0",
+    "codetiming==1.4.0",
 ]
 
 [build-system]
