@@ -1,0 +1,42 @@
+[
+    {
+        "hyperparameters": {
+            "temperature": "0.7",
+            "top_p": "0.9",
+            "n": "2",
+            "max_tokens": "1024",
+            "task_name": "gsm8k"
+        },
+        "mean_score": 0.00265352539802881,
+        "distinct_4gram": 0.8004393851559796,
+        "best_score": 0.00530705079605762,
+        "solve_none": 1312,
+        "solve_all": 0,
+        "avg_output_length": 1180.238059135709,
+        "format_error_rollouts": 2522,
+        "soft_mean_score": 0.33244882486732374,
+        "soft_best_score": 0.48218347232752085,
+        "soft_solve_none": 683,
+        "soft_solve_all": 241
+    },
+    {
+        "hyperparameters": {
+            "temperature": "0.7",
+            "top_p": "0.9",
+            "n": "1",
+            "max_tokens": "1024",
+            "task_name": "gsm8k"
+        },
+        "mean_score": 0.000758150113722517,
+        "distinct_4gram": 0.880067152468974,
+        "best_score": 0.000758150113722517,
+        "solve_none": 1318,
+        "solve_all": 1,
+        "avg_output_length": 1197.3373768006065,
+        "format_error_rollouts": 1266,
+        "soft_mean_score": 0.3146322971948446,
+        "soft_best_score": 0.3146322971948446,
+        "soft_solve_none": 904,
+        "soft_solve_all": 415
+    }
+]

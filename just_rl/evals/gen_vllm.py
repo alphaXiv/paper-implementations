@@ -13,19 +13,11 @@ from vllm import LLM, SamplingParams
 # --------------------------------------------------------------------------- #
 DATA_DIR = "data"
 TASKS       = [
-    # {"name": "AIME24", "path": f"{DATA_DIR}/AIME24/test.parquet", "N": 32},
-    {"name": "AIME25", "path": f"{DATA_DIR}/AIME25/test.parquet", "N": 32},
-    # {"name": "AMC23", "path": f"{DATA_DIR}/AMC23/test.parquet", "N": 32},
-    {"name": "MATH-500", "path": f"{DATA_DIR}/MATH-500/test.parquet", "N": 4},
-    # {"name": "Minerva", "path": f"{DATA_DIR}/Minerva/test.parquet", "N": 4},
-    {"name": "Olympiad-Bench", "path": f"{DATA_DIR}/Olympiad-Bench/test.parquet", "N": 4},
-    # {"name": "BRUMO25", "path": f"{DATA_DIR}/BRUMO25/test.parquet", "N": 32},
-    # {"name": "CMIMC25", "path": f"{DATA_DIR}/CMIMC25/test.parquet", "N": 32},
-    # {"name": "HMMT25", "path": f"{DATA_DIR}/HMMT25/test.parquet", "N": 32},
+    {"name": "gsm8k", "path": f"{DATA_DIR}/processed/test.parquet", "N": 1},
 ]
 PROMPT_TEMPLATE = """{problem} Please reason step by step, and put your final answer within \\boxed{{}}."""
 NAME        = "Qwen/Qwen2.5-0.5B"
-MAX_TOKENS  = 31744
+MAX_TOKENS  = 1024
 TEMPERATURE = 0.7
 TOP_P       = 0.9
 OUT_DIR     = Path(f"justrl_eval_outputs/{NAME.split('/')[-1]}")
@@ -37,24 +29,15 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 def load_samples(filepath: str):
     """Read parquet file and return a list of prompts (no duplication)."""
     df = pd.read_parquet(filepath)
-    if "BRUMO25" in filepath or "CMIMC25" in filepath or "HMMT25" in filepath:
-        samples = [
-            {
-                "example_id": i,
-                "prompt": df.at[i, "problem"].strip(),
-                "answer": df.at[i, "answer"].strip(),
-            }
-            for i in range(len(df))
-        ]
-    else:
-        samples = [
-            {
-                "example_id": i,
-                "prompt": df.at[i, "prompt"][0]["content"].strip(),
-                "answer": df.at[i, "reward_model"]["ground_truth"].strip(),
-            }
-            for i in range(len(df))
-        ]
+
+    samples = [
+        {
+            "example_id": i,
+            "question": df.at[i, "question"].strip(),
+            "answer": df.at[i, "answer"].strip(),
+        }
+        for i in range(len(df))
+    ]
     print(f"Total unique samples: {len(samples)}")
     return samples
 
@@ -97,13 +80,13 @@ def worker_process(args_tuple):
         # outputs = llm.chat(messages, sampling, use_tqdm=True)
 
 
-        prompts = [s["prompt"] for s in samples]
-        outputs = llm.generate(prompts, sampling, use_tqdm=True)
+        questions = [s["question"] for s in samples]
+        outputs = llm.generate(questions, sampling, use_tqdm=True)
         for sample, out in zip(samples, outputs):
             results.append(
                 {
                     "example_id": sample["example_id"],
-                    "prompt": sample["prompt"],
+                    "question": sample["question"],
                     "answer": sample["answer"],
                     "seed": seed,
                     "response": out.outputs[0].text,
@@ -116,7 +99,7 @@ def worker_process(args_tuple):
 #                                   main                                      #
 # --------------------------------------------------------------------------- #
 def main():
-    available_workers = [0,1,2,3,4,5,6,7]
+    available_workers = [0] # adjust this based on the number of GPUs available
     num_workers = len(available_workers)
     for task in TASKS:
         task_name = task["name"]
@@ -131,13 +114,9 @@ def main():
         # 1. Load original prompts
         samples = load_samples(task_path)
 
-        # Append suffix prompt to each sample
-        for sample in samples:
-            sample["prompt"] = PROMPT_TEMPLATE.format(problem=sample["prompt"])
-
         # demo print
         print("Example prompt after formatting:")
-        print(samples[0]["prompt"])
+        print(samples[0]["question"])
         
         # 2. Generate N distinct random seeds and split across GPUs
         random_seeds = random.sample(range(2**31 - 1), N)  # unique & shuffled

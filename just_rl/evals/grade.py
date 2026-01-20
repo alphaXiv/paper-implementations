@@ -1,52 +1,13 @@
 
-from eval_utils import grade_answer_verl
-from transformers import AutoTokenizer
+from eval_utils import grade_answer_verl, grade_answer_with_error_type, extract_answer
 import json
 import pandas as pd
 from pathlib import Path
 import re
-from vllm import LLM, SamplingParams
 
-CV_PROMPT = """
-Please as a grading expert, judge whether the final answers given by the candidates below are consistent with the standard answers, that is, whether the candidates answered correctly. 
-Here are some evaluation criteria:
-1. Please refer to the given standard answer. You don't need to re-generate the answer to the question because the standard answer has been given. You only need to judge whether the candidate's answer is consistent with the standard answer according to the form of the question. THE STANDARD ANSWER IS ALWAYS CORRECT AND THE QUESTION IS PERFECTLY VALID. NEVER QUESTION THEM.
-2. ONLY compare the FINAL ANSWER - COMPLETELY IGNORE any potential errors in the REASONING PROCESSES.
-3. Some answers may be expressed in different ways, such as some answers may be a mathematical expression, some answers may be a textual description, as long as the meaning expressed is the same. Before making a judgment, please understand the question and the standard answer first, and then judge whether the candidate's answer is correct.
-4. Some answers may consist of multiple items, such as multiple-choice questions, multiple-select questions, fill-in-the-blank questions, etc. Regardless of the question type, the final answer will be considered correct as long as it matches the standard answer, regardless of whether the reasoning process is correct. For multiple-select questions and multi-blank fill-in-the-blank questions, all corresponding options or blanks must be answered correctly and match the standard answer exactly to be deemed correct.
-5. If the prediction is given with \\boxed{{}}, please ignore the \\boxed{{}} and only judge whether the candidate's answer is consistent with the standard answer.
-6. If the candidate's answer is invalid (e.g., incomplete (cut off mid-response), lots of unnormal repetitive content, or irrelevant to the question, saying it can't answer the question because some irresistible factors, like ethical issues, no enough information, etc.), select option C (INVALID).Please judge whether the following answers are consistent with the standard answer based on the above criteria. Grade the predicted answer of this new question as one of:
-A: CORRECT 
-B: INCORRECT
-C: INVALID
-Just return the letters "A", "B", or "C", with no text around it.
-Here is your task. Simply reply with either CORRECT, INCORRECT, or INVALID. Don't apologize or correct yourself if there was a mistake; we are just trying to grade the answer.
-<Original Question Begin>:
-{question}
-<Original Question End>
-<Standard Answer Begin>:
-{gold_answer}
-<Standard Answer End>
-<Candidate's Answer Begin>: 
-{llm_response}
-<Candidate's Answer End>
-Judging the correctness of the candidate's answer:
-"""
-
-NAME     = "Qwen/Qwen2.5-0.5B" # "JustRL-Nemotron-1.5B"
+NAME     = "Qwen2.5-0.5B" # "JustRL-Nemotron-1.5B"
 EVAL_DIR = Path(f"justrl_eval_outputs/{NAME}")
-OUTPUT_FILE = EVAL_DIR / "grading_results.json"
-
-model_name = "opencompass/CompassVerifier-3B"
-model_tokenizer = AutoTokenizer.from_pretrained(model_name)
-vllm_model = LLM(
-    model=model_name,
-    tensor_parallel_size=1
-)
-sampling_params = SamplingParams(
-    temperature=0.0,
-    max_tokens=2048
-)
+OUTPUT_FILE = EVAL_DIR / "grade.jsonl"
 
 length_tokenizer = None
 
@@ -77,18 +38,32 @@ def get_diverse_score(sequences, n=4):
 def process_jsonl_file(file_name):
     """
     Process a JSONL file and dynamically handle the number of problems.
+    Expected format: Each line is a JSON object with:
+    - example_id: int
+    - question: str
+    - answer: str (ground truth)
+    - seed: int
+    - response: str (model output)
+    
+    Multiple lines can have the same example_id (when n > 1 in filename).
     """
     results = []
-    with open(file_name) as f:
+    with open(file_name, 'r', encoding='utf-8') as f:
         for line in f:
+            line = line.strip()
+            if not line:
+                continue
             data = json.loads(line)
-            id = int(data["example_id"])
-            while len(results) <= id:  # Ensure the list is large enough
+            example_id = int(data["example_id"])
+            # Ensure the list is large enough
+            while len(results) <= example_id:
                 results.append({"gt": None, "responses": []})
+            # Extract ground truth and response
             gt = data["answer"]
             response = data["response"]
-            results[id]["gt"] = gt
-            results[id]["responses"].append(response)
+            # Store ground truth (will be overwritten if multiple lines have same example_id, but should be same)
+            results[example_id]["gt"] = gt
+            results[example_id]["responses"].append(response)
     return results
 
 def parse_hyperparameters_from_filename(filename):
@@ -112,12 +87,18 @@ def grade_file(file_path):
     task_name = file_path.stem.split("_")[0]
     hyperparams["task_name"] = task_name
 
-    if "parquet" in str(file_path):
+    if file_path.suffix == ".parquet":
         df = pd.read_parquet(file_path)
         num_pred = len(df["responses"][0])
-    else:
+    elif file_path.suffix == ".jsonl":
         df = process_jsonl_file(file_path)
-        num_pred = len(df[0]["responses"])
+        if len(df) == 0:
+            print(f"Warning: No data found in {file_path}")
+            return None
+        num_pred = len(df[0]["responses"]) if len(df[0]["responses"]) > 0 else 1
+    else:
+        print(f"Unsupported file format: {file_path.suffix}")
+        return None
 
     results = {
         "hyperparameters": hyperparams,
@@ -128,6 +109,10 @@ def grade_file(file_path):
         "solve_all": 0,
         "avg_output_length": 0,
         "format_error_rollouts": 0,
+        "soft_mean_score": 0,
+        "soft_best_score": 0,
+        "soft_solve_none": 0,
+        "soft_solve_all": 0,
     }
 
     diverse = []
@@ -139,83 +124,51 @@ def grade_file(file_path):
     response_lengths = []
     incorrect_data = []  # List to store incorrect responses and ground truths
 
-    all_model_inputs = []  # Collect all prompts for batch processing
-    all_responses = []  # Keep track of responses for mapping back
-    all_questions = []  # Keep track of questions for mapping back
-    all_ground_truths = []  # Keep track of ground truths for mapping back
-    rule_based_scores = []  # Store rule-based scores for fallback logic
+    rule_based_scores = []  # Store strict rule-based scores
+    soft_scores = []  # Store soft grading scores
 
     for i in range(len(df)):
-        if "jsonl" in str(file_path):
+        if file_path.suffix == ".jsonl":
             responses = df[i]["responses"]
             gt = df[i]["gt"]
-            question = df[i].get("question", "")  # Assuming question is part of the data
-        else:
+        else:  # parquet format
             responses = df["responses"][i]
             gt = df["reward_model"][i]["ground_truth"]
-            question = df["reward_model"][i].get("question", "")
 
         responses_list = [str(response) for response in responses]
         if length_tokenizer:
             response_lengths += [get_len(response) for response in responses_list]
         else:
-            response_lengths = [0]
-        not_formated = ["boxed" not in response for response in responses_list]
-        without_boxed += sum(not_formated)
-
-        # First, use the rule-based verifier
+            response_lengths += [len(response) for response in responses_list]
+        
+        # Count responses where strict grader couldn't parse an answer (extract_answer returns None)
         for response in responses_list:
-            rule_score = grade_answer_verl(response, gt)
-            rule_based_scores.append(rule_score)
-            if not rule_score:  # If rule-based verifier fails, prepare for model-based verifier
-                model_input = CV_PROMPT.format(
-                    question=question,
-                    gold_answer=gt,
-                    llm_response=response
-                )
-                all_model_inputs.append(model_input)
-                all_responses.append(response)
-                all_questions.append(question)
-                all_ground_truths.append(gt)
+            parsed_answer = extract_answer(response)
+            if parsed_answer is None:
+                without_boxed += 1
+
+        # Use strict rule-based verifier for scoring, but also check soft grading for error categorization
+        for response in responses_list:
+            strict_score, soft_score, error_type = grade_answer_with_error_type(response, gt)
+            rule_based_scores.append(strict_score)
+            soft_scores.append(soft_score)  # Track soft scores
+            
+            # Add incorrect answers to incorrect_data with error type
+            if not strict_score:  # Only add if strict grading fails
+                incorrect_data.append({
+                    "example_id": i,
+                    "response": response,
+                    "ground_truth": gt,
+                    "error_type": error_type,  # "formatting" or "math"
+                    "soft_score": soft_score,  # Whether it passes soft grading
+                })
 
         diverse.append(get_diverse_score(responses_list))
 
-    # Batch process all model-based verifier inputs
-    if all_model_inputs:
-        model_inputs = [model_tokenizer.apply_chat_template(
-            [{"role": "user", "content": input_text}],
-            add_generation_prompt=True,
-            tokenize=False
-        ) for input_text in all_model_inputs]
-        outputs = vllm_model.generate(model_inputs, sampling_params)
+    # Use rule-based scores directly (no model-based fallback)
+    final_scores = rule_based_scores
 
-        # Map back the results to the corresponding responses
-        model_based_scores = []
-        for idx, output in enumerate(outputs):
-            judgement = output.outputs[0].text.strip()
-            model_score = "A" == judgement  # True if "A" (correct), False otherwise
-            model_based_scores.append(model_score)
-
-            # Save incorrect responses and ground truths
-            if not model_score:
-                incorrect_data.append({
-                    "response": all_responses[idx][-300:],  # Save last 300 characters
-                    "ground_truth": all_ground_truths[idx]
-                })
-
-        # Combine rule-based and model-based scores
-        model_idx = 0
-        final_scores = []
-        for rule_score in rule_based_scores:
-            if rule_score:  # If rule-based verifier passed
-                final_scores.append(rule_score)
-            else:  # Use model-based verifier score
-                final_scores.append(model_based_scores[model_idx])
-                model_idx += 1
-    else:
-        final_scores = rule_based_scores
-
-    # Calculate metrics
+    # Calculate metrics for strict grading
     avg_scores = [sum(final_scores[i:i + num_pred]) / num_pred for i in range(0, len(final_scores), num_pred)]
     best = [max(final_scores[i:i + num_pred]) for i in range(0, len(final_scores), num_pred)]
 
@@ -227,13 +180,25 @@ def grade_file(file_path):
     results["best_score"] = sum(best) / len(best)
     results["solve_none"] = solve_none
     results["solve_all"] = solve_all
-    results["avg_output_length"] = sum(response_lengths) / len(response_lengths)
+    results["avg_output_length"] = sum(response_lengths) / len(response_lengths) if response_lengths else 0
     results["format_error_rollouts"] = without_boxed
 
+    # Calculate metrics for soft grading
+    soft_avg_scores = [sum(soft_scores[i:i + num_pred]) / num_pred for i in range(0, len(soft_scores), num_pred)]
+    soft_best = [max(soft_scores[i:i + num_pred]) for i in range(0, len(soft_scores), num_pred)]
+
+    soft_solve_none = sum(1 for avg_score in soft_avg_scores if avg_score == 0)
+    soft_solve_all = sum(1 for avg_score in soft_avg_scores if avg_score == 1)
+
+    results["soft_mean_score"] = sum(soft_avg_scores) / len(soft_avg_scores)
+    results["soft_best_score"] = sum(soft_best) / len(soft_best)
+    results["soft_solve_none"] = soft_solve_none
+    results["soft_solve_all"] = soft_solve_all
+
     # Save incorrect responses and ground truths to a separate file
-    # incorrect_file = EVAL_DIR / f"{file_path.stem}_incorrect_data.json"
-    # with incorrect_file.open("w", encoding="utf-8") as f:
-    #     json.dump(incorrect_data, f, indent=4)
+    incorrect_file = EVAL_DIR / f"{file_path.stem}_incorrect_data.json"
+    with incorrect_file.open("w", encoding="utf-8") as f:
+        json.dump(incorrect_data, f, indent=4)
 
     return results
 

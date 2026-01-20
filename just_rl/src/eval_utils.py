@@ -427,6 +427,60 @@ def extract_boxed_answer(solution: str) -> str:
     solution = remove_boxed(solution)
     return solution
 
+def extract_hashed_answer(solution: str) -> str:
+    """Extract the answer from inside a hashed answer: #### <number> (must be at end of string)"""
+    match = re.search(r"####\s+(\-?[0-9\.]+)\s*$", solution)
+    if match:
+        return match.group(1)
+    return solution
+
+def extract_last_number(text: str) -> Optional[str]:
+    """
+    Extract the last number from a string (soft extraction).
+    Looks for the last occurrence of a number (integer or decimal, with optional negative sign).
+    Returns None if no number is found.
+    """
+    # Find all numbers in the text (including decimals and negative numbers)
+    numbers = re.findall(r'-?\d+\.?\d*', text)
+    if numbers:
+        return numbers[-1]  # Return the last number found
+    return None
+
+def grade_answer_soft(given_answer: str, ground_truth: str) -> bool:
+    """
+    Soft grading: extracts the last number from the given answer and compares it to ground truth.
+    This is more lenient than strict grading as it doesn't require proper formatting.
+    """
+    if not ground_truth:
+        return False
+    
+    # Extract ground truth number (handle #### format)
+    if "####" in ground_truth:
+        gt_number = extract_hashed_answer(ground_truth)
+    else:
+        gt_number = extract_last_number(ground_truth)
+        if gt_number is None:
+            # Try to extract from ground truth as-is
+            gt_number = ground_truth.strip()
+    
+    if gt_number is None:
+        return False
+    
+    # Extract last number from given answer
+    given_number = extract_last_number(given_answer)
+    if given_number is None:
+        return False
+    
+    # Normalize both numbers for comparison
+    try:
+        # Convert to float for comparison (handles decimals)
+        gt_float = float(gt_number)
+        given_float = float(given_number)
+        return abs(gt_float - given_float) < 1e-6  # Use small epsilon for floating point comparison
+    except ValueError:
+        # If conversion fails, do string comparison
+        return gt_number.strip() == given_number.strip()
+
 def grade_answer_sympy(given_answer: str, ground_truth: str) -> bool:
     ground_truth_normalized = _normalize(ground_truth)
     given_normalized = _normalize(given_answer)
@@ -478,20 +532,43 @@ def grade_answer_mathd(given_answer: str, ground_truth: str) -> bool:
 
 
 def extract_answer(passage: str) -> str:
-    if "\\boxed" in passage:
-        return extract_boxed_answer(passage)
+    if "####" in passage:
+        return extract_hashed_answer(passage)
     return None
 
 def grade_answer_verl(solution_str, ground_truth):
+    """
+    Strict grading: requires proper formatting (#### <number> at end).
+    Returns True if answer is correct, False otherwise.
+    """
     if not ground_truth:
         return False
-    if '\\boxed' in ground_truth:
-        ground_truth = extract_answer(ground_truth)
+    if "####" in ground_truth:
+        ground_truth = extract_hashed_answer(ground_truth)
     given_answer = extract_answer(solution_str)
     if given_answer is None:
         return False
     return grade_answer_mathd(given_answer, ground_truth) \
         or grade_answer_sympy(given_answer, ground_truth)
+
+def grade_answer_with_error_type(solution_str, ground_truth):
+    """
+    Grade answer using both soft and strict rubrics.
+    Returns tuple: (is_correct_strict, is_correct_soft, error_type)
+    error_type can be: None (if correct), "formatting" (passes soft but fails strict), 
+                       "math" (fails both)
+    """
+    soft_score = grade_answer_soft(solution_str, ground_truth)
+    strict_score = grade_answer_verl(solution_str, ground_truth)
+    
+    if strict_score:
+        error_type = None
+    elif soft_score:
+        error_type = "formatting"  # Passes soft but fails strict
+    else:
+        error_type = "math"  # Fails both
+    
+    return strict_score, soft_score, error_type
 
 def main():
     # Example usage
