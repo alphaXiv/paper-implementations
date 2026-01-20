@@ -1,10 +1,17 @@
 import os
+import sys
 import datasets
 from pathlib import Path
 
+# Add project root to path for imports
+SCRIPT_DIR = Path(__file__).parent.resolve()
+PROJECT_ROOT = SCRIPT_DIR.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from src.eval_utils import extract_hashed_answer
+
 if __name__ == '__main__':
-    SCRIPT_DIR = Path(__file__).parent.resolve()
-    PROJECT_ROOT = SCRIPT_DIR.parent
     DEFAULT_OUTPUT_DIR = str(PROJECT_ROOT / 'data' / 'processed')
     DATASET_NAME = 'openai/gsm8k'
 
@@ -16,8 +23,11 @@ if __name__ == '__main__':
 
     # Process function to add data_source and append instruction_following to question
     def process_example(example):
+        ground_truth = extract_hashed_answer(example['answer'])
         example['data_source'] = DATASET_NAME
         example['question'] = example['question'] + "\n\n" + instruction_following
+        example['prompt'] = [{'content': example['question'], 'role': 'user'}]
+        example['reward_model'] = {'ground_truth': ground_truth}
         return example
 
     # Apply processing to train dataset first
