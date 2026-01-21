@@ -53,11 +53,12 @@ def compute_score(solution_str, ground_truth, method="strict", format_score=0.0,
         format_score: the score for the format
         score: the score for the correct answer
     """
-    answer = extract_solution(solution_str=solution_str, method=method)
-    if answer is None:
-        return 0
+    if method == "strict":
+        answer = extract_solution(solution_str=solution_str, method="strict")
+        return score if answer == ground_truth else 0
     else:
-        if answer == ground_truth:
-            return score
-        else:
-            return format_score
+        answer = extract_solution(solution_str=solution_str, method="flexible")
+        acc_score = 0.5 if answer == ground_truth else 0
+        strict_answer = extract_solution(solution_str=solution_str, method="strict")
+        fmt_score = 0.5 if strict_answer is not None and strict_answer == answer else 0
+        return acc_score + fmt_score

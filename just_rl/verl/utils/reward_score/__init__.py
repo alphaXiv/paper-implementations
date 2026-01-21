@@ -15,6 +15,12 @@
 
 from verl.utils.import_utils import deprecated
 
+def compute_score_flexible(data_source, solution_str, ground_truth, extra_info=None, sandbox_fusion_url=None, concurrent_semaphore=None, memory_limit_mb=None):
+    if data_source == "openai/gsm8k":
+        from . import gsm8k
+        return gsm8k.compute_score(solution_str, ground_truth, method="flexible")
+    else:
+        raise NotImplementedError(f"Reward function is not implemented for {data_source=}")
 
 def default_compute_score(data_source, solution_str, ground_truth, extra_info=None, sandbox_fusion_url=None, concurrent_semaphore=None, memory_limit_mb=None):
     """Compute the score for a given solution based on the data source.
