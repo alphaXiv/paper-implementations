@@ -1,17 +1,18 @@
-export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
-export N_GPUS=8
+export CUDA_VISIBLE_DEVICES=0
+export N_GPUS=1
 export ROLLOUT_TP_SIZE=1
 
 export HYDRA_FULL_ERROR=1
 
 export DATA_DIR="data/processed"
 export BASE_MODEL="Qwen/Qwen2.5-0.5B"
-export EXPERIMENT_NAME="verl-justrl-grpo-gsm8k-flexible"
+export EXPERIMENT_NAME="verl-justrl-grpo-gsm8k-test-run"
 export CKPT_DIR="checkpoints/$EXPERIMENT_NAME"
 export TRAIN_DATA_FILE="train.parquet"
 export VAL_DATA_FILE="val.parquet"
-export CUSTOM_REWARD_FUNCTION_PATH="verl/utils/reward_score/__init__.py"
+export REWARD_FUNCTION_PATH="verl/utils/reward_score/__init__.py"
 export CUSTOM_REWARD_FUNCTION_NAME="compute_score_flexible"
+export EVAL_REWARD_FUNCTION_NAME="default_compute_score"
 
 # If you want to run with custom reward function (format + accuracy), the last two lines should be uncommented.
 
@@ -54,6 +55,8 @@ python -u -m verl.trainer.main_ppo \
     trainer.n_gpus_per_node=$N_GPUS \
     trainer.total_training_steps=2000 \
     trainer.default_local_dir=$CKPT_DIR \
-    custom_reward_function.path=$CUSTOM_REWARD_FUNCTION_PATH \
+    ++val_reward_function.path=$REWARD_FUNCTION_PATH \
+    ++val_reward_function.name=$EVAL_REWARD_FUNCTION_NAME \
+    custom_reward_function.path=$REWARD_FUNCTION_PATH \
     custom_reward_function.name=$CUSTOM_REWARD_FUNCTION_NAME \
     

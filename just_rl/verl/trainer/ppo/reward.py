@@ -22,11 +22,11 @@ from verl import DataProto
 from verl.utils.reward_score import default_compute_score
 
 
-def get_custom_reward_fn(config):
+def get_custom_reward_fn(config, config_key="custom_reward_function"):
     import importlib.util
     import sys
 
-    reward_fn_config = config.get("custom_reward_function") or {}
+    reward_fn_config = config.get(config_key) or {}
     file_path = reward_fn_config.get("path")
     if not file_path:
         return None
@@ -57,7 +57,7 @@ def get_custom_reward_fn(config):
     return wrapped_fn
 
 
-def load_reward_manager(config, tokenizer, num_examine, **reward_kwargs):
+def load_reward_manager(config, tokenizer, num_examine, reward_fn_config_key="custom_reward_function", **reward_kwargs):
     """
     Load and initialize a reward manager based on the configuration.
 
@@ -65,6 +65,7 @@ def load_reward_manager(config, tokenizer, num_examine, **reward_kwargs):
         config: PPO trainer configuration object containing reward_model fields.
         tokenizer: Tokenizer object used for processing text.
         num_examine: Number of samples to examine.
+        reward_fn_config_key: Config key for reward function (default: "custom_reward_function").
         **reward_kwargs: Additional keyword arguments for the reward manager.
 
     Returns:
@@ -84,7 +85,9 @@ def load_reward_manager(config, tokenizer, num_examine, **reward_kwargs):
     reward_manager_cls = get_reward_manager_cls(reward_manager_name)
 
     # Try to get a custom reward function based on the configuration
-    compute_score = get_custom_reward_fn(config)
+    compute_score = get_custom_reward_fn(config, config_key=reward_fn_config_key)
+    if compute_score is None and reward_fn_config_key != "custom_reward_function":
+        compute_score = get_custom_reward_fn(config, config_key="custom_reward_function")
     final_compute_score = compute_score
 
     if compute_score is None:
