@@ -40,6 +40,12 @@ def parse_args():
     parser.add_argument("--num_engines", type=int, default=NUM_ENGINES)
     parser.add_argument("--num_iterations", type=int, default=NUM_ITERATIONS)
     parser.add_argument("--experiment_dir", type=str, default=EXPERIMENT_DIR)
+    parser.add_argument(
+        "--num_train_samples",
+        type=int,
+        default=200,
+        help="Number of training examples to use from the countdown dataset (default: 200)",
+    )
     parser.add_argument("--cuda_devices", type=str, default="0,1,2,3")
     parser.add_argument('--verbose', action='store_true', help='Print verbose logs')
     parser.add_argument(
@@ -153,7 +159,7 @@ def main(args):
     data_path = "countdown/data/countdown.json"
     with open(data_path, "r") as f:
         task_datas = json.load(f)
-    task_datas = task_datas[:200]
+    task_datas = task_datas[: args.num_train_samples]
 
     # Launch engines
     engines, pgs = launch_engines(args.num_engines, base_model_path)
