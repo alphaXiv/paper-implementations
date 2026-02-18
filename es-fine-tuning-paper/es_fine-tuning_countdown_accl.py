@@ -14,7 +14,7 @@ import ray
 from ray.util.placement_group import placement_group, remove_placement_group
 from ray.util.scheduling_strategies import PlacementGroupSchedulingStrategy
 import torch
-from torch.utils.tensorboard import SummaryWriter
+import wandb
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from vllm import LLM, SamplingParams
 from vllm.utils import get_ip, get_open_port
@@ -132,8 +132,22 @@ def main(args):
     ray.init(address="local", include_dashboard=False, ignore_reinit_error=True)
 
     # Logging
-    logging_dir = f"{args.experiment_dir}/countdown_nccl_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-    writer = SummaryWriter(log_dir=logging_dir)
+    run_name = f"countdown_nccl_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    logging_dir = f"{args.experiment_dir}/{run_name}"
+    wandb.init(
+        project="es-fine-tuning-countdown",
+        name=run_name,
+        config={
+            "model_name": args.model_name,
+            "sigma": args.sigma,
+            "alpha": args.alpha,
+            "population_size": args.population_size,
+            "num_engines": args.num_engines,
+            "num_iterations": args.num_iterations,
+            "num_train_samples": args.num_train_samples,
+            "global_seed": args.global_seed,
+        }
+    )
 
     # Prepare an HF checkpoint for vLLM to load
     model_saves_dir = f"{logging_dir}/model_saves"
@@ -276,10 +290,13 @@ def main(args):
             if args.verbose:
                 print(f"Seed {k} normalized reward: {seeds_perf[k]['norm_reward']}")
 
-        writer.add_scalar("reward/mean", mean_reward, i)
-        writer.add_scalar("reward/std", std_reward, i)
-        writer.add_scalar("reward/min", min_reward, i)
-        writer.add_scalar("reward/max", max_reward, i)
+        wandb.log({
+            "reward/mean": mean_reward,
+            "reward/std": std_reward,
+            "reward/min": min_reward,
+            "reward/max": max_reward,
+            "iteration": i
+        })
 
         # Compute ES update ONLY on engine 0 (baseline is already current weights)
         per_seed_coeffs = [
@@ -295,21 +312,21 @@ def main(args):
         ray.get(handles)
         if args.verbose:
             print(f"Applied perturbations in {time.time() - perturb_start}s")
-        writer.add_scalar("time/perturbation_application", time.time() - perturb_start, i)
+        wandb.log({"time/perturbation_application": time.time() - perturb_start, "iteration": i})
 
         # Broadcast updated weights from engine 0 to all engines (avoid CPU copies)
         broadcast_start = time.time()
         ray.get([e.collective_rpc.remote("broadcast_all_weights", args=(0,)) for e in engines])
         if args.verbose:
             print(f"Broadcasted updated weights in {time.time() - broadcast_start}s")
-        writer.add_scalar("time/broadcast", time.time() - broadcast_start, i)
+        wandb.log({"time/broadcast": time.time() - broadcast_start, "iteration": i})
 
         # Logging per-result and timing
         if args.verbose:
             for res_idx, res in enumerate(results_this_gen):
                 print(f"IDX:{res_idx} Seed {res['seed']} avg_reward: {res['avg_reward']}, time: {res['time']}s")
         total_iter_end = time.time()
-        writer.add_scalar("time/iteration", total_iter_end - total_iter_start, i)
+        wandb.log({"time/iteration": total_iter_end - total_iter_start, "iteration": i})
         print(f"wall clock time for iteration {i}: {total_iter_end - total_iter_start}s")
         print(f"=== Generation {i} finished ===\n")
 
@@ -323,6 +340,7 @@ def main(args):
     )
     print(f"Final model weights saved to {final_model_path}.")
 
+    wandb.finish()
     cleanup()
 
 if __name__ == "__main__":
