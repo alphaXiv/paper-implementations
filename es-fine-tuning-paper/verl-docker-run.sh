@@ -66,6 +66,13 @@ sudo docker exec verl-es-fine-tuning-paper bash -c "if [ ! -d '/workspace/es-fin
     exit 1
 }
 
+# Patch main_ppo.py to support separate tokenizer path
+echo "Patching main_ppo.py to support separate tokenizer path..."
+sudo docker exec verl-es-fine-tuning-paper bash -c "cd /workspace/es-fine-tuning-paper/src/verl && sed -i '/trust_remote_code = config.data.get(\"trust_remote_code\", False)/,/processor = hf_processor(local_path, use_fast=True)/c\        trust_remote_code = config.data.get(\"trust_remote_code\", False)\n        tokenizer_path = config.actor_rollout_ref.model.get(\"tokenizer_path\", None)\n        if tokenizer_path is not None:\n            tokenizer_local_path = copy_to_local(tokenizer_path)\n            print(f\"Using separate tokenizer from: {tokenizer_path}\")\n        else:\n            tokenizer_local_path = local_path\n        tokenizer = hf_tokenizer(tokenizer_local_path, trust_remote_code=trust_remote_code)\n        processor = hf_processor(tokenizer_local_path, use_fast=True)  # used for multimodal LLM, could be none' verl/trainer/main_ppo.py" || {
+    echo "Failed to patch main_ppo.py."
+    exit 1
+}
+
 # Install VERL
 echo "Installing VERL..."
 sudo docker exec verl-es-fine-tuning-paper bash -c "cd /workspace/es-fine-tuning-paper/src/verl && pip3 install -e ." || {
