@@ -1,13 +1,23 @@
 set -x
 
+# Check if HF_TOKEN is set
+if [ -z "$HF_TOKEN" ]; then
+    echo "Error: HF_TOKEN environment variable is not set"
+    echo "Please run: export HF_TOKEN=your_huggingface_token"
+    exit 1
+fi
+
+# Login to HuggingFace to access models
+huggingface-cli login --token "$HF_TOKEN"
+
 # First, prepare the data with test set reserved for final evaluation
 # python3 grpo_data_gsm8k.py --local_dir ./data/gsm8k-0.1 --train_split 0.1 --test_samples 200
 
 python3 -m verl.trainer.main_ppo \
     algorithm.adv_estimator=grpo \
     trainer.val_before_train=False \
-    data.train_files=./data/gsm8k-0.1/train.parquet \
-    data.val_files=./data/gsm8k-0.1/validation.parquet \
+    data.train_files=./data/gsm8k-0.4/train.parquet \
+    data.val_files=./data/gsm8k-0.4/validation.parquet \
     data.train_batch_size=32 \
     data.max_prompt_length=512 \
     data.max_response_length=1024 \

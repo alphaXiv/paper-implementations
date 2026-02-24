@@ -1,4 +1,9 @@
+#!/bin/bash
 set -x
+
+# GRPO training for GSM8K using BASE Qwen model with custom chat template tokenizer
+# Model: Qwen/Qwen2.5-3B (base, not instruct)
+# Tokenizer: Custom tokenizer with "Question: {input} Answer: Let's think step by step." template
 
 # Check if HF_TOKEN is set
 if [ -z "$HF_TOKEN" ]; then
@@ -10,13 +15,15 @@ fi
 # Login to HuggingFace to access models
 huggingface-cli login --token "$HF_TOKEN"
 
-# First, prepare the data with test set reserved for final evaluation
-# python3 grpo_data_gsm8k.py --local_dir ./data/gsm8k-0.1 --train_split 0.1 --test_samples 200
+# Prepare custom tokenizer if not already created
+if [ ! -d "./tokenizers/qwen2.5-3b-base-chat" ]; then
+    echo "Creating custom tokenizer for Qwen base model..."
+    python3 base_model_tokenizer.py \
+        --model_path Qwen/Qwen2.5-3B \
+        --save_path ./tokenizers/qwen2.5-3b-base-chat
+fi
 
-# Train base model using instruct model's tokenizer (with chat template)
-# - Model weights: meta-llama/Llama-3.2-3B (base model, not instruction-tuned)
-# - Tokenizer: meta-llama/Llama-3.2-3B-Instruct (has chat template)
-
+# Train base Qwen model with custom tokenizer
 python3 -m verl.trainer.main_ppo \
     algorithm.adv_estimator=grpo \
     trainer.val_before_train=False \
@@ -28,8 +35,8 @@ python3 -m verl.trainer.main_ppo \
     data.filter_overlong_prompts=True \
     data.truncation='error' \
     data.shuffle=False \
-    actor_rollout_ref.model.path=meta-llama/Llama-3.2-3B \
-    +actor_rollout_ref.model.tokenizer_path=meta-llama/Llama-3.2-3B-Instruct \
+    actor_rollout_ref.model.path=Qwen/Qwen2.5-3B \
+    +actor_rollout_ref.model.tokenizer_path=./tokenizers/qwen2.5-3b-base-chat \
     +actor_rollout_ref.model.lora_rank=64 \
     +actor_rollout_ref.model.lora_alpha=32 \
     actor_rollout_ref.actor.optim.lr=3e-6 \
@@ -55,22 +62,15 @@ python3 -m verl.trainer.main_ppo \
     algorithm.use_kl_in_reward=False \
     trainer.critic_warmup=0 \
     trainer.logger='["console","wandb"]' \
-    trainer.project_name='verl_grpo_gsm8k_base' \
-    trainer.experiment_name='llama3.2_3b_base_grpo_lora' \
+    trainer.project_name='verl_grpo_gsm8k_base_custom' \
+    trainer.experiment_name='qwen2.5_3b_base_custom_template_lora' \
     trainer.n_gpus_per_node=8 \
     trainer.nnodes=1 \
     trainer.save_freq=23 \
     trainer.test_freq=1 \
     trainer.total_epochs=1
-  
-    # actor_rollout_ref.actor.ppo_mini_batch_size=256 \  
-    # data.train_batch_size=1024 \  
-    # trainer.n_gpus_per_node=8 \  
-    # actor_rollout_ref.model.use_shm=True \
 
 # After training completes, evaluate the saved model on the reserved test set:
-# python3 evaluate_model.py \
-#     --model_path <path_to_saved_checkpoint> \
-#     --test_file ./data/gsm8k-0.1/test.parquet \
-#     --task_type gsm8k \
-#     --output_file ./evals/eval_results_gsm8k_base.json
+# bash evaluate_gsm8k.sh --base_model Qwen/Qwen2.5-3B \
+#     --project_name verl_grpo_gsm8k_base_custom \
+#     --experiment_name qwen2.5_3b_base_custom_template_lora

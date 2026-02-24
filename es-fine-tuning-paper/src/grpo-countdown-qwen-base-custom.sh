@@ -1,4 +1,9 @@
+#!/bin/bash
 set -x
+
+# GRPO training for Countdown using BASE Qwen model with custom chat template tokenizer
+# Model: Qwen/Qwen2.5-3B (base, not instruct)
+# Tokenizer: Custom tokenizer with "Question: {input} Answer: Let's think step by step." template
 
 # Check if HF_TOKEN is set
 if [ -z "$HF_TOKEN" ]; then
@@ -10,31 +15,33 @@ fi
 # Login to HuggingFace to access models
 huggingface-cli login --token "$HF_TOKEN"
 
-# First, prepare the data with test set reserved for final evaluation
-# python3 grpo_data_gsm8k.py --local_dir ./data/gsm8k-0.1 --train_split 0.1 --test_samples 200
+# Prepare custom tokenizer if not already created
+if [ ! -d "./tokenizers/qwen2.5-3b-base-chat" ]; then
+    echo "Creating custom tokenizer for Qwen base model..."
+    python3 base_model_tokenizer.py \
+        --model_path Qwen/Qwen2.5-3B \
+        --save_path ./tokenizers/qwen2.5-3b-base-chat
+fi
 
-# Train base model using instruct model's tokenizer (with chat template)
-# - Model weights: meta-llama/Llama-3.2-3B (base model, not instruction-tuned)
-# - Tokenizer: meta-llama/Llama-3.2-3B-Instruct (has chat template)
-
+# Train base Qwen model with custom tokenizer
 python3 -m verl.trainer.main_ppo \
     algorithm.adv_estimator=grpo \
     trainer.val_before_train=False \
-    data.train_files=./data/gsm8k-0.1/train.parquet \
-    data.val_files=./data/gsm8k-0.1/validation.parquet \
-    data.train_batch_size=32 \
-    data.max_prompt_length=512 \
+    data.train_files=./data/countdown-0.4/train.parquet \
+    data.val_files=./data/countdown-0.4/test.parquet \
+    data.train_batch_size=128 \
+    data.max_prompt_length=256 \
     data.max_response_length=1024 \
     data.filter_overlong_prompts=True \
     data.truncation='error' \
     data.shuffle=False \
-    actor_rollout_ref.model.path=meta-llama/Llama-3.2-3B \
-    +actor_rollout_ref.model.tokenizer_path=meta-llama/Llama-3.2-3B-Instruct \
+    actor_rollout_ref.model.path=Qwen/Qwen2.5-3B \
+    +actor_rollout_ref.model.tokenizer_path=./tokenizers/qwen2.5-3b-base-chat \
     +actor_rollout_ref.model.lora_rank=64 \
     +actor_rollout_ref.model.lora_alpha=32 \
-    actor_rollout_ref.actor.optim.lr=3e-6 \
+    actor_rollout_ref.actor.optim.lr=1e-6 \
     actor_rollout_ref.model.use_remove_padding=True \
-    actor_rollout_ref.actor.ppo_mini_batch_size=32 \
+    actor_rollout_ref.actor.ppo_mini_batch_size=128 \
     actor_rollout_ref.actor.ppo_micro_batch_size_per_gpu=16 \
     actor_rollout_ref.actor.use_kl_loss=True \
     actor_rollout_ref.actor.kl_loss_coef=0.001 \
@@ -44,33 +51,27 @@ python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.actor.fsdp_config.param_offload=False \
     actor_rollout_ref.actor.fsdp_config.optimizer_offload=False \
     actor_rollout_ref.rollout.log_prob_micro_batch_size_per_gpu=16 \
-    actor_rollout_ref.rollout.tensor_model_parallel_size=4 \
+    actor_rollout_ref.rollout.tensor_model_parallel_size=1 \
     actor_rollout_ref.rollout.name=vllm \
     actor_rollout_ref.rollout.gpu_memory_utilization=0.8 \
     actor_rollout_ref.rollout.n=8 \
     actor_rollout_ref.rollout.load_format=safetensors \
-    actor_rollout_ref.rollout.max_num_batched_tokens=65535 \
     actor_rollout_ref.ref.log_prob_micro_batch_size_per_gpu=16 \
     actor_rollout_ref.ref.fsdp_config.param_offload=True \
     algorithm.use_kl_in_reward=False \
     trainer.critic_warmup=0 \
     trainer.logger='["console","wandb"]' \
-    trainer.project_name='verl_grpo_gsm8k_base' \
-    trainer.experiment_name='llama3.2_3b_base_grpo_lora' \
+    trainer.project_name='verl_grpo_countdown_base_custom' \
+    trainer.experiment_name='qwen2.5_3b_base_custom_template_lora' \
     trainer.n_gpus_per_node=8 \
     trainer.nnodes=1 \
-    trainer.save_freq=23 \
-    trainer.test_freq=1 \
-    trainer.total_epochs=1
-  
-    # actor_rollout_ref.actor.ppo_mini_batch_size=256 \  
-    # data.train_batch_size=1024 \  
-    # trainer.n_gpus_per_node=8 \  
-    # actor_rollout_ref.model.use_shm=True \
+    trainer.save_freq=100 \
+    trainer.test_freq=100 \
+    trainer.total_epochs=100 \
+    custom_reward_function.path=./countdown_reward.py \
+    custom_reward_function.name=countdown_reward_function
 
-# After training completes, evaluate the saved model on the reserved test set:
-# python3 evaluate_model.py \
-#     --model_path <path_to_saved_checkpoint> \
-#     --test_file ./data/gsm8k-0.1/test.parquet \
-#     --task_type gsm8k \
-#     --output_file ./evals/eval_results_gsm8k_base.json
+# After training completes, evaluate the saved model on the test set:
+# bash evaluate_countdown.sh --base_model Qwen/Qwen2.5-3B \
+#     --project_name verl_grpo_countdown_base_custom \
+#     --experiment_name qwen2.5_3b_base_custom_template_lora
