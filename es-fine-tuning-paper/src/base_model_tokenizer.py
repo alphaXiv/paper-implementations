@@ -80,6 +80,122 @@ def create_base_tokenizer(model_path: str, save_path: Optional[str] = None, **kw
     return tokenizer
 
 
+def test_model_generation(model_path: str, data_path: str, num_samples: int = 30):
+    """
+    Test model generation with countdown dataset samples, similar to VERL's approach.
+    
+    Args:
+        model_path: Path to the model
+        data_path: Path to parquet data file (e.g., train.parquet)
+        num_samples: Number of samples to generate
+    """
+    from transformers import AutoModelForCausalLM
+    import torch
+    import pandas as pd
+    
+    print(f"\n{'='*60}")
+    print(f"Testing Model Generation (VERL-style)")
+    print(f"{'='*60}")
+    print(f"Model: {model_path}")
+    print(f"Data: {data_path}")
+    print(f"Samples: {num_samples}")
+    
+    # Load data
+    print("\n[1/4] Loading data...")
+    df = pd.read_parquet(data_path)
+    print(f"Total samples in dataset: {len(df)}")
+    
+    # Take first num_samples
+    samples = df.head(num_samples)
+    
+    # Load tokenizer with custom chat template
+    print("\n[2/4] Loading tokenizer...")
+    tokenizer = BaseModelTokenizer(model_path)
+    
+    # Load model
+    print("[3/4] Loading model...")
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model = AutoModelForCausalLM.from_pretrained(
+        model_path,
+        torch_dtype=torch.bfloat16 if torch.cuda.is_available() else torch.float32,
+        device_map="auto" if torch.cuda.is_available() else None
+    )
+    if not torch.cuda.is_available():
+        model = model.to(device)
+    model.eval()
+    
+    print(f"Model loaded on: {device}")
+    
+    print(f"\n[4/4] Generating answers for {num_samples} samples...")
+    print(f"{'='*60}\n")
+    
+    # Generate answers
+    results = []
+    for idx, row in samples.iterrows():
+        # Extract the user question from the prompt
+        prompt_messages = row['prompt']
+        # Find the user message (skip system message if present)
+        user_content = None
+        for msg in prompt_messages:
+            if msg['role'] == 'user':
+                user_content = msg['content']
+                break
+        
+        if user_content is None:
+            print(f"Warning: No user message found in sample {idx}, skipping...")
+            continue
+        
+        # Format message with chat template
+        messages = [{"role": "user", "content": user_content}]
+        
+        # Apply chat template and tokenize (VERL-style)
+        input_ids = tokenizer.apply_chat_template(
+            messages,
+            tokenize=True,
+            add_generation_prompt=False,
+            return_tensors="pt"
+        ).to(device)
+        
+        # Generate using model.generate (VERL-style)
+        with torch.no_grad():
+            outputs = model.generate(
+                input_ids,
+                max_new_tokens=256,
+                temperature=0.7,
+                top_p=0.9,
+                do_sample=True,
+                pad_token_id=tokenizer.pad_token_id,
+                eos_token_id=tokenizer.eos_token_id,
+            )
+        
+        # Decode the generated text
+        generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+        
+        # Extract just the answer part (after the prompt)
+        prompt_text = tokenizer.decode(input_ids[0], skip_special_tokens=True)
+        answer = generated_text[len(prompt_text):].strip()
+        
+        results.append({
+            "question": user_content,
+            "prompt": prompt_text,
+            "answer": answer,
+            "full_output": generated_text
+        })
+        
+        # Print progress
+        print(f"Sample {idx + 1}/{num_samples}")
+        print(f"Q: {user_content}")
+        print(f"A: {answer}")
+        print(f"{'-'*60}\n")
+    
+    print(f"\n{'='*60}")
+    print(f"✓ Generation test completed successfully!")
+    print(f"Total samples: {len(results)}")
+    print(f"{'='*60}\n")
+    
+    return results
+
+
 if __name__ == "__main__":
     import argparse
     
@@ -95,7 +211,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--save_path",
         type=str,
-        required=True,
+        default=None,
         help="Directory to save the tokenizer with custom chat template"
     )
     parser.add_argument(
@@ -103,50 +219,71 @@ if __name__ == "__main__":
         action="store_true",
         help="Test the tokenizer with sample messages"
     )
+    parser.add_argument(
+        "--test_generation",
+        action="store_true",
+        help="Test model generation with multiple samples (VERL-style)"
+    )
+    parser.add_argument(
+        "--data_path",
+        type=str,
+        default="data/countdown-0.1/train.parquet",
+        help="Path to parquet data file (default: data/countdown-0.1/train.parquet)"
+    )
+    parser.add_argument(
+        "--num_samples",
+        type=int,
+        default=30,
+        help="Number of samples to generate (default: 30)"
+    )
     
     args = parser.parse_args()
     
-    # Create tokenizer
-    print(f"\nCreating tokenizer from: {args.model_path}")
-    tokenizer = create_base_tokenizer(args.model_path, args.save_path)
-    
-    if args.test:
-        # Test the tokenizer
-        print("\n" + "="*50)
-        print("Testing tokenizer with sample messages")
-        print("="*50)
+    # Test generation mode
+    if args.test_generation:
+        results = test_model_generation(args.model_path, args.data_path, args.num_samples)
+    else:
+        # Create tokenizer
+        print(f"\nCreating tokenizer from: {args.model_path}")
+        tokenizer = create_base_tokenizer(args.model_path, args.save_path)
         
-        messages = [
-            {
-                "role": "user",
-                "content": "Using the numbers [3, 5, 7, 10], create an equation that equals 24."
-            }
-        ]
-        
-        # Apply chat template
-        formatted_text = tokenizer.apply_chat_template(
-            messages,
-            tokenize=False,
-            add_generation_prompt=False
-        )
-        
-        print("\nFormatted text:")
-        print(formatted_text)
-        
-        # Tokenize
-        tokens = tokenizer.apply_chat_template(
-            messages,
-            tokenize=True,
-            add_generation_prompt=False,
-            return_tensors="pt"
-        )
-        
-        print(f"\nTokens shape: {tokens.shape}")
-        print(f"Number of tokens: {tokens.shape[1]}")
-        
-        # Decode back
-        decoded = tokenizer.decode(tokens[0])
-        print(f"\nDecoded text:")
-        print(decoded)
-        
-        print("\n✓ Tokenizer test completed successfully!")
+        if args.test:
+            # Test the tokenizer
+            print("\n" + "="*50)
+            print("Testing tokenizer with sample messages")
+            print("="*50)
+            
+            messages = [
+                {
+                    "role": "user",
+                    "content": "Using the numbers [3, 5, 7, 10], create an equation that equals 24."
+                }
+            ]
+            
+            # Apply chat template
+            formatted_text = tokenizer.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=False
+            )
+            
+            print("\nFormatted text:")
+            print(formatted_text)
+            
+            # Tokenize
+            tokens = tokenizer.apply_chat_template(
+                messages,
+                tokenize=True,
+                add_generation_prompt=False,
+                return_tensors="pt"
+            )
+            
+            print(f"\nTokens shape: {tokens.shape}")
+            print(f"Number of tokens: {tokens.shape[1]}")
+            
+            # Decode back
+            decoded = tokenizer.decode(tokens[0])
+            print(f"\nDecoded text:")
+            print(decoded)
+            
+            print("\n✓ Tokenizer test completed successfully!")

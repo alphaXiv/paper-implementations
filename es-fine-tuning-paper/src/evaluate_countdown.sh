@@ -9,9 +9,9 @@ echo "Countdown Model Evaluation Pipeline"
 echo "=========================================="
 
 # Configuration
-PROJECT_NAME="verl_grpo_countdown"
-EXPERIMENT_NAME="llama3.2_3b_inst_grpo_countdown_0.4_lora"
-BASE_MODEL="meta-llama/Llama-3.2-3B-Instruct"
+PROJECT_NAME="verl_grpo_countdown_base_custom"
+EXPERIMENT_NAME="qwen2.5_3b_base_custom_template_lora"
+BASE_MODEL="Qwen/Qwen2.5-3B"
 TEST_FILE="./data/countdown-0.4/test.parquet"
 TASK_TYPE="countdown"
 
@@ -66,7 +66,7 @@ fi
 CHECKPOINT_DIR="checkpoints/${PROJECT_NAME}/${EXPERIMENT_NAME}/global_step_${CHECKPOINT_STEP}"
 ACTOR_DIR="${CHECKPOINT_DIR}/actor"
 MERGED_DIR="${CHECKPOINT_DIR}/merged_model"
-OUTPUT_FILE="evals/eval_results_countdown_step${CHECKPOINT_STEP}.json"
+OUTPUT_FILE="evals/eval_results_countdown_qwen_step${CHECKPOINT_STEP}.json"
 
 echo ""
 echo "Configuration:"
