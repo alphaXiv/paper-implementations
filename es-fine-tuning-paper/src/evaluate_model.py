@@ -89,7 +89,7 @@ def evaluate_countdown_answer(response: str, numbers: List[int], target: float) 
     return False
 
 
-def load_model(model_path: str, base_model: str = None, device: str = "cuda"):
+def load_model(model_path: str, base_model: str = None, tokenizer_path: str = None, device: str = "cuda"):
     """Load the fine-tuned model (base + LoRA adapter if applicable)."""
     print(f"Loading model from {model_path}...")
     
@@ -106,7 +106,13 @@ def load_model(model_path: str, base_model: str = None, device: str = "cuda"):
         print(f"Loading LoRA adapter from: {model_path}")
         model = PeftModel.from_pretrained(model, model_path)
         model = model.merge_and_unload()
-        tokenizer = AutoTokenizer.from_pretrained(base_model)
+        
+        # Use custom tokenizer path if provided, otherwise use base_model
+        if tokenizer_path is not None:
+            print(f"Loading custom tokenizer from: {tokenizer_path}")
+            tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
+        else:
+            tokenizer = AutoTokenizer.from_pretrained(base_model)
     else:
         # Load full model
         model = AutoModelForCausalLM.from_pretrained(
@@ -114,7 +120,12 @@ def load_model(model_path: str, base_model: str = None, device: str = "cuda"):
             torch_dtype=torch.bfloat16,
             device_map=device
         )
-        tokenizer = AutoTokenizer.from_pretrained(model_path)
+        # Use custom tokenizer path if provided, otherwise use model_path
+        if tokenizer_path is not None:
+            print(f"Loading custom tokenizer from: {tokenizer_path}")
+            tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
+        else:
+            tokenizer = AutoTokenizer.from_pretrained(model_path)
     
     model.eval()
     return model, tokenizer
@@ -225,6 +236,8 @@ def main():
                         help="Path to saved model checkpoint or LoRA adapter")
     parser.add_argument("--base_model", type=str, default=None,
                         help="Base model path (required if model_path is LoRA adapter)")
+    parser.add_argument("--tokenizer_path", type=str, default=None,
+                        help="Path to custom tokenizer (optional, if different from model/base_model)")
     parser.add_argument("--test_file", type=str, required=True,
                         help="Path to test parquet file")
     parser.add_argument("--task_type", type=str, choices=["gsm8k", "countdown"], 
@@ -240,7 +253,7 @@ def main():
     args = parser.parse_args()
     
     # Load model
-    model, tokenizer = load_model(args.model_path, args.base_model, args.device)
+    model, tokenizer = load_model(args.model_path, args.base_model, args.tokenizer_path, args.device)
     
     # Evaluate
     eval_results = evaluate_dataset(

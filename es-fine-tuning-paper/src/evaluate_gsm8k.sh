@@ -12,6 +12,7 @@ echo "=========================================="
 PROJECT_NAME="verl_grpo_countdown"
 EXPERIMENT_NAME="llama_3.2_3b_instruct_0.4_grpo_lora"
 BASE_MODEL="meta-llama/Llama-3.2-3B-Instruct"
+TOKENIZER_PATH=""  # Optional custom tokenizer path
 TEST_FILE="./data/gsm8k-0.4/test.parquet"
 TASK_TYPE="gsm8k"
 
@@ -27,6 +28,10 @@ while [[ $# -gt 0 ]]; do
             BASE_MODEL="$2"
             shift 2
             ;;
+        --tokenizer_path)
+            TOKENIZER_PATH="$2"
+            shift 2
+            ;;
         --project_name)
             PROJECT_NAME="$2"
             shift 2
@@ -37,7 +42,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         *)
             echo "Unknown option: $1"
-            echo "Usage: $0 [--step CHECKPOINT_STEP] [--base_model MODEL_PATH] [--project_name NAME] [--experiment_name NAME]"
+            echo "Usage: $0 [--step CHECKPOINT_STEP] [--base_model MODEL_PATH] [--tokenizer_path TOKENIZER_PATH] [--project_name NAME] [--experiment_name NAME]"
             exit 1
             ;;
     esac
@@ -142,11 +147,22 @@ echo "Running evaluation..."
 echo "This may take several minutes depending on GPU speed..."
 echo ""
 
-python3 evaluate_model.py \
-    --model_path "$MERGED_DIR" \
-    --test_file "$TEST_FILE" \
-    --task_type "$TASK_TYPE" \
-    --output_file "$OUTPUT_FILE"
+# Build evaluation command
+EVAL_CMD="python3 evaluate_model.py \
+    --model_path '$MERGED_DIR' \
+    --test_file '$TEST_FILE' \
+    --task_type '$TASK_TYPE' \
+    --output_file '$OUTPUT_FILE'"
+
+# Add tokenizer path if specified
+if [ -n "$TOKENIZER_PATH" ]; then
+    EVAL_CMD="$EVAL_CMD \
+    --tokenizer_path '$TOKENIZER_PATH'"
+    echo "Using custom tokenizer: $TOKENIZER_PATH"
+fi
+
+# Execute evaluation
+eval $EVAL_CMD
 
 echo ""
 echo "=========================================="
