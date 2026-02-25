@@ -68,9 +68,24 @@ sudo docker exec verl-es-fine-tuning-paper bash -c "if [ ! -d '/workspace/es-fin
 
 # Patch main_ppo.py to support separate tokenizer path
 echo "Patching main_ppo.py to support separate tokenizer path..."
-sudo docker exec verl-es-fine-tuning-paper bash -c "cd /workspace/es-fine-tuning-paper/src/verl && sed -i '/trust_remote_code = config.data.get(\"trust_remote_code\", False)/,/processor = hf_processor(local_path, use_fast=True)/c\        trust_remote_code = config.data.get(\"trust_remote_code\", False)\n        tokenizer_path = config.actor_rollout_ref.model.get(\"tokenizer_path\", None)\n        if tokenizer_path is not None:\n            tokenizer_local_path = copy_to_local(tokenizer_path)\n            print(f\"Using separate tokenizer from: {tokenizer_path}\")\n        else:\n            tokenizer_local_path = local_path\n        tokenizer = hf_tokenizer(tokenizer_local_path, trust_remote_code=trust_remote_code)\n        processor = hf_processor(tokenizer_local_path, use_fast=True)  # used for multimodal LLM, could be none' verl/trainer/main_ppo.py" || {
+sudo docker exec verl-es-fine-tuning-paper bash -c "
+cd /workspace/es-fine-tuning-paper/src/verl
+# Check if patch is already applied
+if grep -q 'tokenizer_path = config.actor_rollout_ref.model.get' verl/trainer/main_ppo.py; then
+    echo 'Patch already applied to main_ppo.py, skipping.'
+else
+    echo 'Applying tokenizer patch to main_ppo.py...'
+    sed -i '/trust_remote_code = config.data.get(\"trust_remote_code\", False)/,/processor = hf_processor(local_path, use_fast=True)/c\        trust_remote_code = config.data.get(\"trust_remote_code\", False)\n        tokenizer_path = config.actor_rollout_ref.model.get(\"tokenizer_path\", None)\n        if tokenizer_path is not None:\n            tokenizer_local_path = copy_to_local(tokenizer_path)\n            print(f\"Using separate tokenizer from: {tokenizer_path}\")\n        else:\n            tokenizer_local_path = local_path\n        tokenizer = hf_tokenizer(tokenizer_local_path, trust_remote_code=trust_remote_code)\n        processor = hf_processor(tokenizer_local_path, use_fast=True)  # used for multimodal LLM, could be none' verl/trainer/main_ppo.py
+fi
+" || {
     echo "Failed to patch main_ppo.py."
     exit 1
+}
+
+# Fix permissions for verl directory
+echo "Fixing file permissions..."
+sudo chown -R ubuntu:ubuntu /home/ubuntu/alphaxiv-sandbox/paper-implementations/es-fine-tuning-paper/src/verl/ || {
+    echo "Warning: Failed to fix permissions, but continuing..."
 }
 
 # Install VERL
@@ -110,6 +125,12 @@ if [ ! -z "$WANDB_API_KEY" ]; then
         exit 1
     }
 fi
+
+# Final comprehensive permission fix for all created files
+echo "Fixing all file permissions..."
+sudo chown -R ubuntu:ubuntu /home/ubuntu/alphaxiv-sandbox/paper-implementations/es-fine-tuning-paper/src/ 2>/dev/null || true
+sudo chown -R ubuntu:ubuntu /home/ubuntu/alphaxiv-sandbox/paper-implementations/es-fine-tuning-paper/data/ 2>/dev/null || true
+echo "Setup complete!"
 
 # # Set up environment variables for Docker exec
 # DOCKER_ENV=""
