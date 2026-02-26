@@ -64,11 +64,11 @@ python3 -m verl.trainer.main_ppo \
     trainer.logger='["console","wandb"]' \
     trainer.project_name='verl_grpo_gsm8k_base_custom' \
     trainer.experiment_name='llama3.2_3b_base_custom_template_lora' \
-    trainer.n_gpus_per_node=8 \
+    trainer.n_gpus_per_node=2 \
     trainer.nnodes=1 \
-    trainer.save_freq=23 \
-    trainer.test_freq=1 \
-    trainer.total_epochs=1
+    trainer.save_freq=100 \
+    trainer.test_freq=100 \
+    trainer.total_epochs=100
 
 # After training completes, evaluate the saved model on the reserved test set:
 # bash evaluate_gsm8k.sh --base_model meta-llama/Llama-3.2-3B \

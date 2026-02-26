@@ -1,0 +1,27 @@
+{
+  "model_id": "Qwen/Qwen2.5-3B-Instruct",
+  "eval_stats": {
+    "dataset_name": "GSM8K Test",
+    "num_samples": 200,
+    "avg_reward": 0.9594999999999966,
+    "avg_format_reward": 0.995,
+    "avg_answer_reward": 0.86,
+    "std_reward": 0.3482954923624479,
+    "min_reward": 0.0,
+    "max_reward": 1.1,
+    "high_reward_count": 172,
+    "high_reward_percentage": 86.0,
+    "correct_count": 172,
+    "accuracy": 86.0,
+    "eval_time": 18.898414850234985
+  },
+  "generation_config": {
+    "max_new_tokens": 1024,
+    "do_sample": false,
+    "temperature": null,
+    "top_p": null,
+    "batch_size": 32,
+    "tensor_parallel_size": 1,
+    "dtype": "float16"
+  }
+}

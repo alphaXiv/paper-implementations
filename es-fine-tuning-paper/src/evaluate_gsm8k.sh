@@ -9,10 +9,11 @@ echo "GSM8K Model Evaluation Pipeline"
 echo "=========================================="
 
 # Configuration
-PROJECT_NAME="verl_grpo_countdown"
-EXPERIMENT_NAME="llama_3.2_3b_instruct_0.4_grpo_lora"
-BASE_MODEL="meta-llama/Llama-3.2-3B-Instruct"
-TOKENIZER_PATH=""  # Optional custom tokenizer path
+PROJECT_NAME="verl_grpo_gsm8k_base_custom"
+EXPERIMENT_NAME="qwen2.5_3b_base_custom_template_lora_0.4"
+# BASE_MODEL="meta-llama/Llama-3.2-3B"
+BASE_MODEL="Qwen/Qwen2.5-3B"
+TOKENIZER_PATH="./tokenizers/qwen2.5-3b-base-chat"  # Optional custom tokenizer path
 TEST_FILE="./data/gsm8k-0.4/test.parquet"
 TASK_TYPE="gsm8k"
 

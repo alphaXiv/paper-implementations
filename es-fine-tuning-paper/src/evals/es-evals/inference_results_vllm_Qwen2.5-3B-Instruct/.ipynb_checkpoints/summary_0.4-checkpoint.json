@@ -1,0 +1,27 @@
+{
+  "model_id": "Qwen/Qwen2.5-3B-Instruct",
+  "eval_stats": {
+    "dataset_name": "Eval",
+    "num_samples": 100,
+    "avg_reward": 0.39790000000000036,
+    "avg_format_reward": 0.47900000000000015,
+    "avg_answer_reward": 0.35,
+    "std_reward": 0.515892033278282,
+    "min_reward": 0.0,
+    "max_reward": 1.1,
+    "high_reward_count": 35,
+    "high_reward_percentage": 35.0,
+    "correct_count": 35,
+    "accuracy": 35.0,
+    "eval_time": 67.21692252159119
+  },
+  "generation_config": {
+    "max_new_tokens": 1024,
+    "do_sample": false,
+    "temperature": null,
+    "top_p": null,
+    "batch_size": null,
+    "tensor_parallel_size": 1,
+    "dtype": "float16"
+  }
+}
