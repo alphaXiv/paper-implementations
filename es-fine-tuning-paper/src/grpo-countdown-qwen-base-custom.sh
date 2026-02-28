@@ -27,6 +27,7 @@ fi
 python3 -m verl.trainer.main_ppo \
     algorithm.adv_estimator=grpo \
     trainer.val_before_train=False \
+    trainer.resume_mode=disable \
     data.train_files=./data/countdown-0.4/train.parquet \
     data.val_files=./data/countdown-0.4/test.parquet \
     data.train_batch_size=128 \
@@ -63,7 +64,7 @@ python3 -m verl.trainer.main_ppo \
     trainer.logger='["console","wandb"]' \
     trainer.project_name='verl_grpo_countdown_base_custom' \
     trainer.experiment_name='qwen2.5_3b_base_custom_template_lora' \
-    trainer.n_gpus_per_node=2 \
+    trainer.n_gpus_per_node=8 \
     trainer.nnodes=1 \
     trainer.save_freq=100 \
     trainer.test_freq=100 \

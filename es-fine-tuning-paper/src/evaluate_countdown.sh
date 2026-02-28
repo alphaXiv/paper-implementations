@@ -10,12 +10,12 @@ echo "=========================================="
 
 # Configuration
 PROJECT_NAME="verl_grpo_countdown_base_custom"
-EXPERIMENT_NAME="llama3.2_3b_base_custom_template_lora"
-# BASE_MODEL="Qwen/Qwen2.5-3B"
-BASE_MODEL='meta-llama/Llama-3.2-3b'
+EXPERIMENT_NAME="qwen2.5_3b_base_custom_template_lora"
+BASE_MODEL="Qwen/Qwen2.5-3B"
+# BASE_MODEL='meta-llama/Llama-3.2-3b'
 TOKENIZER_PATH=""  # Optional custom tokenizer path
 
-TEST_FILE="./data/countdown-0.1/test.parquet"
+TEST_FILE="./data/countdown-0.4/test.parquet"
 TASK_TYPE="countdown"
 
 # Parse command line arguments
@@ -73,7 +73,7 @@ fi
 CHECKPOINT_DIR="checkpoints/${PROJECT_NAME}/${EXPERIMENT_NAME}/global_step_${CHECKPOINT_STEP}"
 ACTOR_DIR="${CHECKPOINT_DIR}/actor"
 MERGED_DIR="${CHECKPOINT_DIR}/merged_model"
-OUTPUT_FILE="evals/llama3.2_3b_base_eval_results_countdown_${CHECKPOINT_STEP}.json"
+OUTPUT_FILE="evals/qwen2.5_3b_base_eval_results_countdown_${CHECKPOINT_STEP}.json"
 
 echo ""
 echo "Configuration:"

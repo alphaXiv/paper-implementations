@@ -8,8 +8,8 @@ echo "Preparing GSM8K data for GRPO training"
 echo "=========================================="
 
 # Default parameters
-LOCAL_DIR="./data/gsm8k-0.1"
-TRAIN_SPLIT=0.1
+LOCAL_DIR="./data/gsm8k-0.4"
+TRAIN_SPLIT=0.4
 TEST_SAMPLES=200
 
 #install datasets

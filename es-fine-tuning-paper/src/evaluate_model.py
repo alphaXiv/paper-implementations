@@ -143,6 +143,8 @@ def generate_response(model, tokenizer, messages: List[Dict], max_new_tokens: in
             **inputs,
             max_new_tokens=max_new_tokens,
             do_sample=False,
+            temperature=None,  # Disable temperature when not sampling
+            top_p=None,  # Disable top_p when not sampling
             pad_token_id=tokenizer.eos_token_id,
         )
     
