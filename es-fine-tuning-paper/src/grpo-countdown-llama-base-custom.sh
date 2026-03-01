@@ -27,8 +27,8 @@ fi
 python3 -m verl.trainer.main_ppo \
     algorithm.adv_estimator=grpo \
     trainer.val_before_train=False \
-    data.train_files=./data/countdown-0.4/train.parquet \
-    data.val_files=./data/countdown-0.4/test.parquet \
+    data.train_files=./data/countdown-0.1/train.parquet \
+    data.val_files=./data/countdown-0.1/test.parquet \
     data.train_batch_size=128 \
     data.max_prompt_length=256 \
     data.max_response_length=1024 \

@@ -14,7 +14,6 @@ import pandas as pd
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from tqdm import tqdm
-from peft import PeftModel
 
 
 def extract_solution(solution_str):
@@ -93,39 +92,19 @@ def load_model(model_path: str, base_model: str = None, tokenizer_path: str = No
     """Load the fine-tuned model (base + LoRA adapter if applicable)."""
     print(f"Loading model from {model_path}...")
     
-    # Check if this is a LoRA adapter directory
-    if os.path.exists(os.path.join(model_path, "adapter_config.json")):
-        if base_model is None:
-            raise ValueError("base_model must be specified when loading LoRA adapter")
-        print(f"Loading base model: {base_model}")
-        model = AutoModelForCausalLM.from_pretrained(
-            base_model,
-            torch_dtype=torch.bfloat16,
-            device_map=device
-        )
-        print(f"Loading LoRA adapter from: {model_path}")
-        model = PeftModel.from_pretrained(model, model_path)
-        model = model.merge_and_unload()
-        
-        # Use custom tokenizer path if provided, otherwise use base_model
-        if tokenizer_path is not None:
-            print(f"Loading custom tokenizer from: {tokenizer_path}")
-            tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
-        else:
-            tokenizer = AutoTokenizer.from_pretrained(base_model)
+    
+    # Load full model
+    model = AutoModelForCausalLM.from_pretrained(
+        model_path,
+        torch_dtype=torch.bfloat16,
+        device_map=device
+    )
+    # Use custom tokenizer path if provided, otherwise use model_path
+    if tokenizer_path is not None:
+        print(f"Loading custom tokenizer from: {tokenizer_path}")
+        tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
     else:
-        # Load full model
-        model = AutoModelForCausalLM.from_pretrained(
-            model_path,
-            torch_dtype=torch.bfloat16,
-            device_map=device
-        )
-        # Use custom tokenizer path if provided, otherwise use model_path
-        if tokenizer_path is not None:
-            print(f"Loading custom tokenizer from: {tokenizer_path}")
-            tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
-        else:
-            tokenizer = AutoTokenizer.from_pretrained(model_path)
+        tokenizer = AutoTokenizer.from_pretrained(model_path)
     
     model.eval()
     return model, tokenizer

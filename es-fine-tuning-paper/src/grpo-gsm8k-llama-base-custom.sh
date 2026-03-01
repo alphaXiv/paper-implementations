@@ -51,7 +51,7 @@ python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.actor.fsdp_config.param_offload=False \
     actor_rollout_ref.actor.fsdp_config.optimizer_offload=False \
     actor_rollout_ref.rollout.log_prob_micro_batch_size_per_gpu=16 \
-    actor_rollout_ref.rollout.tensor_model_parallel_size=4 \
+    actor_rollout_ref.rollout.tensor_model_parallel_size=1 \
     actor_rollout_ref.rollout.name=vllm \
     actor_rollout_ref.rollout.gpu_memory_utilization=0.8 \
     actor_rollout_ref.rollout.n=8 \
@@ -66,9 +66,9 @@ python3 -m verl.trainer.main_ppo \
     trainer.experiment_name='llama3.2_3b_base_custom_template_lora' \
     trainer.n_gpus_per_node=2 \
     trainer.nnodes=1 \
-    trainer.save_freq=100 \
-    trainer.test_freq=100 \
-    trainer.total_epochs=100
+    trainer.save_freq=23 \
+    trainer.test_freq=23 \
+    trainer.total_epochs=1
 
 # After training completes, evaluate the saved model on the reserved test set:
 # bash evaluate_gsm8k.sh --base_model meta-llama/Llama-3.2-3B \

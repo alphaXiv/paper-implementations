@@ -26,10 +26,10 @@ NUM_ENGINES=${NUM_ENGINES:-8}
 NUM_ITERATIONS=${NUM_ITERATIONS:-100}
 NUM_TRAIN_SAMPLES=${NUM_TRAIN_SAMPLES:-200}
 CUDA_DEVICES=${CUDA_DEVICES:-"0,1,2,3,4,5,6,7"}
-MODEL_NAME=${MODEL_NAME:-"meta-llama/Llama-3.2-3B-Instruct"}
-EXPERIMENT_DIR=${EXPERIMENT_DIR:-"es-ft-gsm8k-experiment-exp3"}
+MODEL_NAME=${MODEL_NAME:-"meta-llama/Llama-3.2-3B"}
+EXPERIMENT_DIR=${EXPERIMENT_DIR:-"es-ft-gsm8k-experiment-exp2"}
 DATA_PATH="src/data/gsm8k-0.1/train.parquet"
-TOKENIZER_PATH=${TOKENIZER_PATH:-""}
+TOKENIZER_PATH=${TOKENIZER_PATH:-"src/tokenizers/llama-3.2-3b-base-chat"}
 
 
 echo "Configuration:"
