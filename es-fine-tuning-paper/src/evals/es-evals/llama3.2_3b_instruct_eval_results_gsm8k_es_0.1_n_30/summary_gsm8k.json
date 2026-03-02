@@ -1,0 +1,27 @@
+{
+  "model_id": "meta-llama/Llama-3.2-3B-Instruct",
+  "eval_stats": {
+    "dataset_name": "GSM8K Test",
+    "num_samples": 200,
+    "avg_reward": 0.845,
+    "avg_format_reward": 0.0,
+    "avg_answer_reward": 0.845,
+    "std_reward": 0.36190468358395134,
+    "min_reward": 0.0,
+    "max_reward": 1.0,
+    "high_reward_count": 169,
+    "high_reward_percentage": 84.5,
+    "correct_count": 169,
+    "accuracy": 84.5,
+    "eval_time": 19.324060678482056
+  },
+  "generation_config": {
+    "max_new_tokens": 1024,
+    "do_sample": false,
+    "temperature": null,
+    "top_p": null,
+    "batch_size": 32,
+    "tensor_parallel_size": 1,
+    "dtype": "float16"
+  }
+}
