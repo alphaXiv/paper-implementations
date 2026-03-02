@@ -16,15 +16,15 @@ huggingface-cli login --token "$HF_TOKEN"
 python3 -m verl.trainer.main_ppo \
     algorithm.adv_estimator=grpo \
     trainer.val_before_train=False \
-    data.train_files=./data/gsm8k-0.4/train.parquet \
-    data.val_files=./data/gsm8k-0.4/validation.parquet \
+    data.train_files=./data/gsm8k-0.1/train.parquet \
+    data.val_files=./data/gsm8k-0.1/validation.parquet \
     data.train_batch_size=32 \
     data.max_prompt_length=512 \
     data.max_response_length=1024 \
     data.filter_overlong_prompts=True \
     data.truncation='error' \
     data.shuffle=False \
-    actor_rollout_ref.model.path=meta-llama/Llama-3.2-3B-Instruct \
+    actor_rollout_ref.model.path=Qwen/Qwen2.5-3B-Instruct \
     +actor_rollout_ref.model.lora_rank=64 \
     +actor_rollout_ref.model.lora_alpha=32 \
     actor_rollout_ref.actor.optim.lr=3e-6 \
@@ -39,7 +39,7 @@ python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.actor.fsdp_config.param_offload=False \
     actor_rollout_ref.actor.fsdp_config.optimizer_offload=False \
     actor_rollout_ref.rollout.log_prob_micro_batch_size_per_gpu=16 \
-    actor_rollout_ref.rollout.tensor_model_parallel_size=4 \
+    actor_rollout_ref.rollout.tensor_model_parallel_size=1 \
     actor_rollout_ref.rollout.name=vllm \
     actor_rollout_ref.rollout.gpu_memory_utilization=0.8 \
     actor_rollout_ref.rollout.n=8 \
@@ -51,11 +51,11 @@ python3 -m verl.trainer.main_ppo \
     trainer.critic_warmup=0 \
     trainer.logger='["console","wandb"]' \
     trainer.project_name='verl_grpo_example_gsm8k' \
-    trainer.experiment_name='qwen2.5_3b_grpo_lora' \
+    trainer.experiment_name='qwen2.5_3b_ins_grpo_lora_0.1' \
     trainer.n_gpus_per_node=8 \
     trainer.nnodes=1 \
     trainer.save_freq=23 \
-    trainer.test_freq=10 \
+    trainer.test_freq=23 \
     trainer.total_epochs=1
   
     # actor_rollout_ref.actor.ppo_mini_batch_size=256 \  
@@ -66,7 +66,7 @@ python3 -m verl.trainer.main_ppo \
 # After training completes, evaluate the saved model on the reserved test set:
 # python3 evaluate_model.py \
 #     --model_path <path_to_saved_checkpoint> \
-#     --base_model meta-llama/Llama-3.2-3B-Instruct \
+#     --base_model qwen/Qwen2.5-3B-Instruct \
 #     --test_file ./data/gsm8k-0.1/test.parquet \
 #     --task_type gsm8k \
 #     --output_file ./eval_results_gsm8k.json

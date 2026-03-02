@@ -26,12 +26,12 @@ echo "Evaluating trained model from: $TRAINED_MODEL_PATH"
 
 # Default configuration
 MODEL_ID="${MODEL_ID:-Qwen/Qwen2.5-3B-Instruct}"
-EVAL_DATA_PATH="${EVAL_DATA_PATH:-src/data/gsm8k-0.7/test.parquet}"
+EVAL_DATA_PATH="${EVAL_DATA_PATH:-src/data/gsm8k-0.1/test.parquet}"
 EVAL_SAMPLES="${EVAL_SAMPLES:-200}"
 MAX_NEW_TOKENS="${MAX_NEW_TOKENS:-1024}"
 BATCH_SIZE="${BATCH_SIZE:-32}"
 TENSOR_PARALLEL_SIZE="${TENSOR_PARALLEL_SIZE:-1}"
-OUTPUT_DIR="${OUTPUT_DIR:-src/evals/qwen2.5_3b_instruct_eval_results_gsm8k_es_0.9}"
+OUTPUT_DIR="${OUTPUT_DIR:-src/evals/qwen2.5_3b_instruct_eval_results_gsm8k_es_0.1_n_30}"
 
 echo "Configuration:"
 echo "  Base Model: $MODEL_ID"

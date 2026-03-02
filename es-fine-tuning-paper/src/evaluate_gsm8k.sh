@@ -9,10 +9,10 @@ echo "GSM8K Model Evaluation Pipeline"
 echo "=========================================="
 
 # Configuration
-PROJECT_NAME="verl_grpo_countdown"
-EXPERIMENT_NAME="qwen_2.5_3b_base_custom_template_lora"
+PROJECT_NAME="verl_grpo_example_gsm8k"
+EXPERIMENT_NAME="qwen_2.5_3b_grpo_lora"
 BASE_MODEL="qwen/Qwen2.5-3B"
-TOKENIZER_PATH="./tokenizers/qwen2.5-3b-base-chat"  # Optional custom tokenizer path
+TOKENIZER_PATH=""  # Optional custom tokenizer path
 TEST_FILE="./data/gsm8k-0.1/test.parquet"
 TASK_TYPE="gsm8k"
 USE_FSDP="false"  # Set to "false" to skip FSDP model merging
