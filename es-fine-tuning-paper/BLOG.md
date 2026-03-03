@@ -122,7 +122,7 @@ ES has several appealing properties:
 GRPO is a modern on-policy RL algorithm that estimates advantages by comparing responses within a group. For each prompt, GRPO generates $N$ responses and uses their relative performance to compute advantages.
 
 Our GRPO implementation uses:
-- LoRA adapters (rank=64, alpha=32) for efficient fine-tuning
+- Full-parameter fine-tuning (LoRA only for 100% dataset experiments)
 - $N=8$ rollouts per prompt
 - $\text{lr}=3\times10^{-6}$ learning rate
 - KL divergence penalty (coef=0.001) to prevent drift from reference policy
@@ -154,14 +154,15 @@ For base models, we use custom chat templates to format prompts appropriately, a
 
 # Training Setup
 
-All experiments were conducted on **8x A100 (40GB)** GPUs. To handle memory constraints at the 3B scale, both ES and GRPO used LoRA (Low-Rank Adaptation) for parameter-efficient fine-tuning.
+All experiments were conducted on **1x H100 (80GB)** and **8x A100 (80GB)** GPUs on Lambda Labs running Lambda Stack 22.04. Full-parameter fine-tuning was used for all experiments, with the exception of the 100% dataset experiments which used LoRA (Low-Rank Adaptation, rank=64, alpha=32) for memory efficiency.
 
 ## ES Configuration
 
 ES training used the accelerated implementation (`es_fine_tuning_gsm8k_accl.py`, `es_fine-tuning_countdown_accl.py`) with:
 - vLLM for fast inference
 - Ray for distributed coordination
-
+- Multiple vLLM engines (one per GPU) for parallel evaluation
+- NCCL all-reduce for gradient synchronization across engines
 
 The accelerated implementation achieves **10x+ speedup** over the original sequential version while maintaining equivalent convergence behavior.
 
@@ -170,6 +171,8 @@ The accelerated implementation achieves **10x+ speedup** over the original seque
 GRPO training used VERL's optimized implementation with:
 - vLLM for rollout generation
 - FSDP for distributed training
+- Gradient checkpointing for memory efficiency
+- LoRA adapters (rank=64, alpha=32) only for 100% dataset experiments
 
 Both methods were configured to perform approximately equal total evaluations for fair comparison.
 
@@ -181,27 +184,27 @@ We first examine how ES and GRPO compare across different training data sizes on
 
 <div align="center" style="margin: 2em 0;">
 
-<p><em>Table 1: Test accuracy of ES and GRPO on Countdown (left) and GSM8K (right) as training data size increases. Qwen2.5-3B-Instruct with N=8, 100 iterations.</em></p>
+<p><em>Table 1: Test accuracy of ES and GRPO on Countdown and GSM8K as training data size increases. Qwen2.5-3B-Instruct with N=8, 100 iterations.</em></p>
 </div>
 
-| Model | Task | Method | Training % | Training Samples | Accuracy |
-|-------|------|--------|-----------|------------------|----------|
-| Qwen2.5-3B-Instruct | Countdown | ES | 10% | 200 | 36.0 |
-| Qwen2.5-3B-Instruct | Countdown | GRPO | 10% | 200 | 34.1 |
-| Qwen2.5-3B-Instruct | Countdown | ES | 40% | 800 | 35.0 |
-| Qwen2.5-3B-Instruct | Countdown | GRPO | 40% | 800 | 39.6 |
-| Qwen2.5-3B-Instruct | Countdown | ES | 70% | 1,400 | 42.0 |
-| Qwen2.5-3B-Instruct | Countdown | GRPO | 70% | 1,400 | 47.5 |
-| Qwen2.5-3B-Instruct | Countdown | ES | 100% | 2,000 | 39.0 |
-| Qwen2.5-3B-Instruct | Countdown | GRPO | 100% | 2,000 | 40.5 |
-| Qwen2.5-3B-Instruct | GSM8K | ES | 10% | 700 | 89.0 |
-| Qwen2.5-3B-Instruct | GSM8K | GRPO | 10% | 700 | 85.5 |
-| Qwen2.5-3B-Instruct | GSM8K | ES | 40% | 2,800 | 86.5 |
-| Qwen2.5-3B-Instruct | GSM8K | GRPO | 40% | 2,800 | 90.9 |
-| Qwen2.5-3B-Instruct | GSM8K | ES | 70% | 4,900 | 83.0 |
-| Qwen2.5-3B-Instruct | GSM8K | GRPO | 70% | 4,900 | 89.6 |
-| Qwen2.5-3B-Instruct | GSM8K | ES | 100% | 7,000 | 86.0 |
-| Qwen2.5-3B-Instruct | GSM8K | GRPO | 100% | 7,000 | 87.4 |
+| Task | Method | Training % | Training Samples | Accuracy |
+|------|--------|-----------|------------------|----------|
+| Countdown | ES | 10% | 200 | 36.0 |
+| Countdown | GRPO | 10% | 200 | 34.1 |
+| Countdown | ES | 40% | 800 | 35.0 |
+| Countdown | GRPO | 40% | 800 | 39.6 |
+| Countdown | ES | 70% | 1,400 | 42.0 |
+| Countdown | GRPO | 70% | 1,400 | 47.5 |
+| Countdown | ES | 100% | 2,000 | 39.0 |
+| Countdown | GRPO | 100% | 2,000 | 40.5 |
+| GSM8K | ES | 10% | 700 | 89.0 |
+| GSM8K | GRPO | 10% | 700 | 85.5 |
+| GSM8K | ES | 40% | 2,800 | 86.5 |
+| GSM8K | GRPO | 40% | 2,800 | 90.9 |
+| GSM8K | ES | 70% | 4,900 | 83.0 |
+| GSM8K | GRPO | 70% | 4,900 | 89.6 |
+| GSM8K | ES | 100% | 7,000 | 86.0 |
+| GSM8K | GRPO | 100% | 7,000 | 87.4 |
 
 **Key findings:**
 
@@ -218,24 +221,25 @@ The data suggests a clear trade-off: **use ES when data is limited (≤10%), swi
 
 The picture changes dramatically when we move from instruction-tuned models to base models. We tested both methods on 10% training data with Qwen2.5-3B (base) and Llama-3.2-3B (base).
 
-| Model | Task | Method | Training Samples | Accuracy |
-|-------|------|--------|------------------|----------|
-| Qwen2.5-3B (base) | Countdown | GRPO | 200 | 58.4 |
-| Llama-3.2-3B (base) | Countdown | ES | 200 | 2.0 |
-| Llama-3.2-3B (base) | Countdown | GRPO | 200 | 23.5 |
-| Qwen2.5-3B (base) | GSM8K | ES | 700 | 82.5 |
-| Qwen2.5-3B (base) | GSM8K | GRPO | 700 | 87.7 |
-| Llama-3.2-3B (base) | GSM8K | ES | 700 | 16.0 |
-| Llama-3.2-3B (base) | GSM8K | GRPO | 700 | 14.0 |
-
 <div align="center" style="margin: 2em 0;">
 
 <p><em>Table 2: Comparison of ES and GRPO on base models across Countdown and GSM8K tasks. GRPO generally performs better, especially on Qwen2.5 base.</em></p>
 </div>
 
+| Model | Task | Method | Samples | Iter | N | Total Evals | Accuracy |
+|-------|------|--------|---------|------|---|-------------|----------|
+| Qwen2.5-3B (base) | Countdown | GRPO | 200 | 100 | 8 | 160K |  |
+| Qwen2.5-3B (base) | Countdown | GRPO | 200 | 100 | 8 | 160K | 58.43 |
+| Llama-3.2-3B (base) | Countdown | ES | 200 | 100 | 8 | 160K | 2.0 |
+| Llama-3.2-3B (base) | Countdown | GRPO | 200 | 100 | 8 | 160K | 23.46 |
+| Qwen2.5-3B (base) | GSM8K | ES | ~700 | 100 | 8 | 560K | 82.5 |
+| Qwen2.5-3B (base) | GSM8K | GRPO | ~700 | 100 | 8 | 560K | 87.71 |
+| Llama-3.2-3B (base) | GSM8K | ES | ~700 | 100 | 8 | 560K | 16.0 |
+| Llama-3.2-3B (base) | GSM8K | GRPO | ~700 | 100 | 8 | 560K | 14.0 |
+
 **Key observations:**
 
-1. **GRPO strongly preferred for base models**: On Qwen2.5 base, GRPO achieves 87.7% on GSM8K compared to ES's 82.5%. The 5.2-point gap is much larger than we saw with instruction-tuned models.
+1. **GRPO strongly preferred for base models**: On Qwen2.5 base, GRPO achieves 87.71% on GSM8K compared to ES's 82.5%. The 5.2-point gap is larger than we saw with instruction-tuned models at 10%.
 
 2. **Llama-3.2 base struggles with both methods**: Both ES and GRPO fail dramatically on Llama-3.2 base for both tasks, achieving <25% accuracy. This suggests the base model lacks sufficient instruction-following or mathematical capabilities to benefit from either fine-tuning approach.
 
@@ -283,7 +287,7 @@ A natural question with ES is whether using a larger population size improves pe
 |----------|--------|--------|-------|
 | Instruct models, 10% data | ES | Moderate | ES achieves 89% vs GRPO's 85.5% on GSM8K |
 | Instruct models, 40-100% data | GRPO | Significant | GRPO consistently 3-5 points ahead |
-| Base models (Qwen) | GRPO | Large | 10+ point advantage on GSM8K |
+| Base models (Qwen) | GRPO | Moderate | 5+ point advantage on GSM8K (87.71% vs 82.5%) |
 | Base models (Llama) | Both fail | N/A | Both methods struggle, both <25% |
 | Large population (Countdown) | N=30 | 6-10 points | Helps ES on structured tasks |
 | Large population (GSM8K) | Mixed | 0-2 points | Little benefit, higher cost |
@@ -330,7 +334,7 @@ Our study has several limitations that deserve mention:
 
 3. **Task diversity**: We only tested on two mathematical reasoning tasks. Findings may differ on tasks like code generation, creative writing, or multi-turn dialogue.
 
-4. **LoRA constraint**: Memory limitations forced us to use LoRA for both methods. Full-parameter fine-tuning might show different relative performance.
+4. **Mixed training approaches**: Most experiments used full-parameter fine-tuning, but 100% dataset experiments required LoRA due to memory constraints. This inconsistency may affect the comparability of results across different data fractions.
 
 5. **No hybrid approaches**: We didn't test combinations of ES and GRPO (e.g., ES for early training + GRPO for refinement), which could potentially combine the benefits of both.
 
@@ -402,6 +406,8 @@ As the field continues to explore alternatives to standard RL approaches, ES des
 
 # Acknowledgments
 
-This work builds on the Evolution Strategies implementation from [es-fine-tuning-paper](https://alphaxiv.org/abs/2509.24372) and uses VERL (Volcano Engine Reinforcement Learning) for GRPO experiments. We thank the authors of both frameworks for open-sourcing their implementations.
+This work builds on the Evolution Strategies implementation from [es-fine-tuning-paper](https://arxiv.org/abs/2509.24372) and uses VERL (Volcano Engine Reinforcement Learning) for GRPO experiments. We thank the authors of both frameworks for open-sourcing their implementations.
+
+Experiments were conducted on Lambda Labs cloud infrastructure (1x H100 80GB and 8x A100 80GB) running Lambda Stack 22.04.
 
 Experiments were conducted using Lambda Labs cloud infrastructure (8x NVIDIA A100 40GB GPUs)
