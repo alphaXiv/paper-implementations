@@ -81,7 +81,7 @@ class ESNcclLLM(LLM):
         os.environ["VLLM_ENABLE_V1_MULTIPROCESSING"] = "0"
         super().__init__(*args, **kwargs)
 
-def launch_engines(num_engines, model_name):
+def launch_engines(num_engines, model_name, tokenizer_path=None):
     # Strict 1-GPU isolation via PGs
     pgs = [placement_group([{"GPU": 1, "CPU": 0}], lifetime="detached") for _ in range(num_engines)]
     ray.get([pg.ready() for pg in pgs])
@@ -95,15 +95,24 @@ def launch_engines(num_engines, model_name):
         for pg in pgs
     ]
 
+    # Prepare vLLM kwargs
+    vllm_kwargs = {
+        "model": model_name,
+        "tensor_parallel_size": 1,
+        "distributed_executor_backend": "ray",
+        "worker_extension_cls": "utils.worker_extn.WorkerExtension",
+        "dtype": "float16",
+        "enable_prefix_caching": False,
+        "enforce_eager": False,
+    }
+    
+    # Add tokenizer path if provided
+    if tokenizer_path:
+        vllm_kwargs["tokenizer"] = tokenizer_path
+
     engines = [
         ray.remote(num_cpus=0, num_gpus=0, scheduling_strategy=strategy)(ESNcclLLM).remote(
-            model=model_name,
-            tensor_parallel_size=1,
-            distributed_executor_backend="ray",
-            worker_extension_cls="utils.worker_extn.WorkerExtension",
-            dtype="float16",
-            enable_prefix_caching=False,
-            enforce_eager=False,
+            **vllm_kwargs
         )
         for strategy in strategies
     ]
@@ -156,8 +165,10 @@ def main(args):
     
     # Load tokenizer from custom path if provided, otherwise from model
     if args.tokenizer_path:
-        print(f"Loading custom tokenizer from: {args.tokenizer_path}")
-        tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_path, token=hf_token)
+        # Convert to absolute path to avoid HuggingFace validation issues
+        tokenizer = AutoTokenizer.from_pretrained(
+           args.tokenizer_path,
+        )
     else:
         print(f"Loading tokenizer from model: {args.model_name}")
         tokenizer = AutoTokenizer.from_pretrained(args.model_name, token=hf_token)
@@ -191,8 +202,8 @@ def main(args):
     
     task_datas = task_datas[: args.num_train_samples]
 
-    # Launch engines
-    engines, pgs = launch_engines(args.num_engines, base_model_path)
+    # Launch engines with custom tokenizer path
+    engines, pgs = launch_engines(args.num_engines, base_model_path, tokenizer_path=base_model_path)
 
     # Init inter-engine communicator once
     master_address = get_ip()
