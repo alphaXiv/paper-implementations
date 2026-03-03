@@ -20,6 +20,9 @@ def parse_args():
                         help='HF model name for vLLM')
     parser.add_argument('--trained_model_path', type=str, required=True,
                         help='Path to the trained model directory')
+    parser.add_argument('--tokenizer_path', type=str, default=None,
+                        help='Path to tokenizer (e.g. base_model or custom tokenizer saved during training). '
+                             'Use this when only weights were saved so eval matches training tokenization.')
 
     # Data args (match the regular evaluator)
     parser.add_argument('--train_data_path', type=str,
@@ -71,7 +74,7 @@ class ESNcclLLM(LLM):
         os.environ["VLLM_ENABLE_V1_MULTIPROCESSING"] = "0"
         super().__init__(*args, **kwargs)
 
-def launch_engines(num_engines, model_name):
+def launch_engines(num_engines, model_name, tokenizer_path=None):
     # Strict 1-GPU isolation via PGs
     pgs = [placement_group([{"GPU": 1, "CPU": 0}], lifetime="detached") for _ in range(num_engines)]
     ray.get([pg.ready() for pg in pgs])
@@ -85,15 +88,21 @@ def launch_engines(num_engines, model_name):
         for pg in pgs
     ]
 
+    engine_kwargs = dict(
+        model=model_name,
+        tensor_parallel_size=1,
+        distributed_executor_backend="ray",
+        worker_extension_cls="utils.worker_extn.WorkerExtension",
+        dtype="float16",
+        enable_prefix_caching=False,
+        enforce_eager=False,
+    )
+    if tokenizer_path is not None:
+        engine_kwargs["tokenizer"] = tokenizer_path
+
     engines = [
         ray.remote(num_cpus=0, num_gpus=0, scheduling_strategy=strategy)(ESNcclLLM).remote(
-            model=model_name,
-            tensor_parallel_size=1,
-            distributed_executor_backend="ray",
-            worker_extension_cls="utils.worker_extn.WorkerExtension",
-            dtype="float16",
-            enable_prefix_caching=False,
-            enforce_eager=False,
+            **engine_kwargs
         )
         for strategy in strategies
     ]
@@ -329,6 +338,11 @@ def main():
 
     print("=== vLLM ES Model Inference Script ===")
     print(f"Model path: {args.model_id}")
+    if args.tokenizer_path:
+        print(f"Tokenizer path: {args.tokenizer_path}")
+    else:
+        print("Warning: --tokenizer_path not set. vLLM will use the tokenizer from model_id. "
+              "If you trained with a custom/saved tokenizer, pass --tokenizer_path so eval matches training.")
     print(f"Eval data: {args.eval_data_path} (samples: {args.eval_samples}, offset: {args.eval_offset})")
     print(f"Output directory: {args.output_dir}")
     print(f"Tensor parallel size: {args.tensor_parallel_size}")
@@ -338,6 +352,7 @@ def main():
     llm, _ = launch_engines(
         num_engines=1,
         model_name=args.model_id,
+        tokenizer_path=args.tokenizer_path,
     )
     llm = llm[0]
     llm.collective_rpc.remote("load_weights_from_disk", args=(args.trained_model_path,))
