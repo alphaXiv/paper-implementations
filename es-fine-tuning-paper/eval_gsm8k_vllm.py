@@ -20,7 +20,13 @@ def parse_args():
                         help='HF model name for vLLM')
     parser.add_argument('--trained_model_path', type=str, required=True,
                         help='Path to the trained model directory')
-
+    parser.add_argument(
+        "--tokenizer_path",
+        type=str,
+        default=None,
+        help="Path to custom tokenizer (e.g., src/tokenizers/qwen2.5-3b-base-chat)",
+    )
+    
     # Data args
     parser.add_argument('--eval_data_path', type=str,
                         default='src/data/gsm8k-0.1/test.parquet',
@@ -68,7 +74,7 @@ class ESNcclLLM(LLM):
         os.environ["VLLM_ENABLE_V1_MULTIPROCESSING"] = "0"
         super().__init__(*args, **kwargs)
 
-def launch_engines(num_engines, model_name):
+def launch_engines(num_engines, model_name, tokenizer_path):
     # Strict 1-GPU isolation via PGs
     pgs = [placement_group([{"GPU": 1, "CPU": 0}], lifetime="detached") for _ in range(num_engines)]
     ray.get([pg.ready() for pg in pgs])
@@ -82,15 +88,24 @@ def launch_engines(num_engines, model_name):
         for pg in pgs
     ]
 
+    # Prepare vLLM kwargs
+    vllm_kwargs = {
+        "model": model_name,
+        "tensor_parallel_size": 1,
+        "distributed_executor_backend": "ray",
+        "worker_extension_cls": "utils.worker_extn.WorkerExtension",
+        "dtype": "float16",
+        "enable_prefix_caching": False,
+        "enforce_eager": False,
+    }
+    
+    # Add tokenizer path if provided
+    if tokenizer_path:
+        vllm_kwargs["tokenizer"] = tokenizer_path
+
     engines = [
         ray.remote(num_cpus=0, num_gpus=0, scheduling_strategy=strategy)(ESNcclLLM).remote(
-            model=model_name,
-            tensor_parallel_size=1,
-            distributed_executor_backend="ray",
-            worker_extension_cls="utils.worker_extn.WorkerExtension",
-            dtype="float16",
-            enable_prefix_caching=False,
-            enforce_eager=False,
+            **vllm_kwargs
         )
         for strategy in strategies
     ]
@@ -338,6 +353,7 @@ def main():
     llm, _ = launch_engines(
         num_engines=1,
         model_name=args.model_id,
+        tokenizer_path=args.tokenizer_path
     )
     llm = llm[0]
     
