@@ -2,7 +2,7 @@
 
 Reinforcement learning (RL) has become the dominant paradigm for fine-tuning large language models (LLMs) on tasks with verifiable outputs. Methods like PPO, DPO, and GRPO (Group Relative Policy Optimization) power many state-of-the-art systems. But there's an alternative approach that's been quietly gaining traction: **Evolution Strategies (ES)**.
 
-ES offers a fundamentally different way to optimize neural networks. Instead of computing gradients through backpropagation, ES treats the model as a black box and optimizes it using only forward passes and reward signals. This approach has surprising benefits: it's simpler to implement, naturally parallelizes, and can be more sample-efficient in certain regimes.
+ES offers a fundamentally different way to optimize neural networks. Instead of computing gradients through backpropagation, ES treats the model as a black box and optimizes it using only forward passes and reward signals. This approach has surprising benefits: it's simpler to implement, parallelizes wells, and can be more sample-efficient in certain regimes.
 
 *Evolution Strategies (left) perturbs model weights with random noise and updates based on which perturbations yield higher rewards. Reinforcement Learning (right) uses gradient-based policy optimization to update model parameters.*
 
