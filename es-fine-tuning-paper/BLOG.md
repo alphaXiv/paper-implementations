@@ -100,21 +100,6 @@ Evolution Strategies optimize model parameters by sampling random perturbations 
 
 ![Algorithm 1: Basic ES Algorithm](assets/algorithm1-es.png)
 
-At each iteration $t$:
-
-1. Sample $N$ noise vectors $\epsilon_1, \ldots, \epsilon_N \sim \mathcal{N}(0, I)$
-2. Create $N$ perturbed models: $\theta_i = \theta_t + \sigma \epsilon_i$
-3. Evaluate each perturbed model on a batch of training data
-4. Compute the ES gradient estimate:
-
-$$
-\nabla_\theta J(\theta) \approx \frac{1}{N\sigma} \sum_{i=1}^{N} R_i \cdot \epsilon_i
-$$
-
-where $R_i$ is the average reward obtained by the $i$-th perturbed model.
-
-1. Update parameters: $\theta_{t+1} = \theta_t + \alpha \nabla_\theta J(\theta)$
-
 **Key hyperparameters:**
 
 - $\sigma = 0.001$ (noise standard deviation)
