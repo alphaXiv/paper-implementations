@@ -255,16 +255,12 @@ The takeaway: **for base models, strongly prefer GRPO**, which appears more robu
 A natural question with ES is whether using a larger population size improves performance. We compared N=8 vs N=30 on instruction-tuned models at 10% training data.
 
 
-| Model                 | Task      | Method | Pop Size (N) | Total Evals | Accuracy |
-| --------------------- | --------- | ------ | ------------ | ----------- | -------- |
-| Qwen2.5-3B-Instruct   | Countdown | ES     | 8            | 160K        | 36.0     |
-| Qwen2.5-3B-Instruct   | Countdown | ES     | 30           | 600K        | 42.0     |
-| Qwen2.5-3B-Instruct   | GSM8K     | ES     | 8            | ~600K       | 89.0     |
-| Qwen2.5-3B-Instruct   | GSM8K     | ES     | 30           | ~2.2M       | 87.5     |
-| Llama-3.2-3B-Instruct | Countdown | ES     | 8            | 160K        | 28.0     |
-| Llama-3.2-3B-Instruct | Countdown | ES     | 30           | 600K        | 38.0     |
-| Llama-3.2-3B-Instruct | GSM8K     | ES     | 8            | ~600K       | 82.0     |
-| Llama-3.2-3B-Instruct | GSM8K     | ES     | 30           | ~2.2M       | 84.5     |
+| Model                 | Task      | Accuracy (N=8) | Accuracy (N=30) |
+| --------------------- | --------- | -------------- | --------------- |
+| Qwen2.5-3B-Instruct   | Countdown | 36.0           | **42.0**        |
+| Qwen2.5-3B-Instruct   | GSM8K     | **89.0**       | 87.5            |
+| Llama-3.2-3B-Instruct | Countdown | 28.0           | **38.0**        |
+| Llama-3.2-3B-Instruct | GSM8K     | 82.0           | **84.5**        |
 
 
 *Comparison of N=8 vs N=30 population size for ES across models and tasks. Larger populations help for Countdown but not consistently for GSM8K.*
