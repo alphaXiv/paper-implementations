@@ -4,6 +4,10 @@ Reinforcement learning (RL) has become the dominant paradigm for fine-tuning lar
 
 ES offers a fundamentally different way to optimize neural networks. Instead of computing gradients through backpropagation, ES treats the model as a black box and optimizes it using only forward passes and reward signals. This approach has surprising benefits: it's simpler to implement, parallelizes well, and can be more sample-efficient in certain regimes.
 
+<div align="center" style="margin: 2em 0;">
+<img src="assets/rl-vs_es.png" width="75%" alt="ES vs RL Optimization" />
+<p><em>Comparison of Evolution Strategies (ES) and Reinforcement Learning (RL) optimization approaches. ES perturbs model weights with random noise and updates based on reward signals, while RL uses gradient-based policy optimization.</em></p>
+</div>
 
 Despite the theoretical appeal of ES, a key question remains: **how does ES actually perform compared to RL when fine-tuning modern LLMs?** Specifically:
 
@@ -19,6 +23,7 @@ Our contributions are:
 - Analysis of how ES and GRPO perform on base vs instruction-tuned models
 - Insights on population size scaling for ES at the 3B model scale
 
+You can find our eval rollouts and dataset used at this [link](https://huggingface.co/collections/alphaXiv/es-grpo).
 # Tasks & Dataset
 
 We evaluate ES and GRPO on two mathematical reasoning tasks that differ in structure and difficulty.
@@ -52,6 +57,13 @@ The reward function gives:
 - **1.0 points** if the expression uses all numbers exactly once and evaluates to the target
 - **0.1 points** for proper formatting (presence of appropriate tags)
 - **0.0 points** for invalid or incorrect answers
+
+<div align="center" style="margin: 2em 0;">
+<img src="assets/es_reward_cal.png" width="70%" alt="ES Reward Calculation Process" />
+<p><em>Illustration of how rewards are computed in Evolution Strategies. Each perturbed model is evaluated on a batch of training data, producing rewards that guide the parameter update direction.</em></p>
+</div>
+
+Our choice of hyperparameters for GRPO version of this task was inspired by [this repository](https://github.com/Jiayi-Pan/TinyZero/tree/main) which used a similar setup for training on Countdown and the ES version hyperparameters were taken directly from the original [ES paper](https://www.alphaxiv.org/abs/2509.24372) which also used Countdown as a testbed.
 
 ## GSM8K Task
 
@@ -95,27 +107,27 @@ $$
 Keeping the total number of sample evaluations the same between ES and GRPO ensures that any  performance differences reflect the amount of data used rather than samples seen.
 For eg, with $T=100$ iterations, $N=8$ population/group size, and $b=16$ batch size, both methods evaluate 12,800 samples in total. This allows us to isolate the effect of the training method itself on data efficiency and performance. 
 
+Our choice of hyperparameters for GRPO version of this task was inspired by this [HuggingFace article](https://huggingface.co/blog/Weyaxi/engineering-handbook-grpo-lora-with-verl).
 # Methods
 
 ## Evolution Strategies (ES)
 
-Evolution Strategies optimize model parameters by sampling random perturbations and updating in the direction of high-reward perturbations. Our implementation follows the canonical ES algorithm:
+Evolution Strategies optimize model parameters by sampling random perturbations and updating in the direction of high-reward perturbations. The implementation follows the canonical ES algorithm:
 
 ![Algorithm 1: Basic ES Algorithm](assets/algorithm1-es.png)
 
-**Key hyperparameters:**
+**Key hyperparameters (and what we used):**
 
 - $\sigma = 0.001$ (noise standard deviation)
 - $\alpha = 0.0005$ (learning rate)
 - $N \in 8, 30$ (population size)
-- 100 iterations
+- $T \in 100, 200$ iterations
 
 ES has several appealing properties:
 
 - **No gradients needed**: Only requires forward passes and reward evaluation
-- **Natural parallelism**: All $N$ evaluations can run in parallel
-- **Simple implementation**: No need for value functions, advantage estimation, or KL penalties
-- **Exploration**: Built-in exploration through noise injection
+- **Sync-free parallelism**: All $N$ evaluations can run in parallel without synchronizations as in gradient based approaches (since there are none)
+- **Exploration**: Tunable exploration through noise injection generating n-diverse perturbations
 
 In practice, the algorithm is implemented using several tricks to ensure scalability. These are described in more detail in [the paper](https://www.alphaxiv.org/abs/2509.24372).
 
@@ -131,35 +143,26 @@ Our GRPO implementation uses:
 - KL divergence penalty (coef=0.001) to prevent drift from reference policy
 - FSDP (Fully Sharded Data Parallel) for distributed training
 
-GRPO updates follow the standard policy gradient framework with group-relative advantage estimation:
-
-$$
-\mathcal{L}*{\text{GRPO}} = \mathbb{E}*{(s,a) \sim \pi_{\theta}} \left[ \frac{\pi_{\theta}(a|s)}{\pi_{\theta_{\text{old}}}(a|s)} \cdot A^{\text{group}}(s,a) \right] - \beta \cdot D_{\text{KL}}(\pi_{\theta} || \pi_{\text{ref}})
-$$
-
+![GRPO Working](assets/grpo-working.png)
 We use VERL (a scalable RL training framework) for our GRPO experiments, which provides efficient implementations of vLLM-based rollout generation and FSDP-based training.
 
 ## Models
 
 We compare ES and GRPO on two model families at the 3B parameter scale:
 
-**Qwen2.5-3B** (base and instruct):
+- **Qwen2.5-3B** (base and instruct)
+- **Llama-3.2-3B** (base and instruct)
 
-- Strong performance on math and reasoning benchmarks
-- Extended training on code and mathematical data
-- Both base and instruction-tuned variants available
 
-**Llama-3.2-3B** (base and instruct):
+We chose these models, owing to their availability at 3B scale which suited for consumer GPUs and different training characteristics since qwen models are know to be more robust to instruction tuning and have better mathematical capabilities than llama models.
 
-- Commonly used open-source model
-- Represents a different architecture and training data distribution
-- Allows us to test generalization of findings
-
-For base models, we use custom chat templates to format prompts appropriately, as they lack built-in instruction-following capabilities.
+For base models, we use custom chat templates to format prompts appropriately, as they lack built-in instruction-following capabilities. The use of chat template is necessary as mentioned in [DeepSeek-R1](https://www.alphaxiv.org/abs/2509.24372). We made use of a simple prompt template owing to [SimpleRL](https://www.alphaxiv.org/abs/2503.18892) results
 
 # Training Setup
 
-All experiments were conducted on **1x H100 (80GB)** and **8x A100 (80GB)** GPUs on Lambda Labs running Lambda Stack 22.04. Full-parameter fine-tuning was used for all experiments, with the exception of the 100% dataset experiments which used LoRA (Low-Rank Adaptation, rank=64, alpha=32) for memory efficiency.
+## Hardware Details
+- All experiments were conducted on  **8x A100 (80GB)** GPUs on Lambda Labs running Lambda Stack 22.04. 
+- Full-parameter fine-tuning was used for all experiments, with the exception of the 100% dataset experiments which used LoRA (Low-Rank Adaptation, rank=64, alpha=32) for memory efficiency.
 
 ## ES Configuration
 
@@ -168,7 +171,6 @@ ES training used the accelerated implementation (`es_fine_tuning_gsm8k_accl.py`,
 - vLLM for fast inference
 - Ray for distributed coordination
 - Multiple vLLM engines (one per GPU) for parallel evaluation
-- NCCL all-reduce for gradient synchronization across engines
 
 The accelerated implementation achieves **10x+ speedup** over the original sequential version while maintaining equivalent convergence behavior.
 
@@ -177,9 +179,8 @@ The accelerated implementation achieves **10x+ speedup** over the original seque
 GRPO training used VERL's optimized implementation with:
 
 - vLLM for rollout generation
-- FSDP for distributed training
-- Gradient checkpointing for memory efficiency
-- LoRA adapters (rank=64, alpha=32) only for 100% dataset experiments
+- FSDP and ray for distributed training
+
 
 Both methods were configured to perform approximately equal total evaluations for fair comparison.
 
@@ -190,7 +191,7 @@ Both methods were configured to perform approximately equal total evaluations fo
 We first examine how ES and GRPO compare across different training data sizes on instruction-tuned models (Qwen2.5-3B-Instruct).
 
 <div align="center" style="margin: 2em 0;">
-<img src="img/table1_data_efficiency.png" width="90%" alt="Data Efficiency: ES vs GRPO on Instruction-Tuned Models" />
+<img src="assets/table1_data_efficiency.png" width="90%" alt="Data Efficiency: ES vs GRPO on Instruction-Tuned Models" />
 <p><em>Figure 1: Test accuracy of ES and GRPO on Countdown and GSM8K as training data size increases. Qwen2.5-3B-Instruct with N=8, 100 iterations.</em></p>
 </div>
 
@@ -207,16 +208,22 @@ The data suggests a clear trade-off: **use ES when data is limited (≤10%), swi
 The picture changes dramatically when we move from instruction-tuned models to base models. We tested both methods on 10% training data with Qwen2.5-3B (base) and Llama-3.2-3B (base).
 
 <div align="center" style="margin: 2em 0;">
-<img src="img/table2_base_models.png" width="90%" alt="Base Model Performance: ES vs GRPO" />
+<img src="assets/table2_base_models.png" width="90%" alt="Base Model Performance: ES vs GRPO" />
 <p><em>Figure 2: Comparison of ES and GRPO on base models across Countdown and GSM8K tasks. GRPO generally performs better, especially on Qwen2.5 base. All experiments used 10% training data (200 samples for Countdown, ~700 for GSM8K), 100 iterations, and N=8.</em></p>
 </div>
 
 **Key observations:**
 
-1. **GRPO strongly preferred for base models**: On Qwen2.5 base, GRPO achieves 87.71% on GSM8K compared to ES's 82.5%. The 5.2-point gap is larger than we saw with instruction-tuned models at 10%.
-2. **Llama-3.2 base struggles with both methods**: Both ES and GRPO fail dramatically on Llama-3.2 base for both tasks, achieving <25% accuracy. This suggests the base model lacks sufficient instruction-following or mathematical capabilities to benefit from either fine-tuning approach.
-3. **ES collapsing on Countdown base**: Llama-3.2 base with ES achieves only 2% accuracy on Countdown, indicating complete training failure. This could be due to ES's sensitivity to initialization when starting from models without aligned output formats.
-4. **Qwen2.5 base is more robust**: The Qwen2.5 base model achieves reasonable performance with both methods, though GRPO still leads. This suggests Qwen's pretraining included more mathematical and structured reasoning data.
+1. **GRPO strongly preferred for base models**: On Qwen2.5 base, GRPO achieves 87.71% on GSM8K compared to ES's 82.5%. The 5.2-point gap is larger than we saw with instruction-tuned models at 10%. Similarly, on Countdown, GRPO achieves 58.43% while ES only reaches 15%.
+
+2. **Llama-3.2 base struggles with both methods**: Both ES and GRPO fail dramatically on Llama-3.2 base for both tasks, achieving poor accuracy.
+    - Analyzing the rollouts, for both countdown and gsm8k, we found that the base Llama model rarely produces valid responses (e.g. it often fails to include the required tags in both the tasks which is required for extraction of final answer). This leads to near-zero rewards for ES perturbations, resulting in ineffective updates. 
+    - GRPO also struggles but can still extract some learning signal from partially correct outputs, which is why it performs better than ES on Llama base. This calls for modelling beter reward functions for base models which can provide more informative feedback even when the model is far from producing valid outputs or dynamic reward shaping that can evolve as the model improves.
+
+3. **ES collapses on both base models for Countdown**: On Countdown, ES achieves only 15% (Qwen) and 2% (Llama) accuracy, indicating severe training difficulties. This could be due to ES's sensitivity to hyperparameters when starting from models without aligned output formats and for the reaons above. 
+    - We chose to keep the same hyperparamter settings for ES across all experiments to maintain consistency and robustness factor as portrayed in the [original paper](https://www.alphaxiv.org/abs/2509.24372), but it's possible that tuning ES specifically for base models could yield better results.
+
+4. **Qwen2.5 base is more robust**: The Qwen2.5 base model achieves reasonable performance with both methods, though GRPO still leads significantly. This suggests Qwen's pretraining included more mathematical and structured reasoning data.
 
 The takeaway: **for base models, strongly prefer GRPO**, which appears more robust to poor initialization and can better shape the model toward desired output formats.
 
@@ -225,7 +232,7 @@ The takeaway: **for base models, strongly prefer GRPO**, which appears more robu
 A natural question with ES is whether using a larger population size improves performance. We compared N=8 vs N=30 on instruction-tuned models at 10% training data.
 
 <div align="center" style="margin: 2em 0;">
-<img src="img/table3_population_scaling.png" width="90%" alt="Effect of population size on ES performance" />
+<img src="assets/table3_population_scaling.png" width="90%" alt="Effect of population size on ES performance" />
 <p><em>Figure 3: Comparison of N=8 vs N=30 population size for ES across models and tasks. Larger populations help for Countdown but not consistently for GSM8K. All experiments used 10% training data.</em></p>
 </div>
 
@@ -241,7 +248,7 @@ A natural question with ES is whether using a larger population size improves pe
 ## Summary of Key Results
 
 <div align="center" style="margin: 2em 0;">
-<img src="img/table4_summary.png" width="90%" alt="Summary of Key Results" />
+<img src="assets/table4_summary.png" width="90%" alt="Summary of Key Results" />
 <p><em>Figure 4: Summary of key findings comparing ES and GRPO across different scenarios and configurations.</em></p>
 </div>
 
@@ -254,34 +261,6 @@ ES's advantage in low-data regimes stems from a fundamental difference in how it
 ## Why Does GRPO Dominate Base Models?
 
 GRPO's dominance on base models likely reflects the larger distributional shift required to elicit structured outputs from a model with no instruction-tuning. When the base model rarely produces valid responses, ES receives near-zero reward for most perturbations, leaving the parameter update with little useful signal. GRPO, operating at the token level, can extract a learning signal even from partially correct outputs, making it more effective at bootstrapping behavior from scratch.
-
-## Computational Considerations
-
-While our experiments controlled for total sample evaluations, wall-clock time and hardware utilization differ between methods:
-
-**ES advantages:**
-
-- Trivially parallelizes across GPUs (one perturbed model per GPU)
-- No need for gradient synchronization during evaluation
-- Simpler implementation without actor/critic infrastructure
-
-**GRPO advantages:**
-
-- More sample-efficient with sufficient data
-- Can use gradient checkpointing and mixed precision for memory efficiency
-- Mature frameworks (VERL, OpenRLHF) with production-grade implementations
-
-For practitioners, ES may be preferable when:
-
-- You have many GPUs and limited data
-- You need a simple, hackable implementation
-- Your task has a complex, non-differentiable reward structure
-
-GRPO is preferable when:
-
-- You have sufficient training data (>10% of full dataset)
-- You need state-of-the-art performance
-- You're working with base models that need significant distributional shift
 
 # Limitations
 
