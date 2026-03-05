@@ -204,24 +204,16 @@ We first examine how ES and GRPO compare across different training data sizes on
 *Table 1: Test accuracy of ES and GRPO on Countdown and GSM8K as training data size increases. Qwen2.5-3B-Instruct with N=8, 100 iterations.*
 
 
-| Task      | Method | Training % | Training Samples | Accuracy |
-| --------- | ------ | ---------- | ---------------- | -------- |
-| Countdown | ES     | 10%        | 200              | 36.0     |
-| Countdown | GRPO   | 10%        | 200              | 34.1     |
-| Countdown | ES     | 40%        | 800              | 35.0     |
-| Countdown | GRPO   | 40%        | 800              | 39.6     |
-| Countdown | ES     | 70%        | 1,400            | 42.0     |
-| Countdown | GRPO   | 70%        | 1,400            | 47.5     |
-| Countdown | ES     | 100%       | 2,000            | 39.0     |
-| Countdown | GRPO   | 100%       | 2,000            | 40.5     |
-| GSM8K     | ES     | 10%        | 700              | 89.0     |
-| GSM8K     | GRPO   | 10%        | 700              | 85.5     |
-| GSM8K     | ES     | 40%        | 2,800            | 86.5     |
-| GSM8K     | GRPO   | 40%        | 2,800            | 90.9     |
-| GSM8K     | ES     | 70%        | 4,900            | 83.0     |
-| GSM8K     | GRPO   | 70%        | 4,900            | 89.6     |
-| GSM8K     | ES     | 100%       | 7,000            | 86.0     |
-| GSM8K     | GRPO   | 100%       | 7,000            | 87.4     |
+| Task      | Training % | Training Samples | ES    | GRPO  |
+| --------- | ---------- | ---------------- | ----- | ----- |
+| Countdown | 10%        | 200              | **36.0** | 34.1 |
+| Countdown | 40%        | 800              | 35.0 | **39.6** |
+| Countdown | 70%        | 1,400            | 42.0 | **47.5** |
+| Countdown | 100%       | 2,000            | 39.0 | **40.5** |
+| GSM8K     | 10%        | 700              | **89.0** | 85.5 |
+| GSM8K     | 40%        | 2,800            | 86.5 | **90.9** |
+| GSM8K     | 70%        | 4,900            | 83.0 | **89.6** |
+| GSM8K     | 100%       | 7,000            | 86.0 | **87.4** |
 
 
 **Key findings:**
