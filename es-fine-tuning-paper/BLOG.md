@@ -233,16 +233,12 @@ The picture changes dramatically when we move from instruction-tuned models to b
 *Table 2: Comparison of ES and GRPO on base models across Countdown and GSM8K tasks. GRPO generally performs better, especially on Qwen2.5 base.*
 
 
-| Model               | Task      | Method | Samples | Iter | N   | Total Evals | Accuracy |
-| ------------------- | --------- | ------ | ------- | ---- | --- | ----------- | -------- |
-| Qwen2.5-3B (base)   | Countdown | GRPO   | 200     | 100  | 8   | 160K        |          |
-| Qwen2.5-3B (base)   | Countdown | GRPO   | 200     | 100  | 8   | 160K        | 58.43    |
-| Llama-3.2-3B (base) | Countdown | ES     | 200     | 100  | 8   | 160K        | 2.0      |
-| Llama-3.2-3B (base) | Countdown | GRPO   | 200     | 100  | 8   | 160K        | 23.46    |
-| Qwen2.5-3B (base)   | GSM8K     | ES     | ~700    | 100  | 8   | 560K        | 82.5     |
-| Qwen2.5-3B (base)   | GSM8K     | GRPO   | ~700    | 100  | 8   | 560K        | 87.71    |
-| Llama-3.2-3B (base) | GSM8K     | ES     | ~700    | 100  | 8   | 560K        | 16.0     |
-| Llama-3.2-3B (base) | GSM8K     | GRPO   | ~700    | 100  | 8   | 560K        | 14.0     |
+| Model               | Task      | Samples | Iter | N | Total Evals | ES    | GRPO   |
+| ------------------- | --------- | ------- | ---- | - | ----------- | ----- | ------ |
+| Qwen2.5-3B (base)   | Countdown | 200     | 100  | 8 | 160K        | 15.0  | **58.43** |
+| Llama-3.2-3B (base) | Countdown | 200     | 100  | 8 | 160K        | 2.0   | **23.46** |
+| Qwen2.5-3B (base)   | GSM8K     | ~700    | 100  | 8 | 560K        | 82.5  | **87.71** |
+| Llama-3.2-3B (base) | GSM8K     | ~700    | 100  | 8 | 560K        | **16.0** | 14.0 |
 
 
 **Key observations:**
