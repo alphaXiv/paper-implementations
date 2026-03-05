@@ -291,6 +291,8 @@ A natural question with ES is whether using a larger population size improves pe
 
 ## Why Does ES Excel in Low-Data Regimes?
 
+ES's advantage in low-data regimes stems from a fundamental difference in how it explores the model's behavior. Rather than injecting noise at the token level (as RL methods do), ES perturbs the model's parameters directly. This means that for a given perturbation, the entire response trajectory is determined by a single noise sample, producing lower-variance rollouts. With limited training data, this matters: GRPO's token-level noise accumulates across every step in a sequence, making gradient estimates unreliable when only a small number of prompts are available to average over. ES sidesteps this problem entirely. Additionally, because ES implicitly optimizes a distribution of solutions rather than a single policy, it is naturally more conservative — less likely to overfit to the handful of examples in a small dataset, which would manifest as reward hacking in the RL setting. Together, these properties make ES a more stable and sample-efficient optimizer when data is scarce.
+
 ## Why Does GRPO Dominate Base Models?
 
 ## Computational Considerations
