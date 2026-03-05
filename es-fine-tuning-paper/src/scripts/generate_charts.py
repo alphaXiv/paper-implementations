@@ -7,8 +7,8 @@ import matplotlib.patches as mpatches
 import numpy as np
 import os
 
-# Create img directory if it doesn't exist
-os.makedirs('img', exist_ok=True)
+# Create assets directory if it doesn't exist
+os.makedirs('assets', exist_ok=True)
 
 # Set style
 plt.style.use('seaborn-v0_8-darkgrid')
@@ -77,8 +77,8 @@ for i, v in enumerate(gsm8k_data['GRPO']):
 plt.suptitle('Data Efficiency: ES vs GRPO on Qwen2.5-3B-Instruct', 
              fontsize=16, fontweight='bold', y=1.02)
 plt.tight_layout()
-plt.savefig('img/table1_data_efficiency.png', dpi=300, bbox_inches='tight')
-print("✓ Saved: img/table1_data_efficiency.png")
+plt.savefig('assets/table1_data_efficiency.png', dpi=300, bbox_inches='tight')
+print("✓ Saved: assets/table1_data_efficiency.png")
 plt.close()
 
 # ============================================================================
@@ -140,8 +140,8 @@ fig.legend(handles=legend_elements, loc='upper center', ncol=2,
 plt.suptitle('Base Model Performance: ES vs GRPO', 
              fontsize=16, fontweight='bold', y=1.05)
 plt.tight_layout()
-plt.savefig('img/table2_base_models.png', dpi=300, bbox_inches='tight')
-print("✓ Saved: img/table2_base_models.png")
+plt.savefig('assets/table2_base_models.png', dpi=300, bbox_inches='tight')
+print("✓ Saved: assets/table2_base_models.png")
 plt.close()
 
 # ============================================================================
@@ -176,14 +176,18 @@ llama_gsm8k = {
 
 pop_colors = ['#95E1D3', '#38A3A5']
 
+# Uniform y-axis scaling for all subplots
+COUNTDOWN_YLIM = [0, 52]
+GSM8K_YLIM = [0, 100]
+
 # Plot Qwen Countdown
 bars = ax1.bar(qwen_countdown['N'], qwen_countdown['accuracy'], 
                color=pop_colors, alpha=0.8, width=0.5)
 ax1.set_ylabel('Accuracy (%)', fontsize=11, fontweight='bold')
 ax1.set_title('Qwen2.5-3B-Instruct - Countdown', fontsize=12, fontweight='bold')
 ax1.grid(axis='y', alpha=0.3)
-ax1.set_ylim([0, 52])  # Increased top margin
-ax1.set_xlim([-0.5, 1.5])  # Add horizontal padding
+ax1.set_ylim(COUNTDOWN_YLIM)  # Uniform scaling
+ax1.set_xlim([-0.5, 1.5])
 for bar, val in zip(bars, qwen_countdown['accuracy']):
     ax1.text(bar.get_x() + bar.get_width()/2, val + 1, 
              f'{val:.1f}%', ha='center', va='bottom', fontsize=10, fontweight='bold')
@@ -194,10 +198,10 @@ bars = ax2.bar(qwen_gsm8k['N'], qwen_gsm8k['accuracy'],
 ax2.set_ylabel('Accuracy (%)', fontsize=11, fontweight='bold')
 ax2.set_title('Qwen2.5-3B-Instruct - GSM8K', fontsize=12, fontweight='bold')
 ax2.grid(axis='y', alpha=0.3)
-ax2.set_ylim([82, 93])  # Increased top margin
-ax2.set_xlim([-0.5, 1.5])  # Add horizontal padding
+ax2.set_ylim(GSM8K_YLIM)  # Uniform scaling
+ax2.set_xlim([-0.5, 1.5])
 for bar, val in zip(bars, qwen_gsm8k['accuracy']):
-    ax2.text(bar.get_x() + bar.get_width()/2, val + 0.3, 
+    ax2.text(bar.get_x() + bar.get_width()/2, val + 2, 
              f'{val:.1f}%', ha='center', va='bottom', fontsize=10, fontweight='bold')
 
 # Plot Llama Countdown
@@ -206,8 +210,8 @@ bars = ax3.bar(llama_countdown['N'], llama_countdown['accuracy'],
 ax3.set_ylabel('Accuracy (%)', fontsize=11, fontweight='bold')
 ax3.set_title('Llama-3.2-3B-Instruct - Countdown', fontsize=12, fontweight='bold')
 ax3.grid(axis='y', alpha=0.3)
-ax3.set_ylim([0, 47])  # Increased top margin
-ax3.set_xlim([-0.5, 1.5])  # Add horizontal padding
+ax3.set_ylim(COUNTDOWN_YLIM)  # Uniform scaling
+ax3.set_xlim([-0.5, 1.5])
 for bar, val in zip(bars, llama_countdown['accuracy']):
     ax3.text(bar.get_x() + bar.get_width()/2, val + 1, 
              f'{val:.1f}%', ha='center', va='bottom', fontsize=10, fontweight='bold')
@@ -218,17 +222,17 @@ bars = ax4.bar(llama_gsm8k['N'], llama_gsm8k['accuracy'],
 ax4.set_ylabel('Accuracy (%)', fontsize=11, fontweight='bold')
 ax4.set_title('Llama-3.2-3B-Instruct - GSM8K', fontsize=12, fontweight='bold')
 ax4.grid(axis='y', alpha=0.3)
-ax4.set_ylim([78, 89])  # Increased top margin
-ax4.set_xlim([-0.5, 1.5])  # Add horizontal padding
+ax4.set_ylim(GSM8K_YLIM)  # Uniform scaling
+ax4.set_xlim([-0.5, 1.5])
 for bar, val in zip(bars, llama_gsm8k['accuracy']):
-    ax4.text(bar.get_x() + bar.get_width()/2, val + 0.3, 
+    ax4.text(bar.get_x() + bar.get_width()/2, val + 2, 
              f'{val:.1f}%', ha='center', va='bottom', fontsize=10, fontweight='bold')
 
 plt.suptitle('Effect of Population Size (N=8 vs N=30) on ES Performance', 
              fontsize=16, fontweight='bold', y=0.995)
 plt.tight_layout()
-plt.savefig('img/table3_population_scaling.png', dpi=300, bbox_inches='tight')
-print("✓ Saved: img/table3_population_scaling.png")
+plt.savefig('assets/table3_population_scaling.png', dpi=300, bbox_inches='tight')
+print("✓ Saved: assets/table3_population_scaling.png")
 plt.close()
 
 # ============================================================================
@@ -282,14 +286,14 @@ ax.spines['bottom'].set_visible(False)
 ax.spines['left'].set_visible(False)
 
 # Add column headers
-ax.text(0.05, len(scenarios), 'Scenario', fontsize=13, fontweight='bold', va='bottom')
-ax.text(0.5, len(scenarios), 'Winner', fontsize=13, fontweight='bold', va='bottom', ha='center')
-ax.text(0.9, len(scenarios), 'Margin', fontsize=13, fontweight='bold', va='bottom', ha='right')
+ax.text(0.05, len(scenarios) + 0.15, 'Scenario', fontsize=13, fontweight='bold', va='bottom')
+ax.text(0.5, len(scenarios) + 0.15, 'Winner', fontsize=13, fontweight='bold', va='bottom', ha='center')
+ax.text(0.9, len(scenarios) + 0.15, 'Margin', fontsize=13, fontweight='bold', va='bottom', ha='right')
 
-plt.title('Summary of Key Results: ES vs GRPO', fontsize=16, fontweight='bold', pad=20)
+plt.title('Summary of Key Results: ES vs GRPO', fontsize=16, fontweight='bold', pad=30)
 plt.tight_layout()
-plt.savefig('img/table4_summary.png', dpi=300, bbox_inches='tight')
-print("✓ Saved: img/table4_summary.png")
+plt.savefig('assets/table4_summary.png', dpi=300, bbox_inches='tight')
+print("✓ Saved: assets/table4_summary.png")
 plt.close()
 
-print("\n✅ All charts generated successfully in img/ directory!")
+print("\n✅ All charts generated successfully in assets/ directory!")

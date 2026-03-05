@@ -202,6 +202,69 @@ fi
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$SCRIPT_DIR"
 
+# Function to setup ES environment
+setup_es_environment() {
+    echo -e "${GREEN}[ES Setup] Checking ES training environment...${NC}"
+    
+    # Check if conda is available
+    if ! command -v conda &> /dev/null; then
+        echo -e "${RED}Error: conda not found. Please install Anaconda/Miniconda first.${NC}"
+        exit 1
+    fi
+    
+    # Check if environment exists
+    if ! conda env list | grep -q "^es-debug "; then
+        echo -e "${YELLOW}ES environment not found. Creating 'es-debug' environment...${NC}"
+        
+        # Create conda environment with Python 3.11
+        conda create -n es-debug python=3.11 -y
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}Error: Failed to create conda environment${NC}"
+            exit 1
+        fi
+        
+        echo -e "${GREEN}✓ Created es-debug environment${NC}"
+        
+        # Activate and install dependencies
+        echo -e "${YELLOW}Installing dependencies...${NC}"
+        eval "$(conda shell.bash hook)"
+        conda activate es-debug
+        
+        # Install base packages
+        pip install uv tensorboard pandas
+        
+        # Install vLLM with CUDA 12.9 support
+        echo -e "${YELLOW}Installing vLLM 0.11.0 (this may take a few minutes)...${NC}"
+        uv pip install vllm==0.11.0 --torch-backend=cu129
+        
+        # CRITICAL: Install transformers 4.57 (HF 5.x has breaking changes)
+        echo -e "${YELLOW}Installing transformers==4.57 (critical for compatibility)...${NC}"
+        pip install transformers==4.57
+        
+        echo -e "${GREEN}✓ ES environment setup complete${NC}"
+    else
+        echo -e "${GREEN}✓ ES environment 'es-debug' already exists${NC}"
+        
+        # Activate environment
+        eval "$(conda shell.bash hook)"
+        conda activate es-debug
+        
+        # Verify critical packages
+        if ! python -c "import vllm" 2>/dev/null; then
+            echo -e "${YELLOW}vLLM not found, installing...${NC}"
+            uv pip install vllm==0.11.0 --torch-backend=cu129
+        fi
+        
+        if ! python -c "import transformers; assert transformers.__version__.startswith('4.57')" 2>/dev/null; then
+            echo -e "${YELLOW}Transformers version mismatch, installing 4.57...${NC}"
+            pip install transformers==4.57
+        fi
+    fi
+    
+    echo -e "${GREEN}✓ ES environment ready${NC}"
+    echo ""
+}
+
 echo -e "${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║        ES vs GRPO Training Speedrun                        ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════════════════════════╝${NC}"
@@ -291,6 +354,9 @@ echo -e "${GREEN}[Step 2] Training${NC}"
 
 # ES Training
 if [ "$METHOD" == "es" ] || [ "$METHOD" == "both" ]; then
+    # Setup ES environment first
+    setup_es_environment
+    
     echo -e "${BLUE}Running ES Training...${NC}"
     
     if [ "$TASK" == "gsm8k" ]; then

@@ -7,19 +7,20 @@ This repository contains the implementation and experimental code for comparing 
 
 ## 🔥 Highlights
 
-- **ES achieves 89% accuracy on GSM8K with only 10% of training data** (vs 85.5% for GRPO)
+- **ES achieves 89% accuracy on GSM8K with only 10% of training data** (vs 85.5% for GRPO) - a 3.5-point advantage
+- **GRPO dominates with more data**: 90.9% vs 86.5% on GSM8K at 40% data
 - **10X+ speed-up** with accelerated vLLM-based implementation
 - **Full-parameter fine-tuning** on 3B models without LoRA (except 100% dataset experiments)
-- Direct comparison of gradient-free (ES) vs gradient-based (GRPO) methods
+- Direct comparison across data regimes (10%, 40%, 70%, 100%) and model types (base vs instruct)
 
 ## 📊 Key Results
 
 | Method | GSM8K (10%) | GSM8K (40%) | Countdown (10%) | Countdown (40%) |
 |--------|-------------|-------------|-----------------|-----------------|
-| **ES (Qwen-3B-Instruct)** | **89.0%** | 86.5% | **100%** | **100%** |
-| **GRPO (Qwen-3B-Instruct)** | 85.5% | **90.9%** | 99.5% | 99.5% |
+| **ES (Qwen-3B-Instruct)** | **89.0%** | 86.5% | **36.0%** | 35.0% |
+| **GRPO (Qwen-3B-Instruct)** | 85.5% | **90.9%** | 34.1% | **39.6%** |
 
-💡 **Key Takeaway:** ES excels with limited data (10%), while GRPO dominates with more data (40%+).
+💡 **Key Takeaway:** ES excels with limited data (10%), while GRPO dominates with more data (40%+). On GSM8K, ES achieves a 3.5-point advantage at 10% data. On Countdown, results are mixed, with ES slightly ahead at 10% but GRPO pulling ahead at 40%.
 
 ## 🗂️ Repository Structure
 
@@ -44,64 +45,90 @@ This repository contains the implementation and experimental code for comparing 
 ## ⚙️ Setup
 
 ### Prerequisites
-- Python >= 3.10
-- CUDA-capable GPU(s)
-- 80GB+ GPU memory recommended for 3B models
+- **Python:** 3.11 (for ES) or 3.10+ (for GRPO)
+- **Conda:** Anaconda or Miniconda (for ES environment management)
+- **Docker:** Required for GRPO training (verl-docker-run.sh)
+- **GPU:** CUDA-capable GPU(s), 80GB+ memory recommended for 3B models
 
-### Installation
+### Quick Setup
+
+**The `speedrun.sh` script handles all environment setup automatically:**
 
 ```bash
-# Create virtual environment
-python -m venv es-env
-source es-env/bin/activate  # On Windows: es-env\Scripts\activate
+# For ES training - automatically creates conda env with all dependencies
+./speedrun.sh --method es --task gsm8k --train-split 0.1
+
+# For GRPO training - automatically sets up Docker container
+./speedrun.sh --method grpo --task gsm8k --train-split 0.1
+```
+
+### Manual Setup (Optional)
+
+If you prefer manual installation:
+
+<details>
+<summary>Click to expand manual setup instructions</summary>
+
+**For ES Training:**
+```bash
+# Create conda environment
+conda create -n es-debug python=3.11
+conda activate es-debug
 
 # Install dependencies
-pip install -r requirement.txt
+pip install uv tensorboard pandas
+uv pip install vllm==0.11.0 --torch-backend=cu129
 
-# For accelerated ES (vLLM-based)
-pip install vllm==0.11.0 tensorboard
-
-# For GRPO training (VERL framework)
-# Follow instructions at: https://github.com/volcengine/verl
+# CRITICAL: Install transformers 4.57 (HF 5.x has breaking changes)
+pip install transformers==4.57
 ```
+
+**For GRPO Training:**
+```bash
+# Setup Docker container with VERL framework
+bash ./verl-docker-run.sh
+```
+</details>
 
 ## 🚀 Quick Start
 
-### Evolution Strategies (ES)
+### Unified Training Script (Recommended)
 
-#### GSM8K with ES (10% data, 8 perturbations)
+Use `speedrun.sh` for automated training with proper environment setup:
+
+#### Evolution Strategies (ES)
+
 ```bash
-python src/scripts/es/es_fine_tuning_gsm8k_accl.py \
-  --model_name Qwen/Qwen2.5-3B-Instruct \
-  --num_train_samples 700 \
-  --population_size 8 \
-  --num_iterations 100 \
-  --cuda_devices 0,1,2,3 \
-  --num_engines 4
+# GSM8K with ES (10% data, 8 perturbations)
+./speedrun.sh --method es --task gsm8k --train-split 0.1 --num-samples 700
+
+# Countdown with ES (40% data)
+./speedrun.sh --method es --task countdown --train-split 0.4 --num-samples 800
+
+# ES with custom population size and iterations
+./speedrun.sh --method es --task gsm8k --population-size 30 --num-iterations 200
 ```
 
-#### Countdown with ES (40% data)
+**ES Environment Setup:** The script automatically creates and configures a conda environment (`es-debug`) with:
+- Python 3.11
+- vLLM 0.11.0 (CUDA 12.9)
+- Transformers 4.57 (critical for compatibility)
+- Required dependencies (tensorboard, pandas, uv)
+
+#### Group Relative Policy Optimization (GRPO)
+
 ```bash
-python src/scripts/es/es_fine-tuning_countdown_accl.py \
-  --model_name Qwen/Qwen2.5-3B-Instruct \
-  --data_sample 800 \
-  --population_size 8 \
-  --num_iterations 100 \
-  --cuda_devices 0,1,2,3 \
-  --num_engines 4
+# GSM8K with GRPO (10% data)
+./speedrun.sh --method grpo --task gsm8k --train-split 0.1
+
+# Countdown with GRPO (40% data)  
+./speedrun.sh --method grpo --task countdown --train-split 0.4
+
+# Run both ES and GRPO for comparison
+./speedrun.sh --method both --task gsm8k --train-split 0.1
 ```
 
-### Group Relative Policy Optimization (GRPO)
-
-#### GSM8K with GRPO (Qwen-3B-Instruct, 10% data)
-```bash
-bash src/scripts/grpo/grpo-gsm8k.sh
-```
-
-#### Countdown with GRPO (40% data)
-```bash
-bash src/scripts/grpo/grpo-countdown-custom.sh
-```
+**GRPO Environment:** Uses Docker container via `verl-docker-run.sh` (automatically set up by speedrun.sh)
 
 ## 📚 Training Details
 
@@ -117,13 +144,28 @@ bash src/scripts/grpo/grpo-countdown-custom.sh
 ### GRPO (Group Relative Policy Optimization)
 - **Algorithm:** On-policy RL with group-based advantage estimation
 - **Training:** Full-parameter fine-tuning (LoRA only for 100% dataset experiments)
-  - LoRA rank: 64
-  - LoRA alpha: 32
+  - LoRA rank: 64, LoRA alpha: 32
 - **Rollouts:** N=8 rollouts per prompt
-- **Learning rate:** lr=3×10⁻⁶
-- **KL divergence penalty:** coef=0.001 to prevent drift from reference policy
+- **KL divergence penalty:** coef=0.001 (low_var_kl) to prevent drift from reference policy
+- **Gradient checkpointing:** Enabled for memory efficiency
 - **Distributed training:** FSDP (Fully Sharded Data Parallel)
+  - 8 GPUs per node
+  - Reference model parameter offload enabled
+  - Actor parameter offload disabled for faster training
 - **Framework:** VERL (Volcano Engine Reinforcement Learning)
+
+**Task-Specific Hyperparameters:**
+
+| Parameter | GSM8K | Countdown |
+|-----------|-------|:-----------|
+| Learning Rate | 3×10⁻⁶ | 1×10⁻⁶ |
+| Batch Size | 32 | 128 |
+| Max Prompt Length | 512 | 256 |
+| Max Response Length | 1024 | 1024 |
+| Rollouts (N) | 8 | 8 |
+| KL Coef | 0.001 | 0.001 |
+| LoRA Rank/Alpha | 64/32 | 64/32 |
+| Save Frequency | 23 steps | 100 steps |
 
 ## 📊 Evaluation
 
@@ -156,28 +198,22 @@ The script automatically:
 - Merges FSDP checkpoints for GRPO
 - Saves results to `./src/evals/`
 
-### Manual Evaluation
-
-#### Evaluate a trained model
-```bash
-python src/scripts/evaluation/evaluate_model.py \
-  --model_path ./checkpoints/your_model \
-  --task gsm8k \
-  --test_file ./src/data/gsm8k-0.1/test.parquet
-```
-
-#### Evaluate with vLLM (faster)
-```bash
-python src/scripts/evaluation/eval_gsm8k_vllm.py \
-  --model_id Qwen/Qwen2.5-3B-Instruct \
-  --trained_model_path ./checkpoints/your_model
-```
 
 ## 🔧 Data Preparation
 
+**Data preparation is handled automatically by `speedrun.sh`.** It detects the task and train split, then prepares the data accordingly.
+
+To skip automatic data prep (if data already exists):
+```bash
+./speedrun.sh --method es --task gsm8k --train-split 0.1 --skip-data-prep
+```
+
+<details>
+<summary>Manual data preparation (optional)</summary>
+
 ### Prepare GSM8K dataset
 ```bash
-python src/scripts/data_prep/grpo_data_gsm8k.py \
+bash ./src/scripts/data_prep/prepare_gsm8k_data.sh \
   --local_dir ./src/data/gsm8k-0.1 \
   --train_split 0.1 \
   --test_samples 200
@@ -185,12 +221,12 @@ python src/scripts/data_prep/grpo_data_gsm8k.py \
 
 ### Prepare Countdown dataset
 ```bash
-python src/scripts/data_prep/grpo_data_countdown.py \
+bash ./src/scripts/data_prep/prepare_countdown_data.sh \
   --local_dir ./src/data/countdown-0.4 \
-  --json_file ./src/data/countdown-full/countdown.json \
   --train_split 0.4 \
   --test_samples 200
 ```
+</details>
 
 ## 📈 Results & Analysis
 
@@ -212,45 +248,10 @@ Detailed results and analysis are available in:
 - 1× A100 (80GB) or equivalent
 - For base models with custom tokenizers: 2-4× A100 recommended
 
-## 🤗 HuggingFace Integration
-
-### Upload datasets to HuggingFace Hub
-```bash
-python upload_to_hf_datasets.py \
-  --dataset_dir ./src/data/gsm8k-0.1 \
-  --repo_name your-username/gsm8k-es-grpo \
-  --token YOUR_HF_TOKEN
-```
-
-### Upload inference results
-```bash
-python upload_inference_results.py \
-  --results_dir ./src/evals \
-  --repo_name your-username/es-grpo-results \
-  --token YOUR_HF_TOKEN
-```
-
-## 📝 Citation
-
-If you find this work helpful, please cite:
-
-```bibtex
-@misc{qiu2025evolutionstrategiesscalellm,
-      title={Evolution Strategies at Scale: LLM Fine-Tuning Beyond Reinforcement Learning}, 
-      author={Xin Qiu and Yulu Gan and Conor F. Hayes and Qiyao Liang and Elliot Meyerson and Babak Hodjat and Risto Miikkulainen},
-      year={2025},
-      eprint={2509.24372},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG},
-      url={https://arxiv.org/abs/2509.24372}, 
-}
-```
 
 ## 🙏 Acknowledgments
 
-- **VERL Framework:** https://github.com/volcengine/verl
-- **vLLM:** https://github.com/vllm-project/vllm
-- **OpenAI GSM8K Dataset:** https://github.com/openai/grade-school-math
+- Thanks to the authors of the original paper for their detailed implementation and insights. [Their work](https://arxiv.org/abs/2509.24372) provided a strong foundation for our experiments and analysis.
 
 ## 📬 Contact & Discussions
 

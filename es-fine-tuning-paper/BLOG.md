@@ -98,6 +98,7 @@ To test data efficiency, we created four training splits for each task:
 - **70%**: 1,400 samples (Countdown), ~4,900 samples (GSM8K)
 - **100%**: 2,000 samples (Countdown), ~7,000 samples (GSM8K)
 
+We keep 
 For fair comparison, we ensured that ES and GRPO evaluated approximately the same number of total samples across training. With batch size $b$, population/group size $N$, and $T$ iterations:
 
 $$
@@ -107,7 +108,7 @@ $$
 Keeping the total number of sample evaluations the same between ES and GRPO ensures that any  performance differences reflect the amount of data used rather than samples seen.
 For eg, with $T=100$ iterations, $N=8$ population/group size, and $b=16$ batch size, both methods evaluate 12,800 samples in total. This allows us to isolate the effect of the training method itself on data efficiency and performance. 
 
-Our choice of hyperparameters for GRPO version of this task was inspired by this [HuggingFace article](https://huggingface.co/blog/Weyaxi/engineering-handbook-grpo-lora-with-verl).
+
 # Methods
 
 ## Evolution Strategies (ES)
@@ -137,11 +138,39 @@ GRPO is a modern on-policy RL algorithm that estimates advantages by comparing r
 
 Our GRPO implementation uses:
 
+**General Configuration:**
 - Full-parameter fine-tuning (LoRA only for 100% dataset experiments)
+  - LoRA rank: 64, LoRA alpha: 32
 - $N=8$ rollouts per prompt
-- $\text{lr}=3\times10^{-6}$ learning rate
-- KL divergence penalty (coef=0.001) to prevent drift from reference policy
+- KL divergence penalty (coef=0.001, low_var_kl) to prevent drift from reference policy
 - FSDP (Fully Sharded Data Parallel) for distributed training
+- Gradient checkpointing enabled for memory efficiency
+
+**Task-Specific Hyperparameters:**
+
+| Parameter | GSM8K | Countdown |
+|-----------|-------|:-----------|
+| Learning Rate | $3\times10^{-6}$ | $1\times10^{-6}$ |
+| Batch Size | 32 | 128 |
+| Max Prompt Length | 512 tokens | 256 tokens |
+| Max Response Length | 1024 tokens | 1024 tokens |
+| PPO Mini-Batch Size | 32 | 128 |
+| Save Frequency | 23 steps | 100 steps |
+| Custom Reward Function | Built-in | `countdown_reward.py` |
+
+Our choice of hyperparameters for GRPO version of GSM8K task was inspired by this [HuggingFace article](https://huggingface.co/blog/Weyaxi/engineering-handbook-grpo-lora-with-verl).
+
+**vLLM Rollout Configuration:**
+- Tensor model parallelism: 1
+- GPU memory utilization: 0.8
+- Load format: safetensors
+- Max batched tokens: 65,535 (GSM8K)
+
+**FSDP Settings:**
+- 8 GPUs per node, 1 node
+- Reference model: parameter offload enabled
+- Actor model: parameter offload disabled (for speed)
+- Optimizer offload: disabled
 
 ![GRPO Working](assets/grpo-working.png)
 We use VERL (a scalable RL training framework) for our GRPO experiments, which provides efficient implementations of vLLM-based rollout generation and FSDP-based training.
@@ -178,9 +207,20 @@ The accelerated implementation achieves **10x+ speedup** over the original seque
 
 GRPO training used VERL's optimized implementation with:
 
-- vLLM for rollout generation
-- FSDP and ray for distributed training
+**Infrastructure:**
+- vLLM for efficient rollout generation (N=8 samples per prompt)
+- FSDP (Fully Sharded Data Parallel) for distributed actor training across 8 GPUs
+- Ray for distributed coordination
 
+**Training Strategy:**
+- On-policy learning with group-based advantage estimation
+- Gradient checkpointing for memory efficiency
+- Reference model parameter offload to CPU (actor parameters kept on GPU)
+- Low-variance KL penalty (coef=0.001) to maintain proximity to reference policy
+
+**Task-Specific Settings:**
+- GSM8K uses higher learning rate (3×10⁻⁶) and smaller batch size (32) due to longer responses
+- Countdown uses lower learning rate (1×10⁻⁶) and larger batch size (128) with custom reward function
 
 Both methods were configured to perform approximately equal total evaluations for fair comparison.
 
