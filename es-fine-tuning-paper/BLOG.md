@@ -39,12 +39,6 @@ Numbers: [3, 6, 25, 50, 75, 100]
 Target: 952
 ```
 
-The task requires:
-
-- Combining multiple numbers with arithmetic operations
-- Using each number exactly once
-- Producing a valid expression that evaluates to the given target
-
 We use a dataset of 2,000 Countdown problems and evaluate models on their ability to generate responses in the format:
 
 ```
@@ -58,10 +52,6 @@ The reward function gives:
 - **0.1 points** for proper formatting (presence of appropriate tags)
 - **0.0 points** for invalid or incorrect answers
 
-<div align="center" style="margin: 2em 0;">
-<img src="assets/es_reward_cal.png" width="70%" alt="ES Reward Calculation Process" />
-<p><em>Illustration of how rewards are computed in Evolution Strategies. Each perturbed model is evaluated on a batch of training data, producing rewards that guide the parameter update direction.</em></p>
-</div>
 
 Our choice of hyperparameters for GRPO version of this task was inspired by [this repository](https://github.com/Jiayi-Pan/TinyZero/tree/main) which used a similar setup for training on Countdown and the ES version hyperparameters were taken directly from the original [ES paper](https://www.alphaxiv.org/abs/2509.24372) which also used Countdown as a testbed.
 
@@ -120,6 +110,12 @@ For eg, with $T=100$ iterations, $N=8$ population/group size, and $b=16$ batch s
 ## Evolution Strategies (ES)
 
 Evolution Strategies optimize model parameters by sampling random perturbations and updating in the direction of high-reward perturbations. The implementation follows the canonical ES algorithm:
+
+
+<div align="center" style="margin: 2em 0;">
+<img src="assets/es_reward_cal.png" width="70%" alt="ES Reward Calculation Process" />
+<p><em>Illustration of how rewards are computed in Evolution Strategies. Each perturbed model is evaluated on a batch of training data, producing rewards that guide the parameter update direction.</em></p>
+</div>
 
 ![Algorithm 1: Basic ES Algorithm](assets/algorithm1-es.png)
 
@@ -283,11 +279,32 @@ A natural question with ES is whether using a larger population size improves pe
 
 ## Why Does ES Excel in Low-Data Regimes?
 
-ES's advantage in low-data regimes stems from a fundamental difference in how it explores the model's behavior. Rather than injecting noise at the token level (as RL methods do), ES perturbs the model's parameters directly. This means that for a given perturbation, the entire response trajectory is determined by a single noise sample, producing lower-variance rollouts, which leads to high rewards according to the reward function. With limited training data, this matters: GRPO's token-level noise accumulates across every step in a sequence, making gradient estimates unreliable when only a small number of prompts are available to average over. ES sidesteps this problem entirely. Additionally, because ES implicitly optimizes a distribution of solutions rather than a single policy, it is naturally more conservative — less likely to overfit to the handful of examples in a small dataset, which would manifest as reward hacking in the RL setting. Together, these properties make ES a more stable and sample-efficient optimizer when data is scarce.
+ES's advantage in low-data regimes stems from a fundamental difference in how it explores the model's behavior. Rather than injecting noise at the token level (as RL methods do), ES perturbs the model's parameters directly. This means that for a given perturbation, the entire response trajectory is determined by a single noise sample, producing lower-variance rollouts, which leads to high rewards according to the reward function. With limited training data, this matters: GRPO's token-level noise accumulates across every step in a sequence, making gradient estimates unreliable when only a small number of prompts are available to average over. 
+
+ES sidesteps this problem entirely. Additionally, because ES implicitly optimizes a distribution of solutions rather than a single policy, it is naturally more conservative — less likely to overfit to the handful of examples in a small dataset, which would manifest as reward hacking in the RL setting. Together, these properties make ES a more stable and sample-efficient optimizer when data is scarce.
 
 ## Why Does GRPO Dominate Base Models?
 
 GRPO's dominance on base models likely reflects the larger distributional shift required to elicit structured outputs from a model with no instruction-tuning. When the base model rarely produces valid responses, ES receives near-zero reward for most perturbations, leaving the parameter update with little useful signal. GRPO, operating at the token level, can extract a learning signal even from partially correct outputs, making it more effective at bootstrapping behavior from scratch.
+
+## Why base models suffer more with ES?
+
+We believe there are three failure modes for ES on base models:
+- **Reward sparsity**
+- **Extent of distributional shift**
+- **Token-level vs sample level rewards**
+
+ Base models, especially those without strong prior in instruction following like Qwen, Llama-3.2 base, struggle with ES because the reward landscape is extremely sparse and noisy when starting from a model that rarely produces valid outputs. ES relies on perturbations to explore the parameter space, but if most perturbations yield zero reward (due to invalid formatting or incorrect answers), the algorithm has no meaningful signal to guide updates. 
+ 
+ In contrast, GRPO can still learn from token-level feedback even when the overall response is poor, allowing it to make incremental progress toward producing valid outputs. 
+ 
+ We believe this scenario to be less problematic when population size is increased substantially, as the larger number of perturbations increases the chance of finding a few that yield non-zero rewards (as seen in [Figure 3](#scaling-population-size-does-n30-help)) with combinatorial search space, paired with a token-level rewards structure, especially in case of distributional shift (like in base vs instruct models).
+
+## Choice of Tasks: Complex the Search Space, the better ES performs
+
+The relative performance of ES and GRPO also depends heavily on task characteristics. Countdown, with its combinatorial search space, benefits more from ES's broader exploration via parameter perturbations which optimizes the search space distribution itself rather than a policy. GSM8K, which requires more straightforward reasoning, is less sensitive to population size and benefits more from GRPO's token-level optimization.
+
+
 
 # Limitations
 
@@ -297,7 +314,7 @@ Our study has several limitations that deserve mention:
 2. **Single hyperparameter setting**: We used fixed hyperparameters ($\sigma=0.001$, $\alpha=0.0005$) for ES across all experiments. Different settings might change the relative performance.
 3. **Task diversity**: We only tested on two mathematical reasoning tasks. Findings may differ on tasks like code generation, creative writing, or multi-turn dialogue.
 4. **Mixed training approaches**: Most experiments used full-parameter fine-tuning, but 100% dataset experiments required LoRA due to memory constraints. This inconsistency may affect the comparability of results across different data fractions.
-5. **No hybrid approaches**: We didn't test combinations of ES and GRPO (e.g., ES for early training + GRPO for refinement), which could potentially combine the benefits of both.
+5. **Token level vs sequence-level rewards**: GRPO's token-level rewards may be more effective for shaping behavior on base models, while ES's sequence-level rewards may struggle when the model is far from producing valid outputs. Alternative reward structures could change the dynamics.
 6. **Reward function design**: Our reward functions are relatively simple. More complex reward shaping or learned reward models might affect the comparison.
 
 # Future Work
@@ -332,13 +349,6 @@ Our results suggest that optimal training strategies depend heavily on task char
 
 Testing on 7B, 13B, and 70B models would reveal whether our findings hold at larger scales. ES's communication patterns may become more favorable as model size grows, since gradient communication costs increase quadratically with model size while ES requires only scalar rewards.
 
-## Alternative ES Variants
-
-We used canonical ES with Gaussian perturbations. Other variants could be explored:
-
-- **Guided ES**: Using gradient information to guide perturbation directions
-- **CMA-ES**: Covariance Matrix Adaptation for more sophisticated search
-- **Natural ES**: Using the natural gradient instead of vanilla gradient
 
 ## Curriculum Learning
 
@@ -369,5 +379,5 @@ As the field continues to explore alternatives to standard RL approaches, ES des
 
 # Acknowledgments
 
-This work builds on the Evolution Strategies implementation from the [es-fine-tuning-paper](https://alphaxiv.org/abs/2509.24372) and uses VERL (Volcano Engine Reinforcement Learning) for GRPO experiments. We thank the authors of both frameworks for open-sourcing their implementations.
+This work builds on the Evolution Strategies implementation from the [es-fine-tuning-paper](https://alphaxiv.org/abs/2509.24372). We thank the authors for open-sourcing their implementations.
 
