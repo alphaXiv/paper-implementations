@@ -98,20 +98,7 @@ Keeping the total number of sample evaluations the same between ES and GRPO ensu
 
 Evolution Strategies optimize model parameters by sampling random perturbations and updating in the direction of high-reward perturbations. Our implementation follows the canonical ES algorithm:
 
-**Algorithm 1 Basic ES Algorithm**
-
-*Require:* Pretrained LLM with initial parameters $\theta_0$; reward function $R(\cdot)$; total iterations $T$; population size $N$; noise scale $\sigma$; learning rate $\alpha$
-
-```
-for t = 1 to T do                    ▷ outer ES iterations
-    for n = 1 to N do
-        Sample noise εₙ ~ N(0, I)
-        Compute reward for perturbed parameters: Rₙ = R(θ_{t-1} + σ·εₙ)
-    end for
-    Normalize Rₙ
-    Update: θ_t ← θ_{t-1} + α · (1/N) Σ_{n=1}^{N} Rₙ εₙ
-end for
-```
+![Algorithm 1: Basic ES Algorithm](assets/algorithm1-es.png)
 
 At each iteration $t$:
 
