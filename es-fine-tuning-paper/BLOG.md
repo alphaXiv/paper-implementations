@@ -129,6 +129,8 @@ ES has several appealing properties:
 - **Simple implementation**: No need for value functions, advantage estimation, or KL penalties
 - **Exploration**: Built-in exploration through noise injection
 
+In practice, the algorithm is implemented using several tricks to ensure scalability. These are described in more detail in [the paper](https://www.alphaxiv.org/abs/2509.24372).
+
 ## Group Relative Policy Optimization (GRPO)
 
 GRPO is a modern on-policy RL algorithm that estimates advantages by comparing responses within a group. For each prompt, GRPO generates $N$ responses and uses their relative performance to compute advantages.
