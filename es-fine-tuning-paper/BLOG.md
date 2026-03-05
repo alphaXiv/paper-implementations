@@ -377,7 +377,7 @@ As the field continues to explore alternatives to standard RL approaches, ES des
 
 # Acknowledgments
 
-This work builds on the Evolution Strategies implementation from [es-fine-tuning-paper](https://arxiv.org/abs/2509.24372) and uses VERL (Volcano Engine Reinforcement Learning) for GRPO experiments. We thank the authors of both frameworks for open-sourcing their implementations.
+This work builds on the Evolution Strategies implementation from [es-fine-tuning-paper](https://alphaxiv.org/abs/2509.24372) and uses VERL (Volcano Engine Reinforcement Learning) for GRPO experiments. We thank the authors of both frameworks for open-sourcing their implementations.
 
 Experiments were conducted on Lambda Labs cloud infrastructure (1x H100 80GB and 8x A100 80GB) running Lambda Stack 22.04.
 
