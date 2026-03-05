@@ -199,22 +199,10 @@ Both methods were configured to perform approximately equal total evaluations fo
 
 We first examine how ES and GRPO compare across different training data sizes on instruction-tuned models (Qwen2.5-3B-Instruct).
 
-
-
-*Table 1: Test accuracy of ES and GRPO on Countdown and GSM8K as training data size increases. Qwen2.5-3B-Instruct with N=8, 100 iterations.*
-
-
-| Task      | Training % | Training Samples | ES    | GRPO  |
-| --------- | ---------- | ---------------- | ----- | ----- |
-| Countdown | 10%        | 200              | **36.0** | 34.1 |
-| Countdown | 40%        | 800              | 35.0 | **39.6** |
-| Countdown | 70%        | 1,400            | 42.0 | **47.5** |
-| Countdown | 100%       | 2,000            | 39.0 | **40.5** |
-| GSM8K     | 10%        | 700              | **89.0** | 85.5 |
-| GSM8K     | 40%        | 2,800            | 86.5 | **90.9** |
-| GSM8K     | 70%        | 4,900            | 83.0 | **89.6** |
-| GSM8K     | 100%       | 7,000            | 86.0 | **87.4** |
-
+<div align="center" style="margin: 2em 0;">
+<img src="img/table1_data_efficiency.png" width="90%" alt="Data Efficiency: ES vs GRPO on Instruction-Tuned Models" />
+<p><em>Figure 1: Test accuracy of ES and GRPO on Countdown and GSM8K as training data size increases. Qwen2.5-3B-Instruct with N=8, 100 iterations.</em></p>
+</div>
 
 **Key findings:**
 
@@ -228,18 +216,10 @@ The data suggests a clear trade-off: **use ES when data is limited (≤10%), swi
 
 The picture changes dramatically when we move from instruction-tuned models to base models. We tested both methods on 10% training data with Qwen2.5-3B (base) and Llama-3.2-3B (base).
 
-
-
-*Table 2: Comparison of ES and GRPO on base models across Countdown and GSM8K tasks. GRPO generally performs better, especially on Qwen2.5 base.*
-
-
-| Model               | Task      | Samples | Iter | N | Total Evals | ES    | GRPO   |
-| ------------------- | --------- | ------- | ---- | - | ----------- | ----- | ------ |
-| Qwen2.5-3B (base)   | Countdown | 200     | 100  | 8 | 160K        | 15.0  | **58.43** |
-| Llama-3.2-3B (base) | Countdown | 200     | 100  | 8 | 160K        | 2.0   | **23.46** |
-| Qwen2.5-3B (base)   | GSM8K     | ~700    | 100  | 8 | 560K        | 82.5  | **87.71** |
-| Llama-3.2-3B (base) | GSM8K     | ~700    | 100  | 8 | 560K        | **16.0** | 14.0 |
-
+<div align="center" style="margin: 2em 0;">
+<img src="img/table2_base_models.png" width="90%" alt="Base Model Performance: ES vs GRPO" />
+<p><em>Figure 2: Comparison of ES and GRPO on base models across Countdown and GSM8K tasks. GRPO generally performs better, especially on Qwen2.5 base. All experiments used 10% training data (200 samples for Countdown, ~700 for GSM8K), 100 iterations, and N=8.</em></p>
+</div>
 
 **Key observations:**
 
@@ -254,16 +234,10 @@ The takeaway: **for base models, strongly prefer GRPO**, which appears more robu
 
 A natural question with ES is whether using a larger population size improves performance. We compared N=8 vs N=30 on instruction-tuned models at 10% training data.
 
-
-| Model                 | Task      | Accuracy (N=8) | Accuracy (N=30) |
-| --------------------- | --------- | -------------- | --------------- |
-| Qwen2.5-3B-Instruct   | Countdown | 36.0           | **42.0**        |
-| Qwen2.5-3B-Instruct   | GSM8K     | **89.0**       | 87.5            |
-| Llama-3.2-3B-Instruct | Countdown | 28.0           | **38.0**        |
-| Llama-3.2-3B-Instruct | GSM8K     | 82.0           | **84.5**        |
-
-
-*Comparison of N=8 vs N=30 population size for ES across models and tasks. Larger populations help for Countdown but not consistently for GSM8K.*
+<div align="center" style="margin: 2em 0;">
+<img src="img/table3_population_scaling.png" width="90%" alt="Effect of population size on ES performance" />
+<p><em>Figure 3: Comparison of N=8 vs N=30 population size for ES across models and tasks. Larger populations help for Countdown but not consistently for GSM8K. All experiments used 10% training data.</em></p>
+</div>
 
 **Analysis:**
 
@@ -276,16 +250,10 @@ A natural question with ES is whether using a larger population size improves pe
 
 ## Summary of Key Results
 
-
-| Scenario                      | Winner    | Margin      | Notes                                         |
-| ----------------------------- | --------- | ----------- | --------------------------------------------- |
-| Instruct models, 10% data     | ES        | Moderate    | ES achieves 89% vs GRPO's 85.5% on GSM8K      |
-| Instruct models, 40-100% data | GRPO      | Significant | GRPO consistently 3-5 points ahead            |
-| Base models (Qwen)            | GRPO      | Moderate    | 5+ point advantage on GSM8K (87.71% vs 82.5%) |
-| Base models (Llama)           | Both fail | N/A         | Both methods struggle, both <25%              |
-| Large population (Countdown)  | N=30      | 6-10 points | Helps ES on structured tasks                  |
-| Large population (GSM8K)      | Mixed     | 0-2 points  | Little benefit, higher cost                   |
-
+<div align="center" style="margin: 2em 0;">
+<img src="img/table4_summary.png" width="90%" alt="Summary of Key Results" />
+<p><em>Figure 4: Summary of key findings comparing ES and GRPO across different scenarios and configurations.</em></p>
+</div>
 
 # Analysis & Discussion
 
