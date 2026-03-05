@@ -4,7 +4,6 @@ Reinforcement learning (RL) has become the dominant paradigm for fine-tuning lar
 
 ES offers a fundamentally different way to optimize neural networks. Instead of computing gradients through backpropagation, ES treats the model as a black box and optimizes it using only forward passes and reward signals. This approach has surprising benefits: it's simpler to implement, parallelizes well, and can be more sample-efficient in certain regimes.
 
-*Evolution Strategies (left) perturbs model weights with random noise and updates based on which perturbations yield higher rewards. Reinforcement Learning (right) uses gradient-based policy optimization to update model parameters.*
 
 Despite the theoretical appeal of ES, a key question remains: **how does ES actually perform compared to RL when fine-tuning modern LLMs?** Specifically:
 
@@ -12,7 +11,7 @@ Despite the theoretical appeal of ES, a key question remains: **how does ES actu
 - Does ES work better on base models or instruction-tuned models?
 - How does scaling the population size affect ES performance?
 
-To answer these questions, we conducted a systematic comparison of ES and GRPO across two reasoning tasks: **Countdown** (an arithmetic puzzle game) and **GSM8K** (grade-school math word problems). We tested on 3B parameter models (Qwen2.5 and Llama-3.2) with varying training data fractions and population sizes.
+To answer these questions, we conducted a comparison of ES and GRPO across two reasoning tasks: **Countdown** (an arithmetic puzzle game) and **GSM8K** (grade-school math word problems). We tested on 3B parameter models (Qwen2.5 and Llama-3.2 - Base + Instruct) with varying training data fractions and population sizes.
 
 Our contributions are:
 
@@ -33,14 +32,13 @@ The Countdown task is inspired by the Numbers round of the British game show *Co
 ```
 Numbers: [3, 6, 25, 50, 75, 100]
 Target: 952
-Solution: (100 + 6) * (75 - 50) - 25 * 3 = 952
 ```
 
 The task requires:
 
 - Combining multiple numbers with arithmetic operations
 - Using each number exactly once
-- Producing a valid expression that evaluates to the target
+- Producing a valid expression that evaluates to the given target
 
 We use a dataset of 2,000 Countdown problems and evaluate models on their ability to generate responses in the format:
 
@@ -57,7 +55,7 @@ The reward function gives:
 
 ## GSM8K Task
 
-GSM8K (Grade School Math 8K) is a dataset of 8,000+ grade-school level math word problems requiring multi-step reasoning. Problems involve arithmetic operations, unit conversions, and logical reasoning.
+GSM8K (Grade School Math 8K) is a dataset of  approx 8,000+ grade-school level math word problems requiring multi-step reasoning. Problems involve arithmetic operations, unit conversions, and logical reasoning.
 
 **Example:**
 
@@ -71,7 +69,11 @@ Natalia sold 48+24 = 72 clips altogether in April and May.
 #### 72
 ```
 
-Models must generate step-by-step reasoning and output the final answer after `####`. The reward function checks both formatting and numerical correctness.
+Models must generate step-by-step reasoning and output the final answer after `####`. The reward function checks both formatting and numerical correctness as follows:
+
+- **1.0 points** if the final answer is correct
+- **0.1 points** if the formatting is correct (presence of `####` and a numerical answer)
+- **0.0 points** for incorrect answers
 
 We use a subset of the GSM8K training set (ranging from 10% to 100%) for fine-tuning, reserving a consistent 200-sample test set for evaluation.
 
@@ -90,7 +92,8 @@ $$
 \text{Total Evaluations} = T \times N \times b
 $$
 
-Keeping the total number of sample evaluations the same between ES and GRPO ensures that any  performance differences reflect the algorithms' intrinsic sample efficiency rather than simply how much data each method has seen.
+Keeping the total number of sample evaluations the same between ES and GRPO ensures that any  performance differences reflect the amount of data used rather than samples seen.
+For eg, with $T=100$ iterations, $N=8$ population/group size, and $b=16$ batch size, both methods evaluate 12,800 samples in total. This allows us to isolate the effect of the training method itself on data efficiency and performance. 
 
 # Methods
 
