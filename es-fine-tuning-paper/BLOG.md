@@ -295,6 +295,8 @@ ES's advantage in low-data regimes stems from a fundamental difference in how it
 
 ## Why Does GRPO Dominate Base Models?
 
+GRPO's dominance on base models likely reflects the larger distributional shift required to elicit structured outputs from a model with no instruction-tuning. When the base model rarely produces valid responses, ES receives near-zero reward for most perturbations, leaving the parameter update with little useful signal. GRPO, operating at the token level, can extract a learning signal even from partially correct outputs, making it more effective at bootstrapping behavior from scratch.
+
 ## Computational Considerations
 
 While our experiments controlled for total sample evaluations, wall-clock time and hardware utilization differ between methods:
