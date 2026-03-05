@@ -290,7 +290,7 @@ ax.text(0.05, len(scenarios) + 0.15, 'Scenario', fontsize=13, fontweight='bold',
 ax.text(0.5, len(scenarios) + 0.15, 'Winner', fontsize=13, fontweight='bold', va='bottom', ha='center')
 ax.text(0.9, len(scenarios) + 0.15, 'Margin', fontsize=13, fontweight='bold', va='bottom', ha='right')
 
-plt.title('Summary of Key Results: ES vs GRPO', fontsize=16, fontweight='bold', pad=30)
+# plt.title('Summary of Key Results:', fontsize=16, fontweight='bold', pad=30)
 plt.tight_layout()
 plt.savefig('assets/table4_summary.png', dpi=300, bbox_inches='tight')
 print("✓ Saved: assets/table4_summary.png")

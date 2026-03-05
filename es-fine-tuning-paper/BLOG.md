@@ -19,9 +19,9 @@ To answer these questions, we conducted a comparison of ES and GRPO across two r
 
 Our contributions are:
 
-- A controlled empirical comparison of ES vs GRPO across multiple data regimes
-- Analysis of how ES and GRPO perform on base vs instruction-tuned models
-- Insights on population size scaling for ES at the 3B model scale
+- Experiment A: Controlled empirical comparison of ES vs GRPO across multiple data regimes
+- Experiment B: Analysis of how ES and GRPO perform on base vs instruction-tuned models
+- Experiment C: Insights on population size scaling for ES at the 3B model scale
 
 You can find our eval rollouts and dataset used at this [link](https://huggingface.co/collections/alphaXiv/es-grpo).
 # Tasks & Dataset
@@ -91,14 +91,20 @@ We use a subset of the GSM8K training set (ranging from 10% to 100%) for fine-tu
 
 ## Data Splits
 
-To test data efficiency, we created four training splits for each task:
+For experiment A, to test data efficiency, we created four training splits for each task:
 
 - **10%**: 200 samples (Countdown), ~700 samples (GSM8K)
 - **40%**: 800 samples (Countdown), ~2,800 samples (GSM8K)
 - **70%**: 1,400 samples (Countdown), ~4,900 samples (GSM8K)
 - **100%**: 2,000 samples (Countdown), ~7,000 samples (GSM8K)
 
-We keep 
+For experiment B (base models), we used the 10% training split to test performance in low-data regimes, which is where ES showed the most promise in experiment A.
+
+For experiment C (population size scaling), we also used the 10% training split to isolate the effect of population size on ES performance without confounding from larger data sizes.
+
+
+We keep last 200 samples separate, from which the first 100 samples are used for validation during training and the remaining 100 samples are used for testing, ensuring that the test set is consistent across all experiments.
+
 For fair comparison, we ensured that ES and GRPO evaluated approximately the same number of total samples across training. With batch size $b$, population/group size $N$, and $T$ iterations:
 
 $$
@@ -130,8 +136,9 @@ ES has several appealing properties:
 - **Sync-free parallelism**: All $N$ evaluations can run in parallel without synchronizations as in gradient based approaches (since there are none)
 - **Exploration**: Tunable exploration through noise injection generating n-diverse perturbations
 
-In practice, the algorithm is implemented using several tricks to ensure scalability. These are described in more detail in [the paper](https://www.alphaxiv.org/abs/2509.24372).
+In practice, the algorithm is implemented using several tricks to ensure scalability. These are described in more detail in the original ES for fine tuning in [the paper](https://www.alphaxiv.org/abs/2509.24372).
 
+We use the hyperparameters from the original ES paper for all experiments to maintain consistency and robustness across tasks and models.
 ## Group Relative Policy Optimization (GRPO)
 
 GRPO is a modern on-policy RL algorithm that estimates advantages by comparing responses within a group. For each prompt, GRPO generates $N$ responses and uses their relative performance to compute advantages.
@@ -144,7 +151,7 @@ Our GRPO implementation uses:
 - $N=8$ rollouts per prompt
 - KL divergence penalty (coef=0.001, low_var_kl) to prevent drift from reference policy
 - FSDP (Fully Sharded Data Parallel) for distributed training
-- Gradient checkpointing enabled for memory efficiency
+
 
 **Task-Specific Hyperparameters:**
 
@@ -156,21 +163,11 @@ Our GRPO implementation uses:
 | Max Response Length | 1024 tokens | 1024 tokens |
 | PPO Mini-Batch Size | 32 | 128 |
 | Save Frequency | 23 steps | 100 steps |
-| Custom Reward Function | Built-in | `countdown_reward.py` |
+
 
 Our choice of hyperparameters for GRPO version of GSM8K task was inspired by this [HuggingFace article](https://huggingface.co/blog/Weyaxi/engineering-handbook-grpo-lora-with-verl).
+For Countdown, we used the hyperparameters from [this repository](https://github.com/Jiayi-Pan/TinyZero/tree/main).
 
-**vLLM Rollout Configuration:**
-- Tensor model parallelism: 1
-- GPU memory utilization: 0.8
-- Load format: safetensors
-- Max batched tokens: 65,535 (GSM8K)
-
-**FSDP Settings:**
-- 8 GPUs per node, 1 node
-- Reference model: parameter offload enabled
-- Actor model: parameter offload disabled (for speed)
-- Optimizer offload: disabled
 
 ![GRPO Working](assets/grpo-working.png)
 We use VERL (a scalable RL training framework) for our GRPO experiments, which provides efficient implementations of vLLM-based rollout generation and FSDP-based training.
@@ -185,7 +182,7 @@ We compare ES and GRPO on two model families at the 3B parameter scale:
 
 We chose these models, owing to their availability at 3B scale which suited for consumer GPUs and different training characteristics since qwen models are know to be more robust to instruction tuning and have better mathematical capabilities than llama models.
 
-For base models, we use custom chat templates to format prompts appropriately, as they lack built-in instruction-following capabilities. The use of chat template is necessary as mentioned in [DeepSeek-R1](https://www.alphaxiv.org/abs/2509.24372). We made use of a simple prompt template owing to [SimpleRL](https://www.alphaxiv.org/abs/2503.18892) results
+For base models, we use custom chat templates to format prompts appropriately, as they lack built-in instruction-following capabilities. The use of chat template is necessary as mentioned in [DeepSeek-R1](https://www.alphaxiv.org/abs/2509.24372). We made use of a simple prompt template owing to [SimpleRL](https://www.alphaxiv.org/abs/2503.18892) results.
 
 # Training Setup
 
@@ -211,16 +208,6 @@ GRPO training used VERL's optimized implementation with:
 - vLLM for efficient rollout generation (N=8 samples per prompt)
 - FSDP (Fully Sharded Data Parallel) for distributed actor training across 8 GPUs
 - Ray for distributed coordination
-
-**Training Strategy:**
-- On-policy learning with group-based advantage estimation
-- Gradient checkpointing for memory efficiency
-- Reference model parameter offload to CPU (actor parameters kept on GPU)
-- Low-variance KL penalty (coef=0.001) to maintain proximity to reference policy
-
-**Task-Specific Settings:**
-- GSM8K uses higher learning rate (3×10⁻⁶) and smaller batch size (32) due to longer responses
-- Countdown uses lower learning rate (1×10⁻⁶) and larger batch size (128) with custom reward function
 
 Both methods were configured to perform approximately equal total evaluations for fair comparison.
 
@@ -296,7 +283,7 @@ A natural question with ES is whether using a larger population size improves pe
 
 ## Why Does ES Excel in Low-Data Regimes?
 
-ES's advantage in low-data regimes stems from a fundamental difference in how it explores the model's behavior. Rather than injecting noise at the token level (as RL methods do), ES perturbs the model's parameters directly. This means that for a given perturbation, the entire response trajectory is determined by a single noise sample, producing lower-variance rollouts. With limited training data, this matters: GRPO's token-level noise accumulates across every step in a sequence, making gradient estimates unreliable when only a small number of prompts are available to average over. ES sidesteps this problem entirely. Additionally, because ES implicitly optimizes a distribution of solutions rather than a single policy, it is naturally more conservative — less likely to overfit to the handful of examples in a small dataset, which would manifest as reward hacking in the RL setting. Together, these properties make ES a more stable and sample-efficient optimizer when data is scarce.
+ES's advantage in low-data regimes stems from a fundamental difference in how it explores the model's behavior. Rather than injecting noise at the token level (as RL methods do), ES perturbs the model's parameters directly. This means that for a given perturbation, the entire response trajectory is determined by a single noise sample, producing lower-variance rollouts, which leads to high rewards according to the reward function. With limited training data, this matters: GRPO's token-level noise accumulates across every step in a sequence, making gradient estimates unreliable when only a small number of prompts are available to average over. ES sidesteps this problem entirely. Additionally, because ES implicitly optimizes a distribution of solutions rather than a single policy, it is naturally more conservative — less likely to overfit to the handful of examples in a small dataset, which would manifest as reward hacking in the RL setting. Together, these properties make ES a more stable and sample-efficient optimizer when data is scarce.
 
 ## Why Does GRPO Dominate Base Models?
 
@@ -378,14 +365,9 @@ As the field continues to explore alternatives to standard RL approaches, ES des
 
 ---
 
-**Code and data**: All code for reproducing these experiments is available at [https://github.com/VsonicV/es-fine-tuning-paper](https://github.com/VsonicV/es-fine-tuning-paper)
-
-**Questions or feedback?** We'd love to hear from you. Open an issue on GitHub or reach out to the authors directly.
+**Code and data**: All code for reproducing these experiments is available at [link](https://github.com/alphaXiv/paper-implementations/tree/raj-es/es-fine-tuning-paper/BLOG.md)
 
 # Acknowledgments
 
 This work builds on the Evolution Strategies implementation from the [es-fine-tuning-paper](https://alphaxiv.org/abs/2509.24372) and uses VERL (Volcano Engine Reinforcement Learning) for GRPO experiments. We thank the authors of both frameworks for open-sourcing their implementations.
 
-Experiments were conducted on Lambda Labs cloud infrastructure (1x H100 80GB and 8x A100 80GB) running Lambda Stack 22.04.
-
-Experiments were conducted using Lambda Labs cloud infrastructure (8x NVIDIA A100 40GB GPUs)
