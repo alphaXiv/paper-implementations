@@ -3,7 +3,7 @@
 This repository contains the implementation and experimental code for comparing **Evolution Strategies (ES)** and **Group Relative Policy Optimization (GRPO)** on mathematical reasoning tasks.
 
 > **Paper:** "Evolution Strategies at Scale: LLM Fine-Tuning Beyond Reinforcement Learning"  
-> **arXiv:** https://arxiv.org/abs/2509.24372
+> **alphaXiv:** https://alphaXiv.org/abs/2509.24372
 
 ## 🔥 Highlights
 
@@ -251,7 +251,7 @@ Detailed results and analysis are available in:
 
 ## 🙏 Acknowledgments
 
-- Thanks to the authors of the original paper for their detailed implementation and insights. [Their work](https://arxiv.org/abs/2509.24372) provided a strong foundation for our experiments and analysis.
+- Thanks to the authors of the original paper for their detailed implementation and insights. [Their work](https://alphaXiv.org/abs/2509.24372) provided a strong foundation for our experiments and analysis.
 
 ## 📬 Contact & Discussions
 
