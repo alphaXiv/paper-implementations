@@ -12,7 +12,7 @@ This repository contains the implementation and experimental code for comparing 
 - - **GRPO** works well with base models (Llama compared to Qwen) than ES
 - Direct comparison across data regimes (10%, 40%, 70%, 100%) and model types (base vs instruct)
 
-📖 **See our [blog](src/BLOG.md) for detailed documentation.**
+📖 **See our [blog](BLOG.md) for detailed documentation.**
 
 
 ## Key Results
