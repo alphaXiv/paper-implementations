@@ -241,18 +241,19 @@ plt.close()
 
 fig, ax = plt.subplots(figsize=(14, 6))
 
+# Reverse order so most important results appear at top
 scenarios = [
-    'Instruct models\n10% data',
-    'Instruct models\n40-100% data',
-    'Base models\n(Qwen)',
+    'Large population ES\n(GSM8K)',
+    'Large population ES\n(Countdown)',
     'Base models\n(Llama)',
-    'Large population\n(Countdown)',
-    'Large population\n(GSM8K)'
+    'Base models\n(Qwen)',
+    'Instruct models\n40-100% data',
+    'Instruct models\n10% data'
 ]
 
-winners = ['ES', 'GRPO', 'GRPO', 'Both fail', 'N=30', 'Mixed']
-margins = ['Moderate\n(+3.5%)', 'Significant\n(+3-5%)', 'Moderate\n(+5.2%)', 
-           'N/A\n(<25%)', 'Large\n(+6-10%)', 'Small\n(0-2%)']
+winners = ['Best of N=Mixed', 'Best of N=30', 'Both fail', 'GRPO', 'GRPO', 'ES']
+margins = ['Small\n(0-2%)', 'Large\n(+6-10%)', 'N/A\n(<25%)', 
+           'Moderate\n(+5.2%)', 'Significant\n(+3-5%)', 'Moderate\n(+3.5%)']
 
 # Color coding
 winner_colors = []
@@ -261,9 +262,9 @@ for w in winners:
         winner_colors.append(colors['ES'])
     elif w == 'GRPO':
         winner_colors.append(colors['GRPO'])
-    elif w == 'N=30':
+    elif w == 'Best of N=30':
         winner_colors.append('#95E1D3')
-    elif w == 'Mixed':
+    elif w == 'Best of N=Mixed':
         winner_colors.append('#FFA500')
     else:  # Both fail
         winner_colors.append('#999999')
