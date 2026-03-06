@@ -64,7 +64,7 @@ This repository contains the implementation and experimental code for comparing 
 ```
 
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Unified Training Script (Recommended)
 
