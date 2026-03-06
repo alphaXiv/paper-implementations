@@ -9,8 +9,7 @@ This repository contains the implementation and experimental code for comparing 
 
 - **ES achieves 89% accuracy on GSM8K with only 10% of training data** (vs 85.5% for GRPO) - a 3.5-point advantage
 - **GRPO dominates with more data**: 90.9% vs 86.5% on GSM8K at 40% data
-- **10X+ speed-up** of ES with accelerated vLLM-based implementation
-- **Full-parameter fine-tuning** on 3B models without LoRA (except 100% dataset experiments)
+- - **GRPO** works well with base models (Llama compared to Qwen) than ES
 - Direct comparison across data regimes (10%, 40%, 70%, 100%) and model types (base vs instruct)
 
 ## Key Results
