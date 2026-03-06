@@ -5,7 +5,7 @@ This repository contains the implementation and experimental code for comparing 
 > **Paper:** "Evolution Strategies at Scale: LLM Fine-Tuning Beyond Reinforcement Learning"  
 > **alphaXiv:** https://alphaXiv.org/abs/2509.24372
 
-## 🔥 Highlights
+## Highlights
 
 - **ES achieves 89% accuracy on GSM8K with only 10% of training data** (vs 85.5% for GRPO) - a 3.5-point advantage
 - **GRPO dominates with more data**: 90.9% vs 86.5% on GSM8K at 40% data
@@ -13,7 +13,7 @@ This repository contains the implementation and experimental code for comparing 
 - **Full-parameter fine-tuning** on 3B models without LoRA (except 100% dataset experiments)
 - Direct comparison across data regimes (10%, 40%, 70%, 100%) and model types (base vs instruct)
 
-## 📊 Key Results
+## Key Results
 
 | Method | GSM8K (10%) | GSM8K (40%) | Countdown (10%) | Countdown (40%) |
 |--------|-------------|-------------|-----------------|-----------------|
@@ -22,7 +22,7 @@ This repository contains the implementation and experimental code for comparing 
 
 💡 **Key Takeaway:** ES excels with limited data (10%), while GRPO dominates with more data (40%+). On GSM8K, ES achieves a 3.5-point advantage at 10% data. On Countdown, results are mixed, with ES slightly ahead at 10% but GRPO pulling ahead at 40%.
 
-## 🗂️ Repository Structure
+## Repository Structure
 
 ```
 ├── src/
@@ -40,9 +40,9 @@ This repository contains the implementation and experimental code for comparing 
 └── assets/                  # Visualizations and figures
 ```
 
-📖 **See [src/README.md](src/README.md) for detailed documentation.**
+📖 **See our [blog](src/BLOG.md) for detailed documentation.**
 
-## ⚙️ Setup
+## Setup
 
 ### Prerequisites
 - **Python:** 3.11 (for ES) or 3.10+ (for GRPO)
@@ -62,33 +62,6 @@ This repository contains the implementation and experimental code for comparing 
 ./speedrun.sh --method grpo --task gsm8k --train-split 0.1
 ```
 
-### Manual Setup (Optional)
-
-If you prefer manual installation:
-
-<details>
-<summary>Click to expand manual setup instructions</summary>
-
-**For ES Training:**
-```bash
-# Create conda environment
-conda create -n es-debug python=3.11
-conda activate es-debug
-
-# Install dependencies
-pip install uv tensorboard pandas
-uv pip install vllm==0.11.0 --torch-backend=cu129
-
-# CRITICAL: Install transformers 4.57 (HF 5.x has breaking changes)
-pip install transformers==4.57
-```
-
-**For GRPO Training:**
-```bash
-# Setup Docker container with VERL framework
-bash ./verl-docker-run.sh
-```
-</details>
 
 ## 🚀 Quick Start
 
@@ -167,7 +140,7 @@ Use `speedrun.sh` for automated training with proper environment setup:
 | LoRA Rank/Alpha | 64/32 | 64/32 |
 | Save Frequency | 23 steps | 100 steps |
 
-## 📊 Evaluation
+## Evaluation
 
 ### Unified Evaluation Script (Recommended)
 
@@ -199,7 +172,7 @@ The script automatically:
 - Saves results to `./src/evals/`
 
 
-## 🔧 Data Preparation
+## Data Preparation
 
 **Data preparation is handled automatically by `speedrun.sh`.** It detects the task and train split, then prepares the data accordingly.
 
@@ -228,32 +201,25 @@ bash ./src/scripts/data_prep/prepare_countdown_data.sh \
 ```
 </details>
 
-## 📈 Results & Analysis
+## Results & Analysis
 
 Detailed results and analysis are available in:
 - **[BLOG.md](BLOG.md)** - Technical blog post with full experimental details
 - **[src/evals/](src/evals/)** - Raw evaluation results (JSON files)
 - **[assets/](assets/)** - Visualization charts
 
-## 🖥️ Hardware Requirements
+## Hardware Requirements
 
 **Our Setup:**
 - **Platform:** Lambda Labs Lambda Stack 22.04
-- **GPUs:** 1× H100 (80GB) + 8× A100 (80GB)
-- **Training time:** 
-  - ES: ~2-4 hours for 100 iterations (10% data)
-  - GRPO: ~6-8 hours for 500 steps (10% data)
-
-**Minimum Requirements:**
-- 1× A100 (80GB) or equivalent
-- For base models with custom tokenizers: 2-4× A100 recommended
+- **GPUs:** 8× A100 (80GB)
 
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Thanks to the authors of the original paper for their detailed implementation and insights. [Their work](https://alphaXiv.org/abs/2509.24372) provided a strong foundation for our experiments and analysis.
 
-## 📬 Contact & Discussions
+## Contact & Discussions
 
 - **Issues:** Report bugs or request features via [GitHub Issues](https://github.com/alphaXiv/paper-implementations/issues)
 - **Discussions:** Join the ES fine-tuning forum in [Discussions](https://github.com/alphaXiv/paper-implementations/discussions)
