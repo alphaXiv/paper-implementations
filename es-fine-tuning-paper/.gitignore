@@ -2,3 +2,26 @@
 bin
 include
 lib
+
+# Evaluation results and datasets (too large for git)
+src/evals/
+src/data/
+src/countdown/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Jupyter
+.ipynb_checkpoints/
+
+# macOS
+.DS_Store
+
+# Environment
+.env
+.venv
+venv/
