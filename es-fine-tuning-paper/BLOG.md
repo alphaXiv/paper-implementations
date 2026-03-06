@@ -337,26 +337,9 @@ Rather than using fixed N=8 or N=30, adaptive schemes could adjust population si
 - Reduce N as training progresses to reduce computational cost
 - Increase N when stuck in local optima
 
-## Task-Specific Optimization
-
-Our results suggest that optimal training strategies depend heavily on task characteristics. Future work could:
-
-- Develop diagnostics to predict whether ES or GRPO will perform better on a new task
-- Create task-specific hyperparameter recommendations
-- Investigate which task properties (search space size, reward density, etc.) favor each method
-
 ## Scaling to Larger Models
 
 Testing on 7B, 13B, and 70B models would reveal whether our findings hold at larger scales. ES's communication patterns may become more favorable as model size grows, since gradient communication costs increase quadratically with model size while ES requires only scalar rewards.
-
-
-## Curriculum Learning
-
-Both methods might benefit from curriculum approaches:
-
-- Start with easy examples, gradually increase difficulty
-- Begin with high temperature for exploration, decrease over time
-- Mix synthetic and real data with changing proportions
 
 # Conclusion
 
