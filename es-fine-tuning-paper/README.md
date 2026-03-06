@@ -12,6 +12,9 @@ This repository contains the implementation and experimental code for comparing 
 - - **GRPO** works well with base models (Llama compared to Qwen) than ES
 - Direct comparison across data regimes (10%, 40%, 70%, 100%) and model types (base vs instruct)
 
+📖 **See our [blog](src/BLOG.md) for detailed documentation.**
+
+
 ## Key Results
 
 | Method | GSM8K (10%) | GSM8K (40%) | Countdown (10%) | Countdown (40%) |
@@ -39,7 +42,6 @@ This repository contains the implementation and experimental code for comparing 
 └── assets/                  # Visualizations and figures
 ```
 
-📖 **See our [blog](src/BLOG.md) for detailed documentation.**
 
 ## Setup
 
