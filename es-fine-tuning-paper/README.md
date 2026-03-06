@@ -206,7 +206,7 @@ bash ./src/scripts/data_prep/prepare_countdown_data.sh \
 
 Detailed results and analysis are available in:
 - **[BLOG.md](BLOG.md)** - Technical blog post with full experimental details
-- **[src/evals/](src/evals/)** - Raw evaluation results (JSON files)
+- **[eval results + rollouts/](https://huggingface.co/datasets/alphaXiv/es-grpo-results/tree/main)** - Raw evaluation results (JSON files)
 - **[assets/](assets/)** - Visualization charts
 
 ## Hardware Requirements
