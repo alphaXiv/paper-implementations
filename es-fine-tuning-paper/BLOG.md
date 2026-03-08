@@ -287,7 +287,7 @@ ES sidesteps this problem entirely. Additionally, because ES implicitly optimize
 
 GRPO's dominance on base models likely reflects the larger distributional shift required to elicit structured outputs from a model with no instruction-tuning. When the base model rarely produces valid responses, ES receives near-zero reward for most perturbations, leaving the parameter update with little useful signal. GRPO, operating at the token level, can extract a learning signal even from partially correct outputs, making it more effective at bootstrapping behavior from scratch.
 
-## Why base models suffer more with ES?
+## Why Do Base Models Suffer More With ES?
 
 We believe there are three failure modes for ES on base models:
 - **Reward sparsity**
