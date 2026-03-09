@@ -360,7 +360,6 @@ As the field continues to explore alternatives to standard RL approaches, ES des
 
 ---
 
-**Code and data**: All code for reproducing these experiments is available at [link](https://github.com/alphaXiv/paper-implementations/tree/raj-es/es-fine-tuning-paper/BLOG.md)
 
 # Acknowledgments
 
