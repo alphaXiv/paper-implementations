@@ -352,6 +352,8 @@ The key insights for practitioners:
 - **Population size**: N=30 helps on complex structured tasks (Countdown) but provides little benefit on straightforward reasoning (GSM8K)
 - **Model type matters**: ES works best with instruction-tuned models that are already "close" to desired behavior; GRPO handles larger distributional shifts required for base models
 
+*Note: All of these insights are based on ablations on two model families on Countdown and GSM8K. Further evaluations on broader model families and benchmarks would be needed to confirm strong generalization.*
+
 Evolution Strategies remains a compelling alternative to gradient-based RL, especially in resource-constrained settings. While it may not replace GRPO as the default choice for LLM fine-tuning, our results demonstrate clear scenarios where ES offers superior sample efficiency and comparable or better performance.
 
 As the field continues to explore alternatives to standard RL approaches, ES deserves serious consideration alongside more established methods. The simplicity, parallelizability, and strong low-data performance make it a valuable tool in the LLM fine-tuning toolkit.
