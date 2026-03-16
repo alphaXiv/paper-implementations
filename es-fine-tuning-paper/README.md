@@ -107,7 +107,6 @@ Use `speedrun.sh` for automated training with proper environment setup:
 ## 📚 Training Details
 
 ### Evolution Strategies (ES)
-- **Algorithm:** Natural Evolution Strategies with antithetic sampling
 - **Training:** Full-parameter fine-tuning (no LoRA except for 100% dataset)
 - **Population size:** N=8 or N=30 perturbations
 - **Learning rate (α):** 0.0005
