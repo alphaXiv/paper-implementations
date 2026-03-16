@@ -111,7 +111,7 @@ Use `speedrun.sh` for automated training with proper environment setup:
 - **Learning rate (α):** 0.0005
 - **Noise std (σ):** 0.001
 - **Inference:** vLLM for fast parallel evaluation
-- **Speed:** (~10X)[https://github.com/VsonicV/es-fine-tuning-paper] faster than original implementation 
+- **Speed:** [~10X](https://github.com/VsonicV/es-fine-tuning-paper) faster than original implementation 
 
 ### GRPO (Group Relative Policy Optimization)
 - **Algorithm:** On-policy RL with group-based advantage estimation
