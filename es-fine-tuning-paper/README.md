@@ -98,8 +98,7 @@ Use `speedrun.sh` for automated training with proper environment setup:
 # Countdown with GRPO (40% data)  
 ./speedrun.sh --method grpo --task countdown --train-split 0.4
 
-# Run both ES and GRPO for comparison
-./speedrun.sh --method both --task gsm8k --train-split 0.1
+# Run both ES and GRPO for comparison(./speedrun.sh --method both --task gsm8k --train-split 0.1
 ```
 
 **GRPO Environment:** Uses Docker container via `verl-docker-run.sh` (automatically set up by speedrun.sh)
@@ -112,7 +111,7 @@ Use `speedrun.sh` for automated training with proper environment setup:
 - **Learning rate (α):** 0.0005
 - **Noise std (σ):** 0.001
 - **Inference:** vLLM for fast parallel evaluation
-- **Speed:** ~10X faster than original implementation
+- **Speed:** (~10X)[https://github.com/VsonicV/es-fine-tuning-paper] faster than original implementation 
 
 ### GRPO (Group Relative Policy Optimization)
 - **Algorithm:** On-policy RL with group-based advantage estimation
