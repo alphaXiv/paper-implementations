@@ -1,4 +1,4 @@
-# Evolution Strategies vs GRPO for LLM Fine-Tuning
+b# Evolution Strategies vs GRPO for LLM Fine-Tuning
 
 This repository contains the implementation and experimental code for comparing **Evolution Strategies (ES)** and **Group Relative Policy Optimization (GRPO)** on mathematical reasoning tasks.
 
@@ -12,7 +12,7 @@ This repository contains the implementation and experimental code for comparing 
 - - **GRPO** works well with base models (Llama compared to Qwen) than ES
 - Direct comparison across data regimes (10%, 40%, 70%, 100%) and model types (base vs instruct)
 
-📖 **See our [blog](BLOG.md) for detailed documentation.**
+📖 **See our [blog](https://pr-2747.storybook.alphaxiv.org/iframe.html?id=blog--post-es-for-fine-tuning-llms&viewMode=story) for detailed documentation.**
 
 
 ## Key Results
@@ -203,7 +203,7 @@ bash ./src/scripts/data_prep/prepare_countdown_data.sh \
 ## Results & Analysis
 
 Detailed results and analysis are available in:
-- **[BLOG.md](BLOG.md)** - Technical blog post with full experimental details
+- **[BLOG](https://pr-2747.storybook.alphaxiv.org/iframe.html?id=blog--post-es-for-fine-tuning-llms&viewMode=story)** - Technical blog post with full experimental details
 - **[eval results + rollouts/](https://huggingface.co/datasets/alphaXiv/es-grpo-results/tree/main)** - Raw evaluation results (JSON files)
 - **[assets/](assets/)** - Visualization charts
 
