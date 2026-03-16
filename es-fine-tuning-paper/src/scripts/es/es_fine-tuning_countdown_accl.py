@@ -44,7 +44,7 @@ def parse_args():
         "--num_train_samples",
         type=int,
         default=200,
-        help="Number of training examples to use from the training dataset (default: 200)",
+        help="Number of examples to use from the training dataset (default: 200)",
     )
     parser.add_argument("--cuda_devices", type=str, default="0,1,2,3")
     parser.add_argument('--verbose', action='store_true', help='Print verbose logs')
