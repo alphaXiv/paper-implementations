@@ -1,4 +1,4 @@
-b# Evolution Strategies vs GRPO for LLM Fine-Tuning
+# Evolution Strategies vs GRPO for LLM Fine-Tuning
 
 This repository contains the implementation and experimental code for comparing **Evolution Strategies (ES)** and **Group Relative Policy Optimization (GRPO)** on mathematical reasoning tasks.
 
