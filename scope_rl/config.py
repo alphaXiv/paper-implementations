@@ -21,7 +21,7 @@ GROUP_SIZE = 8                # rollout.n
 PROMPTS_PER_STEP = 48         # train_prompt_bsz == ppo_mini_batch_size (on-policy)
 LEARNING_RATE = 1e-5          # paper: 1e-6 full FT; x10 for LoRA
 ADV_NORM_STD = True           # original GRPO: (r - mean) / std
-TOTAL_STEPS = 100
+TOTAL_STEPS = 50  # one epoch over the 2400-prompt subset (2400 / 48)
 ROLLOUT_TEMPERATURE = 1.0
 MAX_PROMPT_TOKENS = 1024
 MAX_RESPONSE_TOKENS = 8192
