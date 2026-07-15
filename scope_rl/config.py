@@ -38,6 +38,13 @@ TRAIN_FILE = "dapo_math_2400.jsonl"
 EVAL_FILE = "benchmark.jsonl"
 
 SEED = 0
-SAVE_STATE_EVERY = 25
+SAVE_STATE_EVERY = 10
+
+# Resume a crashed/stalled run from a saved full state (weights + optimizer).
+# Set to a tinker:// path printed as CHECKPOINT in the previous run's log, with
+# RESUME_STEP = the step that checkpoint was saved at. Data order is replayed
+# deterministically from SEED. None = fresh run.
+RESUME_STATE_PATH = "tinker://2ef7cb7f-341f-5d1d-847e-744a30879590:train:0/weights/state-0025"
+RESUME_STEP = 25
 WANDB_PROJECT = "scope-rl-tinker"
 RUN_NAME = "grpo-baseline"

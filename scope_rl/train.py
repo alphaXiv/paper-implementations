@@ -63,7 +63,9 @@ def sample_all(sampling_client, prompts_tokens, num_samples, sampling_params, ma
         failed = []
         for i, fut in futures.items():
             try:
-                results[i] = fut.result()
+                # Hard timeout so a network outage can't wedge the run forever
+                # inside one blocking result() (observed: 3h JWT-refresh loop).
+                results[i] = fut.result(timeout=1200)
             except Exception as e:  # noqa: BLE001
                 failed.append(i)
                 if attempt == max_retries - 1:
@@ -157,9 +159,15 @@ def main() -> None:
     log(f"CONFIG {json.dumps({k: v for k, v in vars(C).items() if k.isupper()})}")
 
     service_client = tinker.ServiceClient()
-    training_client = service_client.create_lora_training_client(
-        base_model=C.BASE_MODEL, rank=C.LORA_RANK
-    )
+    if C.RESUME_STATE_PATH:
+        log(f"RESUME from {C.RESUME_STATE_PATH} at step {C.RESUME_STEP}")
+        training_client = service_client.create_training_client_from_state_with_optimizer(
+            C.RESUME_STATE_PATH
+        )
+    else:
+        training_client = service_client.create_lora_training_client(
+            base_model=C.BASE_MODEL, rank=C.LORA_RANK
+        )
     tokenizer = training_client.get_tokenizer()
 
     train_rows = load_hub_jsonl(C.TRAIN_FILE)
@@ -186,10 +194,20 @@ def main() -> None:
     tokens_sampled = 0
     tokens_trained = 0
 
+    start_step = 1
     sampling_client = training_client.save_weights_and_get_sampling_client()
-    run_eval(sampling_client, tokenizer, eval_rows, step=0, wandb_run=wandb_run)
+    if C.RESUME_STATE_PATH:
+        # Replay the data-order RNG up to the resume point instead of re-evaluating.
+        start_step = C.RESUME_STEP + 1
+        for _ in range(C.RESUME_STEP * C.PROMPTS_PER_STEP):
+            if cursor >= len(order):
+                random.shuffle(order)
+                cursor = 0
+            cursor += 1
+    else:
+        run_eval(sampling_client, tokenizer, eval_rows, step=0, wandb_run=wandb_run)
 
-    for step in range(1, C.TOTAL_STEPS + 1):
+    for step in range(start_step, C.TOTAL_STEPS + 1):
         t0 = time.time()
         batch_idx = []
         for _ in range(C.PROMPTS_PER_STEP):
