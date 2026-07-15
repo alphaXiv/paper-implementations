@@ -1,9 +1,17 @@
-"""Outcome-only GRPO baseline on Tinker (SCOPE-RL reproduction, arXiv 2607.11506).
+"""ASR (SCOPE-RL Stage 1): adaptive scaffolded RL on Tinker (arXiv 2607.11506).
 
-One training step = sample GROUP_SIZE rollouts for each of PROMPTS_PER_STEP
-prompts from the current policy, reward each rollout 1/0 by rule-based final-
-answer check, form group-relative advantages, and take one importance-sampling
-policy-gradient step (fully on-policy, matching the paper's mini_batch == batch).
+Extends the outcome-only GRPO baseline with the paper's Stage 1 (Sec. 3.2):
+each step first rolls out every prompt group on the original problem and scores
+it with the 0/1 outcome reward. Groups whose mean outcome reward falls below
+ASR_TAU are routed: re-rolled out on the cached scaffolded prompt (sub-questions
++ main problem, answers hidden) and scored with the prefix-consistent scaffold
+reward R_ASR (Eq. 10). Scaffolded rollouts REPLACE the original rollouts in the
+GRPO update (compute/gradient-batch parity with the baseline, Appendix J);
+non-routed groups keep their original rollouts and outcome rewards.
+
+Claims under test vs. the baseline branch at the same budget (paper Table 1 /
+Fig 3a): higher benchmark accuracy (biggest on AIME) and a higher effective
+gradient ratio (fraction of groups with non-degenerate advantages).
 
 Everything needed for analysis is printed to stdout as `METRICS {...}` /
 `EVAL {...}` JSON lines. Optional W&B mirroring if WANDB_API_KEY is set.
@@ -20,6 +28,7 @@ from huggingface_hub import hf_hub_download
 from tinker import types
 
 import config as C
+from scaffold import answer_matches, asr_reward, extract_labeled_answers, load_scaffolds, prefix_len
 from verifier import score_response
 
 
@@ -164,14 +173,36 @@ def main() -> None:
 
     train_rows = load_hub_jsonl(C.TRAIN_FILE)
     eval_rows = load_hub_jsonl(C.EVAL_FILE)
+    scaffold_rows = load_scaffolds(
+        hf_hub_download(repo_id=C.HF_DATA_REPO, filename=C.SCAFFOLD_FILE, repo_type="dataset")
+    )
 
     # Pre-tokenize training prompts; drop overlong ones (paper: filter_overlong_prompts).
     items = []
     for r in train_rows:
         toks = render_chat(tokenizer, r["messages"])
         if len(toks) <= C.MAX_PROMPT_TOKENS:
-            items.append({"toks": toks, "gt": r["ground_truth"], "src": r.get("data_source", "math")})
-    log(f"DATA train={len(items)} (filtered {len(train_rows) - len(items)} overlong) eval={len(eval_rows)}")
+            items.append(
+                {
+                    "id": r["id"],
+                    "toks": toks,
+                    "gt": r["ground_truth"],
+                    "src": r.get("data_source", "math"),
+                }
+            )
+    # Pre-tokenize scaffolded prompts (routing targets); overlong scaffolds never route.
+    scaf_items = {}
+    n_scaf_overlong = 0
+    for sid, s in scaffold_rows.items():
+        toks = render_chat(tokenizer, s["messages"])
+        if len(toks) <= C.SCAFFOLD_MAX_PROMPT_TOKENS:
+            scaf_items[sid] = {"toks": toks, "sub_gts": s["sub_gts"], "gt": s["ground_truth"]}
+        else:
+            n_scaf_overlong += 1
+    log(
+        f"DATA train={len(items)} (filtered {len(train_rows) - len(items)} overlong) "
+        f"scaffolds={len(scaf_items)} (filtered {n_scaf_overlong} overlong) eval={len(eval_rows)}"
+    )
 
     rollout_params = types.SamplingParams(
         max_tokens=C.MAX_RESPONSE_TOKENS,
@@ -200,36 +231,85 @@ def main() -> None:
             cursor += 1
         batch = [items[i] for i in batch_idx]
 
+        # Phase 1: original-prompt rollouts, outcome reward (identical to baseline).
         results = sample_all(
             sampling_client, [b["toks"] for b in batch], C.GROUP_SIZE, rollout_params
         )
 
-        datums = []
-        rewards_all = []
-        resp_lens = []
-        n_effective_groups = 0
-        n_groups = 0
+        groups = []  # per-group dicts carrying whichever branch's rollouts enter the update
+        n_outcome_effective = 0
+        outcome_rewards_all = []
         for b, resp in zip(batch, results):
             if resp is None:
                 continue
-            n_groups += 1
             seqs = resp.sequences
             rewards = []
             for seq in seqs:
                 text = tokenizer.decode(list(seq.tokens), skip_special_tokens=True)
                 rewards.append(score_response(text, b["gt"], b["src"]))
-                resp_lens.append(len(seq.tokens))
                 tokens_sampled += len(seq.tokens)
-            rewards_all.extend(rewards)
+            outcome_rewards_all.extend(rewards)
             arr = np.array(rewards, dtype=np.float64)
+            if arr.std() > 0:
+                n_outcome_effective += 1
+            groups.append(
+                {
+                    "b": b,
+                    "prompt_toks": b["toks"],
+                    "seqs": seqs,
+                    "rewards": rewards,
+                    "routed": float(arr.mean()) < C.ASR_TAU and b["id"] in scaf_items,
+                }
+            )
+        n_groups = len(groups)
+
+        # Phase 2: routed groups re-roll out on the scaffolded prompt; scaffold
+        # rollouts replace the original ones (Appendix J: replace, not augment).
+        routed_groups = [g for g in groups if g["routed"]]
+        prefix_lens = []
+        if routed_groups:
+            scaf_results = sample_all(
+                sampling_client,
+                [scaf_items[g["b"]["id"]]["toks"] for g in routed_groups],
+                C.GROUP_SIZE,
+                rollout_params,
+            )
+            for g, resp in zip(routed_groups, scaf_results):
+                if resp is None:
+                    g["routed"] = False  # sampling failed: keep original rollouts
+                    continue
+                sc = scaf_items[g["b"]["id"]]
+                rewards = []
+                for seq in resp.sequences:
+                    text = tokenizer.decode(list(seq.tokens), skip_special_tokens=True)
+                    sub_preds, main_pred = extract_labeled_answers(text, len(sc["sub_gts"]))
+                    sub_ok = [answer_matches(p, gt) for p, gt in zip(sub_preds, sc["sub_gts"])]
+                    main_ok = answer_matches(main_pred, sc["gt"])
+                    rewards.append(asr_reward(sub_ok, main_ok, C.ASR_BETA))
+                    prefix_lens.append(prefix_len(sub_ok) / max(len(sc["sub_gts"]), 1))
+                    tokens_sampled += len(seq.tokens)
+                g["prompt_toks"] = sc["toks"]
+                g["seqs"] = resp.sequences
+                g["rewards"] = rewards
+
+        # GRPO update over the merged batch (identical advantage rule to baseline).
+        datums = []
+        rewards_all = []
+        resp_lens = []
+        n_effective_groups = 0
+        for g in groups:
+            rewards_all.extend(g["rewards"])
+            for seq in g["seqs"]:
+                resp_lens.append(len(seq.tokens))
+            arr = np.array(g["rewards"], dtype=np.float64)
             if arr.std() == 0:
                 continue  # no within-group signal -> zero advantage for every rollout
             n_effective_groups += 1
             advs = arr - arr.mean()
             if C.ADV_NORM_STD:
                 advs = advs / (arr.std() + 1e-6)
-            for seq, adv in zip(seqs, advs):
-                datums.append(make_datum(b["toks"], list(seq.tokens), list(seq.logprobs), adv))
+            for seq, adv in zip(g["seqs"], advs):
+                datums.append(make_datum(g["prompt_toks"], list(seq.tokens), list(seq.logprobs), adv))
                 tokens_trained += len(seq.tokens)
 
         if datums:
@@ -242,10 +322,19 @@ def main() -> None:
 
         sampling_client = training_client.save_weights_and_get_sampling_client()
 
+        n_routed = sum(1 for g in groups if g["routed"])
         metrics = {
             "step": step,
             "reward_mean": round(float(np.mean(rewards_all)), 4) if rewards_all else None,
+            "outcome_reward_mean": round(float(np.mean(outcome_rewards_all)), 4)
+            if outcome_rewards_all
+            else None,
+            "routed_frac": round(n_routed / max(n_groups, 1), 4),
             "effective_group_ratio": round(n_effective_groups / max(n_groups, 1), 4),
+            "effective_group_ratio_outcome": round(n_outcome_effective / max(n_groups, 1), 4),
+            "scaffold_prefix_frac_mean": round(float(np.mean(prefix_lens)), 4)
+            if prefix_lens
+            else None,
             "n_datums": len(datums),
             "resp_len_mean": round(float(np.mean(resp_lens)), 1) if resp_lens else None,
             "tokens_sampled_total": tokens_sampled,

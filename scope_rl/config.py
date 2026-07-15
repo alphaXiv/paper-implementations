@@ -1,16 +1,15 @@
-"""Baseline: outcome-only GRPO (paper's control, Table 1 'GRPO' row).
+"""ASR (SCOPE-RL Stage 1): adaptive scaffolded RL (paper Sec. 3.2, Table 1 'ASR only' row).
 
-Paper config (verl/recipe/scope_rl/run_qwen.sh): Qwen3-8B, GRPO group n=8,
-48 prompts/step fully on-policy (mini_batch == batch), lr 1e-6 (full FT),
-max_prompt 1024 / max_response 8192, no KL loss, no entropy bonus,
-thinking disabled, greedy validation.
+Identical optimizer/budget to the baseline branch (LoRA r32, lr 1e-5, 50 steps,
+group 8, 48 prompts/step); the only change is the reward path: groups with mean
+outcome reward < ASR_TAU are re-rolled out on the paper's cached scaffolded
+prompts and scored with the prefix-consistent scaffold reward (Eq. 10).
 
-Deviations here (Tinker):
-- LoRA rank 32 instead of full fine-tuning (Tinker trains LoRA only), so the
-  learning rate is scaled up ~10x from the paper's full-FT value.
-- Trained on the paper repo's 2400-problem DAPO-Math subset (the decomposed
-  subset shipped with the repo) for a bounded number of steps, not 20k steps
-  over DAPO-Math-17k.
+Paper values kept: tau=0.5, beta=0.5, G=8 (Sec. 3.2.2-3.2.3).
+Deviations (same as baseline): LoRA instead of full FT, 50 steps, 2400-problem
+subset. ASR-specific deviation: scaffolded prompts are capped at 2048 tokens
+(paper caps original prompts at 1024 and does not state a scaffold cap);
+overlong scaffolds simply never route.
 """
 
 BASE_MODEL = "Qwen/Qwen3-8B"
@@ -26,6 +25,11 @@ ROLLOUT_TEMPERATURE = 1.0
 MAX_PROMPT_TOKENS = 1024
 MAX_RESPONSE_TOKENS = 8192
 
+# ASR (Stage 1)
+ASR_TAU = 0.5                 # routing threshold on group mean outcome reward (Eq. 8)
+ASR_BETA = 0.5                # scaffold-checkpoint weight in R_ASR (Eq. 10)
+SCAFFOLD_MAX_PROMPT_TOKENS = 2048
+
 # Eval (paper benchmark: AIME24/25, MATH500, GPQA-diamond; greedy decoding)
 EVAL_EVERY = 25               # also evals at step 0 (val_before_train) and at the end
 EVAL_TEMPERATURE = 0.0
@@ -35,9 +39,10 @@ EVAL_DEDUPE = True            # AIME rows are repeated x8 for avg@8; greedy make
 # Data lives on the HF Hub (prepared by prep_data.py), not in git.
 HF_DATA_REPO = "alphaXiv/scope-rl-reproduction-data"
 TRAIN_FILE = "dapo_math_2400.jsonl"
+SCAFFOLD_FILE = "dapo_math_2400_scaffold.jsonl"
 EVAL_FILE = "benchmark.jsonl"
 
 SEED = 0
 SAVE_STATE_EVERY = 25
 WANDB_PROJECT = "scope-rl-tinker"
-RUN_NAME = "grpo-baseline"
+RUN_NAME = "asr-stage1"
