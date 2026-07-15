@@ -96,28 +96,39 @@ def is_correct_minerva(
 
 
 def verify_math(solution_str: str, answer: str) -> tuple[bool, str]:
-    """Paper's compute_score: look at the tail of the response, try the
-    'Answer: ...' pattern; fall back to the last \\boxed{} if no Answer line."""
-    tail = solution_str[-300:]
+    """Accept either final-answer format the model actually produces:
+    the paper's 'Answer: ...' line (train prompts enforce it), or the last
+    \\boxed{} anywhere in the response (what bare benchmark prompts yield —
+    typically '### Final Answer:' with the box on a later line, which the
+    Answer-line regex alone misreads as empty)."""
+    gt_norm = normalize_final_answer(answer)
+    tail = solution_str[-300:].replace("**", "").replace("`", "")
     correct, pred = is_correct_minerva(tail, answer)
-    if not correct and pred == "[INVALID]":
-        boxed = last_boxed_only_string(solution_str[-1000:])
-        if boxed is not None:
-            pred = normalize_final_answer(remove_boxed(boxed))
-            correct = pred == normalize_final_answer(answer)
-    return correct, pred
+    if correct:
+        return True, pred
+    boxed = last_boxed_only_string(solution_str)
+    if boxed is not None:
+        boxed_pred = normalize_final_answer(remove_boxed(boxed))
+        if boxed_pred == gt_norm:
+            return True, boxed_pred
+        if pred in ("[INVALID]", ""):
+            pred = boxed_pred
+    return False, pred
 
 
 def verify_choice(solution_str: str, answer: str) -> tuple[bool, str]:
-    """Multiple-choice (GPQA): extract the chosen letter from the tail."""
-    tail = solution_str[-300:]
+    """Multiple-choice (GPQA): extract the chosen letter from the tail.
+    Markdown is stripped and whitespace collapsed first so multiline forms
+    like '### Final Answer:\\n\\nB' or '**Answer:** (C)' still parse."""
     gt = answer.strip().strip(".")[:1].upper()
-    m = re.findall(r"(?i)Answer\s*:\s*\**\(?([A-D])\)?", tail)
-    if not m:
-        boxed = last_boxed_only_string(tail)
-        if boxed is not None:
-            inner = remove_boxed(boxed).strip()
-            m = re.findall(r"\(?([A-D])\)?", inner[:3])
+    boxed = last_boxed_only_string(solution_str)
+    if boxed is not None:
+        m = re.findall(r"\(?([A-D])\)?", remove_boxed(boxed).strip()[:3])
+        if m:
+            return m[-1].upper() == gt, m[-1].upper()
+    tail = re.sub(r"[*`$#]", "", solution_str[-400:])
+    tail = re.sub(r"\s+", " ", tail)
+    m = re.findall(r"(?i)Answer\s*(?:is)?\s*:?\s*\(?([A-D])\)?(?=[\s.,)]|$)", tail)
     if not m:
         m = re.findall(r"(?i)\b(?:option|choice)\s*\(?([A-D])\)?", tail)
     pred = m[-1].upper() if m else "[INVALID]"

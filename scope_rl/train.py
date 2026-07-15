@@ -186,7 +186,7 @@ def main() -> None:
     tokens_sampled = 0
     tokens_trained = 0
 
-    sampling_client = training_client.save_weights_and_get_sampling_client(name="step-0000")
+    sampling_client = training_client.save_weights_and_get_sampling_client()
     run_eval(sampling_client, tokenizer, eval_rows, step=0, wandb_run=wandb_run)
 
     for step in range(1, C.TOTAL_STEPS + 1):
@@ -240,9 +240,7 @@ def main() -> None:
         else:
             log(f"WARN step {step}: no effective groups, skipping update")
 
-        sampling_client = training_client.save_weights_and_get_sampling_client(
-            name=f"step-{step:04d}"
-        )
+        sampling_client = training_client.save_weights_and_get_sampling_client()
 
         metrics = {
             "step": step,
