@@ -32,8 +32,10 @@ EVAL_TEMPERATURE = 0.0
 EVAL_MAX_TOKENS = 16384       # benchmark/eval.py ROLL_OUT_MAX_TOKENS
 EVAL_DEDUPE = True            # AIME rows are repeated x8 for avg@8; greedy makes repeats identical
 
-TRAIN_FILE = "data/dapo_math_2400.jsonl"
-EVAL_FILE = "data/benchmark.jsonl"
+# Data lives on the HF Hub (prepared by prep_data.py), not in git.
+HF_DATA_REPO = "alphaXiv/scope-rl-reproduction-data"
+TRAIN_FILE = "dapo_math_2400.jsonl"
+EVAL_FILE = "benchmark.jsonl"
 
 SEED = 0
 SAVE_STATE_EVERY = 25

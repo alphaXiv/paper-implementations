@@ -16,6 +16,7 @@ import time
 
 import numpy as np
 import tinker
+from huggingface_hub import hf_hub_download
 from tinker import types
 
 import config as C
@@ -26,7 +27,8 @@ def log(msg: str) -> None:
     print(msg, flush=True)
 
 
-def load_jsonl(path):
+def load_hub_jsonl(filename):
+    path = hf_hub_download(repo_id=C.HF_DATA_REPO, filename=filename, repo_type="dataset")
     with open(path) as f:
         return [json.loads(line) for line in f]
 
@@ -160,8 +162,8 @@ def main() -> None:
     )
     tokenizer = training_client.get_tokenizer()
 
-    train_rows = load_jsonl(C.TRAIN_FILE)
-    eval_rows = load_jsonl(C.EVAL_FILE)
+    train_rows = load_hub_jsonl(C.TRAIN_FILE)
+    eval_rows = load_hub_jsonl(C.EVAL_FILE)
 
     # Pre-tokenize training prompts; drop overlong ones (paper: filter_overlong_prompts).
     items = []

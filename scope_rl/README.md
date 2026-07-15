@@ -32,9 +32,12 @@ paper's benchmark file.
 - `train.py` — GRPO training loop on Tinker (rollout → verify → group advantage → importance-sampling update), with periodic benchmark evals printed as `EVAL {...}` JSON lines.
 - `verifier.py` — port of the paper's `math_dapo.py` Minerva-style verifier + GPQA letter matching.
 - `config.py` — all hyperparameters (the experiment branch is the config).
-- `prep_data.py` — regenerates `data/` from a clone of the paper's repo.
-- `data/dapo_math_2400.jsonl` — training prompts + ground truths (decompositions stripped).
-- `data/benchmark.jsonl` — paper's eval set (AIME24/25, MATH500, GPQA-diamond).
+- `prep_data.py` — regenerates the data from a clone of the paper's repo and pushes it to the Hub (`--push-to-hub`).
+
+Data is not stored in git: `train.py` downloads it from
+[`alphaXiv/scope-rl-reproduction-data`](https://huggingface.co/datasets/alphaXiv/scope-rl-reproduction-data)
+(`dapo_math_2400.jsonl` — training prompts + ground truths with decompositions stripped;
+`benchmark.jsonl` — the paper's eval set: AIME24/25, MATH500, GPQA-diamond).
 
 Run: `uv sync && uv run python train.py` (needs `TINKER_API_KEY`).
 

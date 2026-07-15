@@ -885,6 +885,7 @@ name = "scope-rl"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "huggingface-hub" },
     { name = "jinja2" },
     { name = "numpy" },
     { name = "tinker" },
@@ -893,6 +894,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "huggingface-hub", specifier = ">=1.23.0" },
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "numpy", specifier = ">=2.5.1" },
     { name = "tinker", specifier = ">=0.22.7" },

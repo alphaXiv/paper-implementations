@@ -4,8 +4,11 @@ Training rows keep only what outcome-only GRPO needs: the original chat prompt a
 the rule-verifiable ground truth. The embedded sub-question decompositions (used by
 the ASR stage) are dropped here; the ASR experiment branch re-extracts them.
 
+The prepared files are not committed to git; they are pushed to the HF Hub
+dataset repo that train.py downloads from (config.HF_DATA_REPO).
+
 Usage:
-    python prep_data.py --scope-rl-repo /path/to/SCOPE-RL [--train-source dapo-math-2400]
+    python prep_data.py --scope-rl-repo /path/to/SCOPE-RL [--train-source dapo-math-2400] [--push-to-hub]
 """
 
 import argparse
@@ -25,6 +28,7 @@ def main() -> None:
     ap.add_argument("--scope-rl-repo", required=True)
     ap.add_argument("--train-source", default="dapo-math-2400", choices=TRAIN_SOURCES)
     ap.add_argument("--out-dir", default="data")
+    ap.add_argument("--push-to-hub", action="store_true", help="upload prepared files to config.HF_DATA_REPO")
     args = ap.parse_args()
 
     repo = Path(args.scope_rl_repo)
@@ -62,6 +66,22 @@ def main() -> None:
             w.write(line)
             n += 1
     print(f"benchmark: {n} rows copied to {bench_out}")
+
+    if args.push_to_hub:
+        from huggingface_hub import HfApi
+
+        import config
+
+        api = HfApi()
+        api.create_repo(config.HF_DATA_REPO, repo_type="dataset", exist_ok=True)
+        for path in [train_out, bench_out]:
+            api.upload_file(
+                path_or_fileobj=str(path),
+                path_in_repo=path.name,
+                repo_id=config.HF_DATA_REPO,
+                repo_type="dataset",
+            )
+            print(f"pushed {path.name} to hf.co/datasets/{config.HF_DATA_REPO}")
 
 
 if __name__ == "__main__":
