@@ -1,18 +1,22 @@
-"""Outcome-only GRPO baseline on Tinker (SCOPE-RL reproduction, arXiv 2607.11506).
+"""Fig 1a probe: scaffold-prefix progress vs. main-answer accuracy (no training).
 
-One training step = sample GROUP_SIZE rollouts for each of PROMPTS_PER_STEP
-prompts from the current policy, reward each rollout 1/0 by rule-based final-
-answer check, form group-relative advantages, and take one importance-sampling
-policy-gradient step (fully on-policy, matching the paper's mini_batch == batch).
+Reproduces the paper's motivating probe (Appendix C) on the base model: the 755
+training problems whose scaffold decomposition has exactly 4 sub-questions are
+evaluated under (a) the scaffolded prompt (sub-questions + main problem in one
+generation) and (b) the original prompt. Samples are binned by the longest
+correct sub-question prefix from the scaffold rollout; per bin we report
+main-answer accuracy under both prompts, verified against the same ground truth.
 
-Everything needed for analysis is printed to stdout as `METRICS {...}` /
-`EVAL {...}` JSON lines. Optional W&B mirroring if WANDB_API_KEY is set.
+Claim under test (paper Fig 1a): scaffold-prompt accuracy exceeds original-prompt
+accuracy and rises monotonically with prefix length
+(paper: 25.4/36.2/60.3/90.4% vs 29.6/31.9/39.7/49.3% for bins 1-4).
+
+No parameter updates happen; the LoRA client is created only to obtain a
+tokenizer and a base-model sampling client (LoRA is identity at init).
+Results are printed as `PROBE ...` / `PROBE_RESULT ...` JSON lines.
 """
 
 import json
-import os
-import random
-import time
 
 import numpy as np
 import tinker
@@ -20,6 +24,7 @@ from huggingface_hub import hf_hub_download
 from tinker import types
 
 import config as C
+from scaffold import answer_matches, extract_labeled_answers, load_scaffolds, prefix_len
 from verifier import score_response
 
 
@@ -41,7 +46,7 @@ def render_chat(tokenizer, messages):
         )
     except TypeError:
         out = tokenizer.apply_chat_template(messages, add_generation_prompt=True)
-    if hasattr(out, "keys"):  # transformers >= 5 returns a BatchEncoding
+    if hasattr(out, "keys"):
         out = out["input_ids"]
     if out and isinstance(out[0], list):
         out = out[0]
@@ -74,201 +79,89 @@ def sample_all(sampling_client, prompts_tokens, num_samples, sampling_params, ma
     return results
 
 
-def make_datum(prompt_toks, seq_tokens, seq_logprobs, advantage):
-    full = list(prompt_toks) + list(seq_tokens)
-    input_toks = full[:-1]
-    targets = full[1:]
-    n_prompt = len(prompt_toks)
-    logprobs = [0.0] * (n_prompt - 1) + list(seq_logprobs)
-    advs = [0.0] * (n_prompt - 1) + [float(advantage)] * len(seq_tokens)
-    assert len(input_toks) == len(targets) == len(logprobs) == len(advs)
-    return types.Datum(
-        model_input=types.ModelInput.from_ints(input_toks),
-        loss_fn_inputs={
-            "target_tokens": types.TensorData.from_numpy(np.array(targets, dtype=np.int64)),
-            "logprobs": types.TensorData.from_numpy(np.array(logprobs, dtype=np.float32)),
-            "advantages": types.TensorData.from_numpy(np.array(advs, dtype=np.float32)),
-        },
-    )
-
-
-def run_eval(sampling_client, tokenizer, eval_rows, step, wandb_run=None):
-    """Greedy decode on the paper benchmark; rule-based verify; truncated => wrong."""
-    rows = eval_rows
-    if C.EVAL_DEDUPE:
-        seen, rows = set(), []
-        for r in eval_rows:
-            key = r["problem"]
-            if key not in seen:
-                seen.add(key)
-                rows.append(r)
-    prompts = [render_chat(tokenizer, [{"role": "user", "content": r["problem"]}]) for r in rows]
-    params = types.SamplingParams(
-        max_tokens=C.EVAL_MAX_TOKENS,
-        temperature=C.EVAL_TEMPERATURE,
-        stop=[tokenizer.eos_token] if tokenizer.eos_token else None,
-    )
-    t0 = time.time()
-    results = sample_all(sampling_client, prompts, 1, params)
-    per_source = {}
-    n_trunc = 0
-    for r, resp in zip(rows, results):
-        src = r["source"]
-        stats = per_source.setdefault(src, {"n": 0, "correct": 0, "tokens": 0})
-        stats["n"] += 1
-        if resp is None:
-            continue
-        seq = resp.sequences[0]
-        text = tokenizer.decode(list(seq.tokens), skip_special_tokens=True)
-        truncated = str(getattr(seq, "stop_reason", "")) == "length" or len(seq.tokens) >= C.EVAL_MAX_TOKENS
-        n_trunc += int(truncated)
-        correct = (not truncated) and score_response(text, str(r["answer"]), src) > 0
-        stats["correct"] += int(correct)
-        stats["tokens"] += len(seq.tokens)
-    summary = {"step": step, "eval_seconds": round(time.time() - t0, 1), "truncated": n_trunc}
-    accs = []
-    for src, s in sorted(per_source.items()):
-        acc = s["correct"] / max(s["n"], 1)
-        accs.append(acc)
-        summary[f"acc/{src}"] = round(acc, 4)
-        summary[f"avg_tokens/{src}"] = round(s["tokens"] / max(s["n"], 1), 1)
-    summary["acc/avg"] = round(float(np.mean(accs)), 4) if accs else 0.0
-    log("EVAL " + json.dumps(summary))
-    if wandb_run:
-        wandb_run.log({f"eval/{k}": v for k, v in summary.items() if k != "step"}, step=step)
-    return summary
-
-
 def main() -> None:
-    random.seed(C.SEED)
-    np.random.seed(C.SEED)
-
-    wandb_run = None
-    if os.environ.get("WANDB_API_KEY"):
-        try:
-            import wandb
-
-            wandb_run = wandb.init(
-                project=C.WANDB_PROJECT, name=C.RUN_NAME, config={k: v for k, v in vars(C).items() if k.isupper()}
-            )
-        except Exception as e:  # noqa: BLE001
-            log(f"WARN wandb init failed, continuing without: {e}")
-
-    log(f"CONFIG {json.dumps({k: v for k, v in vars(C).items() if k.isupper()})}")
+    log(f"CONFIG {json.dumps({k: str(v) for k, v in vars(C).items() if k.isupper()})}")
 
     service_client = tinker.ServiceClient()
     training_client = service_client.create_lora_training_client(
         base_model=C.BASE_MODEL, rank=C.LORA_RANK
     )
     tokenizer = training_client.get_tokenizer()
+    sampling_client = training_client.save_weights_and_get_sampling_client()
 
-    train_rows = load_hub_jsonl(C.TRAIN_FILE)
-    eval_rows = load_hub_jsonl(C.EVAL_FILE)
+    scaffolds = load_scaffolds(hf_hub_download(
+        repo_id=C.HF_DATA_REPO, filename=C.SCAFFOLD_FILE, repo_type="dataset"
+    ))
+    originals = {r["id"]: r for r in load_hub_jsonl(C.TRAIN_FILE)}
+    rows = [
+        s
+        for s in scaffolds.values()
+        if len(s["sub_gts"]) == C.PROBE_N_SUBS and s["id"] in originals
+    ]
+    log(f"DATA probe problems with exactly {C.PROBE_N_SUBS} subs: {len(rows)}")
 
-    # Pre-tokenize training prompts; drop overlong ones (paper: filter_overlong_prompts).
-    items = []
-    for r in train_rows:
-        toks = render_chat(tokenizer, r["messages"])
-        if len(toks) <= C.MAX_PROMPT_TOKENS:
-            items.append({"toks": toks, "gt": r["ground_truth"], "src": r.get("data_source", "math")})
-    log(f"DATA train={len(items)} (filtered {len(train_rows) - len(items)} overlong) eval={len(eval_rows)}")
-
-    rollout_params = types.SamplingParams(
-        max_tokens=C.MAX_RESPONSE_TOKENS,
-        temperature=C.ROLLOUT_TEMPERATURE,
+    params = types.SamplingParams(
+        max_tokens=C.PROBE_MAX_TOKENS,
+        temperature=C.PROBE_TEMPERATURE,
         stop=[tokenizer.eos_token] if tokenizer.eos_token else None,
     )
-    adam = types.AdamParams(learning_rate=C.LEARNING_RATE)
 
-    order = list(range(len(items)))
-    random.shuffle(order)
-    cursor = 0
-    tokens_sampled = 0
-    tokens_trained = 0
+    # Condition (a): scaffolded prompt.
+    scaf_prompts = [render_chat(tokenizer, s["messages"]) for s in rows]
+    # Condition (b): original prompt (same problems, same ground truth).
+    orig_prompts = [render_chat(tokenizer, originals[s["id"]]["messages"]) for s in rows]
 
-    sampling_client = training_client.save_weights_and_get_sampling_client()
-    run_eval(sampling_client, tokenizer, eval_rows, step=0, wandb_run=wandb_run)
+    log(f"SAMPLING scaffold condition ({len(rows)} prompts)")
+    scaf_results = sample_all(sampling_client, scaf_prompts, 1, params)
+    log(f"SAMPLING original condition ({len(rows)} prompts)")
+    orig_results = sample_all(sampling_client, orig_prompts, 1, params)
 
-    for step in range(1, C.TOTAL_STEPS + 1):
-        t0 = time.time()
-        batch_idx = []
-        for _ in range(C.PROMPTS_PER_STEP):
-            if cursor >= len(order):
-                random.shuffle(order)
-                cursor = 0
-            batch_idx.append(order[cursor])
-            cursor += 1
-        batch = [items[i] for i in batch_idx]
-
-        results = sample_all(
-            sampling_client, [b["toks"] for b in batch], C.GROUP_SIZE, rollout_params
+    records = []
+    n_missing = 0
+    for s, scaf_resp, orig_resp in zip(rows, scaf_results, orig_results):
+        if scaf_resp is None or orig_resp is None:
+            n_missing += 1
+            continue
+        scaf_text = tokenizer.decode(list(scaf_resp.sequences[0].tokens), skip_special_tokens=True)
+        orig_text = tokenizer.decode(list(orig_resp.sequences[0].tokens), skip_special_tokens=True)
+        sub_preds, main_pred = extract_labeled_answers(scaf_text, len(s["sub_gts"]))
+        sub_ok = [answer_matches(p, gt) for p, gt in zip(sub_preds, s["sub_gts"])]
+        records.append(
+            {
+                "id": s["id"],
+                "prefix_len": prefix_len(sub_ok),
+                "scaf_main_ok": answer_matches(main_pred, s["ground_truth"]),
+                "orig_main_ok": score_response(orig_text, s["ground_truth"], "math") > 0,
+                "scaf_tokens": len(scaf_resp.sequences[0].tokens),
+                "orig_tokens": len(orig_resp.sequences[0].tokens),
+            }
         )
+    if n_missing:
+        log(f"WARN {n_missing} problems dropped due to sampling failures")
 
-        datums = []
-        rewards_all = []
-        resp_lens = []
-        n_effective_groups = 0
-        n_groups = 0
-        for b, resp in zip(batch, results):
-            if resp is None:
-                continue
-            n_groups += 1
-            seqs = resp.sequences
-            rewards = []
-            for seq in seqs:
-                text = tokenizer.decode(list(seq.tokens), skip_special_tokens=True)
-                rewards.append(score_response(text, b["gt"], b["src"]))
-                resp_lens.append(len(seq.tokens))
-                tokens_sampled += len(seq.tokens)
-            rewards_all.extend(rewards)
-            arr = np.array(rewards, dtype=np.float64)
-            if arr.std() == 0:
-                continue  # no within-group signal -> zero advantage for every rollout
-            n_effective_groups += 1
-            advs = arr - arr.mean()
-            if C.ADV_NORM_STD:
-                advs = advs / (arr.std() + 1e-6)
-            for seq, adv in zip(seqs, advs):
-                datums.append(make_datum(b["toks"], list(seq.tokens), list(seq.logprobs), adv))
-                tokens_trained += len(seq.tokens)
+    bins = {}
+    for r in records:
+        bins.setdefault(r["prefix_len"], []).append(r)
 
-        if datums:
-            fb_future = training_client.forward_backward(datums, loss_fn="importance_sampling")
-            opt_future = training_client.optim_step(adam)
-            fb_future.result()
-            opt_future.result()
-        else:
-            log(f"WARN step {step}: no effective groups, skipping update")
-
-        sampling_client = training_client.save_weights_and_get_sampling_client()
-
-        metrics = {
-            "step": step,
-            "reward_mean": round(float(np.mean(rewards_all)), 4) if rewards_all else None,
-            "effective_group_ratio": round(n_effective_groups / max(n_groups, 1), 4),
-            "n_datums": len(datums),
-            "resp_len_mean": round(float(np.mean(resp_lens)), 1) if resp_lens else None,
-            "tokens_sampled_total": tokens_sampled,
-            "tokens_trained_total": tokens_trained,
-            "step_seconds": round(time.time() - t0, 1),
+    def bin_stats(rs):
+        return {
+            "n": len(rs),
+            "scaffold_main_acc": round(float(np.mean([r["scaf_main_ok"] for r in rs])), 4),
+            "original_main_acc": round(float(np.mean([r["orig_main_ok"] for r in rs])), 4),
         }
-        log("METRICS " + json.dumps(metrics))
-        if wandb_run:
-            wandb_run.log({f"train/{k}": v for k, v in metrics.items() if k != "step" and v is not None}, step=step)
 
-        if C.SAVE_STATE_EVERY and step % C.SAVE_STATE_EVERY == 0:
-            state = training_client.save_state(name=f"state-{step:04d}").result()
-            log(f"CHECKPOINT step={step} path={getattr(state, 'path', state)}")
+    for L in sorted(bins):
+        log("PROBE " + json.dumps({"prefix_len": L, **bin_stats(bins[L])}))
 
-        if C.EVAL_EVERY and step % C.EVAL_EVERY == 0 and step != C.TOTAL_STEPS:
-            run_eval(sampling_client, tokenizer, eval_rows, step=step, wandb_run=wandb_run)
-
-    state = training_client.save_state(name="state-final").result()
-    log(f"CHECKPOINT final path={getattr(state, 'path', state)}")
-    run_eval(sampling_client, tokenizer, eval_rows, step=C.TOTAL_STEPS, wandb_run=wandb_run)
+    overall = {
+        **bin_stats(records),
+        "mean_prefix_len": round(float(np.mean([r["prefix_len"] for r in records])), 3),
+        "scaf_tokens_mean": round(float(np.mean([r["scaf_tokens"] for r in records])), 1),
+        "orig_tokens_mean": round(float(np.mean([r["orig_tokens"] for r in records])), 1),
+        "bins": {str(L): bin_stats(bins[L]) for L in sorted(bins)},
+    }
+    log("PROBE_RESULT " + json.dumps(overall))
     log("DONE")
-    if wandb_run:
-        wandb_run.finish()
 
 
 if __name__ == "__main__":

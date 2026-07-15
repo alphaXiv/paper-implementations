@@ -58,6 +58,35 @@ def main() -> None:
             n_out += 1
     print(f"train: {n_in} rows read -> {n_out} written to {train_out}")
 
+    # Scaffold chains (verifier-only sub-answers) for the ASR stage / Fig 1a probe.
+    n_in, n_scaf = 0, 0
+    scaffold_out = out_dir / f"{args.train_source.replace('-', '_')}_scaffold.jsonl"
+    with open(repo / TRAIN_SOURCES[args.train_source]) as f, open(scaffold_out, "w") as w:
+        for line in f:
+            n_in += 1
+            row = json.loads(line)
+            main_gt = row["reward_model"]["ground_truth"]
+            dec = (row.get("extra_info") or {}).get("decomposition_result") or {}
+            gt = (dec.get("reward_model") or {}).get("ground_truth")
+            if not dec.get("prompt") or not isinstance(gt, dict) or not isinstance(main_gt, str):
+                continue
+            subs = sorted((k for k in gt if k.startswith("sub")), key=lambda k: int(k[3:]))
+            if not subs or "main" not in gt:
+                continue
+            w.write(
+                json.dumps(
+                    {
+                        "id": row.get("extra_info", {}).get("index", str(n_in)),
+                        "messages": dec["prompt"],
+                        "sub_gts": [str(gt[k]) for k in subs],
+                        "ground_truth": main_gt,
+                    }
+                )
+                + "\n"
+            )
+            n_scaf += 1
+    print(f"scaffold: {n_in} rows read -> {n_scaf} written to {scaffold_out}")
+
     bench_in = repo / "benchmark/data/data.jsonl"
     bench_out = out_dir / "benchmark.jsonl"
     n = 0
@@ -74,7 +103,7 @@ def main() -> None:
 
         api = HfApi()
         api.create_repo(config.HF_DATA_REPO, repo_type="dataset", exist_ok=True)
-        for path in [train_out, bench_out]:
+        for path in [train_out, scaffold_out, bench_out]:
             api.upload_file(
                 path_or_fileobj=str(path),
                 path_in_repo=path.name,

@@ -29,7 +29,8 @@ paper's benchmark file.
 
 ## Files
 
-- `train.py` — GRPO training loop on Tinker (rollout → verify → group advantage → importance-sampling update), with periodic benchmark evals printed as `EVAL {...}` JSON lines.
+- `train.py` — on this branch: the Fig 1a probe (base-model sampling only, no updates), printing per-prefix-length bins as `PROBE {...}` JSON lines.
+- `scaffold.py` — scaffold loading, `[SUB-X ANSWER]`/`[MAIN ANSWER]` extraction, prefix-consistency (Eq. 9) and the ASR reward (Eq. 10).
 - `verifier.py` — port of the paper's `math_dapo.py` Minerva-style verifier + GPQA letter matching.
 - `config.py` — all hyperparameters (the experiment branch is the config).
 - `prep_data.py` — regenerates the data from a clone of the paper's repo and pushes it to the Hub (`--push-to-hub`).
@@ -37,6 +38,7 @@ paper's benchmark file.
 Data is not stored in git: `train.py` downloads it from
 [`alphaXiv/scope-rl-reproduction-data`](https://huggingface.co/datasets/alphaXiv/scope-rl-reproduction-data)
 (`dapo_math_2400.jsonl` — training prompts + ground truths with decompositions stripped;
+`dapo_math_2400_scaffold.jsonl` — the paper's scaffold chains with verifier-only sub-answers;
 `benchmark.jsonl` — the paper's eval set: AIME24/25, MATH500, GPQA-diamond).
 
 Run: `uv sync && uv run python train.py` (needs `TINKER_API_KEY`).
@@ -46,3 +48,4 @@ Run: `uv sync && uv run python train.py` (needs `TINKER_API_KEY`).
 | Experiment | Description | Branch |
 |---|---|---|
 | Baseline: outcome-only GRPO | Paper's control (Table 1 "GRPO" row) on DAPO-Math subset via Tinker | [`orx/scope-rl-baseline-outcome-only-grpo-tinker`](https://github.com/alphaXiv/paper-implementations/tree/orx/scope-rl-baseline-outcome-only-grpo-tinker) |
+| Fig 1a probe: scaffold prefix vs main accuracy | Base model, no RL: 755 four-sub-question problems under scaffolded vs original prompt, binned by correct prefix length | [`orx/probe-fig-1a-scaffold-prefix-vs-main-answer-accu`](https://github.com/alphaXiv/paper-implementations/tree/orx/probe-fig-1a-scaffold-prefix-vs-main-answer-accu) |
