@@ -49,7 +49,13 @@ SAVE_STATE_EVERY = 10
 # Set to a tinker:// path printed as CHECKPOINT in the previous run's log, with
 # RESUME_STEP = the step that checkpoint was saved at. Data order is replayed
 # deterministically from SEED. None = fresh run.
-RESUME_STATE_PATH = "tinker://2ef7cb7f-341f-5d1d-847e-744a30879590:train:0/weights/state-0025"
-RESUME_STEP = 25
+RESUME_STATE_PATH = None
+RESUME_STEP = 0
+
+# In-process auto-recovery: on a connection failure mid-step, rebuild the
+# training client from the latest saved state and redo from there (bounded).
+MAX_RECOVERIES = 5
+STEP_OP_TIMEOUT = 1200        # seconds, for forward_backward/optim/save result()
+
 WANDB_PROJECT = "scope-rl-tinker"
-RUN_NAME = "asr-stage1"
+RUN_NAME = "asr-stage1-r2"

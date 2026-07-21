@@ -219,31 +219,48 @@ def main() -> None:
     )
     adam = types.AdamParams(learning_rate=C.LEARNING_RATE)
 
-    order = list(range(len(items)))
-    random.shuffle(order)
-    cursor = 0
+    def data_position(upto_step):
+        """Data-order state after consuming upto_step batches, replayed from SEED.
+
+        Uses a dedicated RNG (not the global `random` module) so replay is exact
+        regardless of what other libraries draw from the global state.
+        """
+        r = random.Random(C.SEED)
+        order = list(range(len(items)))
+        r.shuffle(order)
+        cursor = 0
+        for _ in range(upto_step * C.PROMPTS_PER_STEP):
+            if cursor >= len(order):
+                r.shuffle(order)
+                cursor = 0
+            cursor += 1
+        return r, order, cursor
+
     tokens_sampled = 0
     tokens_trained = 0
 
-    start_step = 1
+    start_step = C.RESUME_STEP + 1 if C.RESUME_STATE_PATH else 1
+    rng, order, cursor = data_position(start_step - 1)
+
     sampling_client = training_client.save_weights_and_get_sampling_client()
     if C.RESUME_STATE_PATH:
-        # Replay the data-order RNG up to the resume point instead of re-evaluating.
-        start_step = C.RESUME_STEP + 1
-        for _ in range(C.RESUME_STEP * C.PROMPTS_PER_STEP):
-            if cursor >= len(order):
-                random.shuffle(order)
-                cursor = 0
-            cursor += 1
+        last_state_path, last_state_step = C.RESUME_STATE_PATH, C.RESUME_STEP
     else:
+        # Anchor state so auto-recovery works even before the first periodic save.
+        state = training_client.save_state(name="state-0000", overwrite=True).result(C.STEP_OP_TIMEOUT)
+        last_state_path, last_state_step = getattr(state, "path", str(state)), 0
+        log(f"CHECKPOINT step=0 path={last_state_path}")
         run_eval(sampling_client, tokenizer, eval_rows, step=0, wandb_run=wandb_run)
 
-    for step in range(start_step, C.TOTAL_STEPS + 1):
+    step = start_step
+    recoveries = 0
+    while step <= C.TOTAL_STEPS:
+      try:
         t0 = time.time()
         batch_idx = []
         for _ in range(C.PROMPTS_PER_STEP):
             if cursor >= len(order):
-                random.shuffle(order)
+                rng.shuffle(order)
                 cursor = 0
             batch_idx.append(order[cursor])
             cursor += 1
@@ -333,8 +350,8 @@ def main() -> None:
         if datums:
             fb_future = training_client.forward_backward(datums, loss_fn="importance_sampling")
             opt_future = training_client.optim_step(adam)
-            fb_future.result()
-            opt_future.result()
+            fb_future.result(C.STEP_OP_TIMEOUT)
+            opt_future.result(C.STEP_OP_TIMEOUT)
         else:
             log(f"WARN step {step}: no effective groups, skipping update")
 
@@ -364,13 +381,41 @@ def main() -> None:
             wandb_run.log({f"train/{k}": v for k, v in metrics.items() if k != "step" and v is not None}, step=step)
 
         if C.SAVE_STATE_EVERY and step % C.SAVE_STATE_EVERY == 0:
-            state = training_client.save_state(name=f"state-{step:04d}").result()
-            log(f"CHECKPOINT step={step} path={getattr(state, 'path', state)}")
+            state = training_client.save_state(name=f"state-{step:04d}", overwrite=True).result(
+                C.STEP_OP_TIMEOUT
+            )
+            last_state_path, last_state_step = getattr(state, "path", str(state)), step
+            log(f"CHECKPOINT step={step} path={last_state_path}")
 
         if C.EVAL_EVERY and step % C.EVAL_EVERY == 0 and step != C.TOTAL_STEPS:
             run_eval(sampling_client, tokenizer, eval_rows, step=step, wandb_run=wandb_run)
+      except Exception as e:  # noqa: BLE001
+        recoveries += 1
+        if recoveries > C.MAX_RECOVERIES:
+            log(f"FATAL recovery budget exhausted at step {step}: {e}")
+            raise
+        log(
+            "RECOVER "
+            + json.dumps(
+                {
+                    "failed_step": step,
+                    "resume_from_step": last_state_step,
+                    "state": last_state_path,
+                    "recoveries": recoveries,
+                    "error": str(e)[:300] or type(e).__name__,
+                }
+            )
+        )
+        training_client = service_client.create_training_client_from_state_with_optimizer(
+            last_state_path
+        )
+        sampling_client = training_client.save_weights_and_get_sampling_client()
+        rng, order, cursor = data_position(last_state_step)
+        step = last_state_step + 1
+        continue
+      step += 1
 
-    state = training_client.save_state(name="state-final").result()
+    state = training_client.save_state(name="state-final", overwrite=True).result(C.STEP_OP_TIMEOUT)
     log(f"CHECKPOINT final path={getattr(state, 'path', state)}")
     run_eval(sampling_client, tokenizer, eval_rows, step=C.TOTAL_STEPS, wandb_run=wandb_run)
     log("DONE")
