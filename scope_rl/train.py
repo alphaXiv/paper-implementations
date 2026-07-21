@@ -22,6 +22,14 @@ import os
 import random
 import time
 
+# All HF resources this run touches (Qwen tokenizer, our dataset repo) are
+# public. The token orx injects into run environments can go stale (observed:
+# 401 "OAuth token signature verification failed" killing the tokenizer load),
+# so drop it and force anonymous Hub access before anything imports HF.
+for _k in ("HF_TOKEN", "HUGGING_FACE_HUB_TOKEN", "HF_HUB_TOKEN"):
+    os.environ.pop(_k, None)
+os.environ["HF_HUB_DISABLE_IMPLICIT_TOKEN"] = "1"
+
 import numpy as np
 import tinker
 from huggingface_hub import hf_hub_download
