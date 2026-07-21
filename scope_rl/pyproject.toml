@@ -9,3 +9,8 @@ dependencies = [
     "tinker>=0.22.7",
     "wandb>=0.28.0",
 ]
+
+[dependency-groups]
+dev = [
+    "matplotlib>=3.11.0",
+]
